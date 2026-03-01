@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TeamGreekGods — Nutrition</title>
+<title>TGG HELPER</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -266,6 +266,42 @@ textarea{resize:vertical;min-height:90px}
 .paste-ex{background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--muted);font-family:monospace;line-height:1.7;margin-bottom:10px}
 .paste-ex strong{color:var(--accent)}
 
+/* PREFS */
+.pref-grid{display:flex;flex-wrap:wrap;gap:8px}
+.pref-chip{padding:8px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface2);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s}
+.pref-chip.active{background:rgba(74,222,128,.12);border-color:var(--accent);color:var(--accent)}
+
+/* PLAN 7 JOURS */
+.plan-wrap{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.plan-day{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.plan-day-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.plan-day-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.plan-day-macros{font-size:11px;font-weight:600;display:flex;gap:6px}
+.plan-meal{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+.plan-meal:last-child{border-bottom:none}
+.plan-meal-emoji{font-size:16px;flex-shrink:0;width:22px;text-align:center}
+.plan-meal-info{flex:1;min-width:0}
+.scale-badge{font-size:9px;font-weight:600;color:var(--muted);background:var(--surface2);padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:middle}
+.plan-meal-name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.plan-meal-mac{font-size:10px;color:var(--muted);margin-top:2px}
+.plan-ings{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.plan-ing{background:var(--surface2);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--muted)}
+.plan-ing strong{color:var(--accent);font-weight:700}
+.swap-btn{background:none;border:none;font-size:14px;cursor:pointer;padding:4px;border-radius:6px;transition:background .2s;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.swap-btn:hover{background:var(--surface2)}
+
+/* EXERCICES */
+.ex-group-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);padding:14px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.ex-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+.ex-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.ex-alts{display:flex;flex-direction:column;gap:5px}
+.alt-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)}
+.alt-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+.alt-badge.direct{background:rgba(74,222,128,.15);color:var(--accent)}
+.alt-badge.accept{background:rgba(250,204,21,.1);color:#facc15}
+.alt-name{font-size:11px;font-weight:600;flex:1}
+.alt-equip{font-size:10px;color:var(--muted);flex-shrink:0}
+
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -283,8 +319,8 @@ textarea{resize:vertical;min-height:90px}
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">🏛</div>
-    <div class="login-title">Team<span>GreekGods</span></div>
-    <div class="login-sub">Ton espace nutrition personnalisé.<br>Connecte-toi avec l'email enregistré par ton coach.</div>
+    <div class="login-title">TGG <span>HELPER</span></div>
+    <div class="login-sub">par Laraki Abdeslam</div>
     <div class="login-field">
       <label>Adresse email</label>
       <input type="email" id="loginEmail" placeholder="ton@email.com" onkeydown="if(event.key==='Enter')doLogin()">
@@ -302,7 +338,6 @@ textarea{resize:vertical;min-height:90px}
   <div id="welcomeBar">
     <div class="welcome-text">👋 Bienvenue <span class="welcome-name" id="welcomeName"></span></div>
     <div style="display:flex;gap:7px">
-      <button class="icon-btn admin" id="adminBtn" onclick="openAdmin()" style="display:none">⚙️ Admin</button>
       <button class="icon-btn" onclick="doLogout()">Déconnexion</button>
     </div>
   </div>
@@ -311,8 +346,8 @@ textarea{resize:vertical;min-height:90px}
     <div class="header-inner">
       <div><div class="app-badge">🏛 TeamGreekGods</div></div>
       <div class="header-titles">
-        <h1>Nutrition <span>Smart</span></h1>
-        <div class="subtitle">Équivalents • Plan hebdo • 50 Recettes</div>
+        <h1>TGG <span>HELPER</span></h1>
+        <div class="subtitle">Équivalence nutrition &amp; exercices</div>
       </div>
     </div>
   </header>
@@ -320,8 +355,7 @@ textarea{resize:vertical;min-height:90px}
   <div class="tabs-wrap">
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('eq')">🔁 Équivalents</button>
-      <button class="tab-btn" onclick="switchTab('menu')">📅 Menu</button>
-      <button class="tab-btn" onclick="switchTab('rec')">🍽 Recettes</button>
+      <button class="tab-btn" onclick="switchTab('ex')">💪 Exercices</button>
     </div>
   </div>
 
@@ -392,108 +426,33 @@ textarea{resize:vertical;min-height:90px}
     <div id="eqResults"></div>
   </div>
 
-  <!-- ══════════════ TAB MENU ══════════════ -->
-  <div id="tab-menu" class="tab-panel">
+  <!-- ══════════════ TAB EXERCICES ══════════════ -->
+  <div id="tab-ex" class="tab-panel">
     <div class="sp"></div>
-    <div class="card" style="margin-bottom:10px">
-      <div class="card-title">✍️ Mode de saisie</div>
-      <div class="toggle-btns" style="width:100%">
-        <button class="toggle-btn active" id="modeManBtn" onclick="setMenuMode('m')" style="flex:1">Manuel</button>
-        <button class="toggle-btn" id="modePasteBtn" onclick="setMenuMode('p')" style="flex:1">Coller texte</button>
-      </div>
-    </div>
-    <div id="pastePanel" style="display:none">
-      <div class="card">
-        <div class="card-title">📋 Coller votre plan</div>
-        <div class="paste-ex"><strong>Format :</strong><br>Lundi - Petit-déjeuner<br>3 oeufs, 80g pain complet, 200g fromage blanc 0%<br>Lundi - Déjeuner<br>150g poulet blanc, 120g riz, 200g brocoli</div>
-        <label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase">Votre plan</label>
-        <textarea id="pasteText" placeholder="Collez votre plan alimentaire ici..."></textarea>
-        <button class="btn btn-p" style="margin-top:10px" onclick="parsePaste()">✨ Analyser</button>
-      </div>
-    </div>
-    <div id="manuelPanel">
-      <div class="week-tabs" id="weekTabs"></div>
-      <div id="dayMeals"></div>
-      <div class="day-tot" id="dayTot">
-        <div class="day-tot-lbl">📊 Total journée</div>
-        <div class="dtm-grid">
-          <div class="dtm kcal"><div class="v" id="dtKcal">0</div><div class="k">kcal</div></div>
-          <div class="dtm prot"><div class="v" id="dtProt">0</div><div class="k">Prot.</div></div>
-          <div class="dtm gluc"><div class="v" id="dtGluc">0</div><div class="k">Gluc.</div></div>
-          <div class="dtm lip"><div class="v" id="dtLip">0</div><div class="k">Lip.</div></div>
-        </div>
-      </div>
-      <button class="btn btn-p" style="width:100%;justify-content:center;margin-bottom:12px" onclick="findMenuRecipes()">🍽 Trouver des recettes équivalentes</button>
-    </div>
-  </div>
 
-  <!-- ══════════════ TAB RECETTES ══════════════ -->
-  <div id="tab-rec" class="tab-panel">
-    <div class="sp"></div>
+    <!-- Filtres -->
     <div class="card" style="margin-bottom:10px">
-      <div class="card-title">🔍 Filtres</div>
-      <div class="fchips" id="mealChips"></div>
-      <div class="fchips" id="typeChips"></div>
-      <div class="form-row" style="margin-bottom:0">
-        <div class="fg"><label>Max calories</label><input type="number" id="fKcal" placeholder="illimité" oninput="renderRecipes()"></div>
-        <div class="fg"><label>Min protéines (g)</label><input type="number" id="fProt" placeholder="0" oninput="renderRecipes()"></div>
+      <div class="card-title">🔍 Recherche</div>
+      <div class="fg" style="margin-bottom:10px">
+        <input type="text" id="exSearch" placeholder="Rechercher un exercice..." oninput="renderExercises()" style="width:100%">
       </div>
+      <div class="card-title" style="margin-top:4px">🏋️ Muscle</div>
+      <div class="fchips" id="muscleChips"></div>
+      <div class="card-title" style="margin-top:10px">🛠 Équipement disponible</div>
+      <div class="fchips" id="equipChips"></div>
     </div>
+
     <div class="res-header">
-      <div class="res-title">Recettes</div>
-      <div class="res-count" id="recCount"></div>
+      <div class="res-title">Exercices</div>
+      <div class="res-count" id="exCount"></div>
     </div>
-    <div id="recResults" class="recipe-grid"></div>
-    <div id="suggHdr" style="display:none"><hr class="sep">
-      <div class="res-header">
-        <div class="res-title">🎯 Suggestions pour votre menu</div>
-        <div class="res-count" id="suggCount"></div>
-      </div>
-    </div>
-    <div id="recSugg" class="recipe-grid"></div>
+    <div id="exResults"></div>
   </div>
 
   </main>
 </div>
 
 <!-- ═══════════════════════════════════ ADMIN ════════════════════ -->
-<div id="adminPanel">
-  <div class="admin-wrap">
-    <div class="admin-hdr">
-      <div class="admin-title">⚙️ Panel <span>Admin</span></div>
-      <button class="btn btn-s btn-sm" onclick="closeAdmin()">← Retour</button>
-    </div>
-    <div class="admin-stats">
-      <div class="astat"><div class="v" id="stTotal">—</div><div class="k">Total clients</div></div>
-      <div class="astat"><div class="v" id="stActif">—</div><div class="k">Actifs</div></div>
-      <div class="astat"><div class="v" id="stInactif">—</div><div class="k">Inactifs</div></div>
-    </div>
-    <div class="admin-grid">
-      <div class="admin-card">
-        <div class="admin-card-title">➕ Ajouter un client</div>
-        <div class="fg" style="margin-bottom:8px"><label>Email</label><input type="email" id="aEmail" placeholder="client@email.com"></div>
-        <div class="fg" style="margin-bottom:10px"><label>Prénom (optionnel)</label><input type="text" id="aNom" placeholder="Mohammed"></div>
-        <button class="btn btn-p" style="width:100%;justify-content:center" onclick="adminAdd()">Ajouter le client</button>
-        <div class="afb" id="addFb"></div>
-      </div>
-      <div class="admin-card">
-        <div class="admin-card-title">🔒 Session admin</div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px">Connecté en tant qu'administrateur.<br>Toutes les actions sont enregistrées dans Google Sheets en temps réel.</p>
-        <button class="btn btn-d btn-sm" style="width:100%;justify-content:center" onclick="doLogout()">Déconnexion complète</button>
-      </div>
-    </div>
-    <div class="admin-card">
-      <div class="admin-card-title" style="display:flex;justify-content:space-between;align-items:center">
-        <span>📋 Clients enregistrés</span>
-        <button class="btn btn-s btn-sm" onclick="adminLoad()">🔄 Actualiser</button>
-      </div>
-      <div class="afb" id="listFb"></div>
-      <div class="client-list" id="clientList">
-        <div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Cliquez sur Actualiser</div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -598,7 +557,7 @@ const FOODS=[
 const RECIPES=[
   // ── PETITS-DÉJEUNERS MAROCAINS
   {id:'r1', name:"Bissara au cumin",emoji:"🟢",meals:['breakfast','lunch'],tags:['breakfast','moroccan'],macros:{kcal:380,prot:22,gluc:55,lip:8},ings:[{e:"🟢",n:"Bissara (pois cassé)",q:"120g cru"},{e:"🫙",n:"Huile d'olive",q:"10ml"},{e:"🧂",n:"Cumin, sel",q:"à volonté"}],steps:["Tremper les pois cassés 1h","Cuire à l'eau + cumin 30min","Mixer jusqu'à consistance crémeuse","Filet d'huile + cumin au service"]},
-  {id:'r2', name:"Khobz + chergui + miel",emoji:"🫓",meals:['breakfast'],tags:['breakfast','moroccan'],macros:{kcal:390,prot:28,gluc:42,lip:10},ings:[{e:"🍞",n:"Pain complet",q:"100g"},{e:"🥛",n:"Chergui",q:"200g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Chauffer le pain","Étaler généreusement le chergui","Filet de miel","Thé marocain sans sucre"]},
+  {id:'r2', name:"Khobz + ricotta + miel",emoji:"🫓",meals:['breakfast'],tags:['breakfast','moroccan'],macros:{kcal:380,prot:18,gluc:44,lip:14},ings:[{e:"🍞",n:"Pain complet",q:"100g"},{e:"🧀",n:"Ricotta",q:"120g"},{e:"🍯",n:"Miel",q:"15g"}],steps:["Griller légèrement le pain","Étaler généreusement la ricotta","Filet de miel par-dessus","Optionnel : quelques noix concassées"]},
   {id:'r3', name:"Khobz + thon + tomate",emoji:"🥙",meals:['breakfast','lunch'],tags:['breakfast','moroccan','highprot'],macros:{kcal:360,prot:32,gluc:38,lip:6},ings:[{e:"🍞",n:"Pain complet",q:"80g"},{e:"🐠",n:"Thon boîte naturel",q:"130g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Trancher le pain","Égoutter et émietter le thon","Couper les tomates en rondelles","Assembler + citron + cumin"]},
   {id:'r4', name:"Omelette aux légumes (4 œufs)",emoji:"🍳",meals:['breakfast'],tags:['breakfast','highprot'],macros:{kcal:370,prot:28,gluc:8,lip:24},ings:[{e:"🥚",n:"Œuf entier",q:"4 œufs"},{e:"🫑",n:"Poivron rouge",q:"80g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Battre les œufs + sel + poivre","Faire revenir légumes 3min","Verser les œufs sur les légumes","Cuire à feu moyen jusqu'à prise"]},
   {id:'r5', name:"Bol avoine-banane-amlou",emoji:"🥣",meals:['breakfast'],tags:['breakfast','bulk'],macros:{kcal:420,prot:14,gluc:65,lip:12},ings:[{e:"🌾",n:"Flocons d'avoine",q:"60g"},{e:"🍌",n:"Banane",q:"120g"},{e:"🥣",n:"Amlou",q:"15g"},{e:"🥛",n:"Lait écrémé",q:"150ml"}],steps:["Chauffer le lait","Verser sur les flocons","Laisser gonfler 5min","Ajouter banane tranchée + amlou en filet"]},
@@ -735,72 +694,18 @@ function showApp(){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('welcomeName').textContent=curUser.nom;
-  if(ADMIN_EMAILS.includes(curUser.email))document.getElementById('adminBtn').style.display='block';
   initApp();
 }
 function doLogout(){
   curUser=null;
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('app').style.display='none';
-  document.getElementById('adminPanel').classList.remove('show');
   document.getElementById('loginEmail').value='';
   hideLErr();
 }
 function showLErr(m){const e=document.getElementById('loginError');e.textContent='⚠️ '+m;e.classList.add('show');}
 function hideLErr(){document.getElementById('loginError').classList.remove('show');}
 
-// ══════════════════════════════════════════════════════
-// ADMIN
-// ══════════════════════════════════════════════════════
-function openAdmin(){document.getElementById('app').style.display='none';document.getElementById('adminPanel').classList.add('show');adminLoad();}
-function closeAdmin(){document.getElementById('adminPanel').classList.remove('show');document.getElementById('app').style.display='block';}
-
-async function adminLoad(){
-  document.getElementById('clientList').innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Chargement...</div>';
-  try{
-    const data=await apiCall({action:'list',adminPass:ADMIN_PASS});
-    if(!data.success)return showFb('listFb',data.error,'err');
-    const cl=data.clients||[];
-    const actif=cl.filter(c=>c.statut==='actif').length;
-    document.getElementById('stTotal').textContent=cl.length;
-    document.getElementById('stActif').textContent=actif;
-    document.getElementById('stInactif').textContent=cl.length-actif;
-    if(!cl.length){document.getElementById('clientList').innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Aucun client enregistré</div>';return;}
-    document.getElementById('clientList').innerHTML=cl.map(c=>`
-      <div class="cr">
-        <div class="cr-info"><div class="cr-email">${c.email}</div><div class="cr-meta">${c.nom||'—'} · ${c.date||''}</div></div>
-        <span class="cr-status ${c.statut}">${c.statut}</span>
-        <div class="cr-actions">
-          <button class="cr-btn ${c.statut==='actif'?'ta':'ti'}" onclick="adminToggle('${c.email}')">${c.statut==='actif'?'Désactiver':'Activer'}</button>
-          <button class="cr-btn rm" onclick="adminRm('${c.email}')">✕</button>
-        </div>
-      </div>`).join('');
-  }catch(e){showFb('listFb','Erreur réseau','err');}
-}
-async function adminAdd(){
-  const email=document.getElementById('aEmail').value.trim().toLowerCase();
-  const nom=document.getElementById('aNom').value.trim();
-  if(!email)return showFb('addFb','Email requis','err');
-  try{
-    const data=await apiCall({action:'add',adminPass:ADMIN_PASS,email,nom});
-    if(data.success){showFb('addFb','✅ '+data.message,'ok');document.getElementById('aEmail').value='';document.getElementById('aNom').value='';adminLoad();}
-    else showFb('addFb','❌ '+data.error,'err');
-  }catch(e){showFb('addFb','Erreur réseau','err');}
-}
-async function adminToggle(email){
-  try{
-    const data=await apiCall({action:'toggle',adminPass:ADMIN_PASS,email});
-    if(data.success)adminLoad();else showFb('listFb','❌ '+data.error,'err');
-  }catch(e){showFb('listFb','Erreur réseau','err');}
-}
-async function adminRm(email){
-  if(!confirm(`Supprimer ${email} définitivement ?`))return;
-  try{
-    const data=await apiCall({action:'remove',adminPass:ADMIN_PASS,email});
-    if(data.success)adminLoad();else showFb('listFb','❌ '+data.error,'err');
-  }catch(e){showFb('listFb','Erreur réseau','err');}
-}
-function showFb(id,msg,cls){const e=document.getElementById(id);e.textContent=msg;e.className='afb '+cls;setTimeout(()=>e.className='afb',4000);}
 
 // ══════════════════════════════════════════════════════
 // INIT
@@ -809,13 +714,13 @@ const GROUPED={};
 FOODS.forEach(f=>{if(!GROUPED[f.cat])GROUPED[f.cat]=[];GROUPED[f.cat].push(f);});
 
 function initApp(){
-  buildSourceSelect();buildMealChips();buildTypeChips();buildWeekTabs();selectDay(0);renderRecipes();
+  buildSourceSelect();buildMuscleChips();buildEquipChips();renderExercises();
 }
 function switchTab(t){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
-  ['eq','menu','rec'].forEach((x,i)=>{if(x===t)document.querySelectorAll('.tab-btn')[i].classList.add('active');});
+  document.getElementById('tab-'+t)?.classList.add('active');
+  ['eq','ex'].forEach((x,i)=>{if(x===t)document.querySelectorAll('.tab-btn')[i].classList.add('active');});
   if(t==='rec')renderRecipes();
 }
 
@@ -915,153 +820,211 @@ function renderEquiv(){
 }
 
 // ══════════════════════════════════════════════════════
-// TAB 2 — MENU
 // ══════════════════════════════════════════════════════
-function setMenuMode(m){
-  document.getElementById('modeManBtn').classList.toggle('active',m==='m');
-  document.getElementById('modePasteBtn').classList.toggle('active',m==='p');
-  document.getElementById('pastePanel').style.display=m==='p'?'block':'none';
-  document.getElementById('manuelPanel').style.display=m==='m'?'block':'none';
+// ══════════════════════════════════════════════════════
+// TAB 2 — EXERCICES
+// ══════════════════════════════════════════════════════
+
+const EXERCISES = [
+  // POITRINE
+  {id:'e1',  name:'Flat Barbell Bench Press',     muscle:'Poitrine', alts:[{name:'Dumbbell Chest Press',equip:'haltères'},{name:'Machine Chest Press',equip:'machine'}]},
+  {id:'e2',  name:'Incline Barbell Bench Press',  muscle:'Poitrine', alts:[{name:'Smith Incline Press',equip:'smith'},{name:'Dumbbell Incline Press',equip:'haltères'}]},
+  {id:'e3',  name:'Incline Dumbbell Fly',         muscle:'Poitrine', alts:[{name:'Cable Crossover High to Low',equip:'câble'},{name:'Pec Deck Machine',equip:'machine'},{name:'Mid Cross Cables Fly',equip:'câble'}]},
+  {id:'e4',  name:'Chest Dips',                   muscle:'Poitrine', alts:[{name:'Assisted Chest Dip',equip:'machine'},{name:'Decline Push-Up Weighted',equip:'poids_corps'}]},
+  {id:'e5',  name:'Low Crossover',                muscle:'Poitrine', alts:[{name:'Dumbbell Low Crossover',equip:'haltères'}]},
+  {id:'e6',  name:'Incline Dumbbell Press',        muscle:'Poitrine', alts:[{name:'Incline Bench Press',equip:'barre'},{name:'Smith Incline Press',equip:'smith'}]},
+  {id:'e7',  name:'Push-Up',                      muscle:'Poitrine', alts:[{name:'Push-Ups Easy Version',equip:'poids_corps'}]},
+  // DOS
+  {id:'e8',  name:'Lat Pulldown',                 muscle:'Dos', alts:[{name:'Pull-Ups',equip:'poids_corps'},{name:'Assisted Pull-Up',equip:'machine'}]},
+  {id:'e9',  name:'Reverse Grip Pulldown',        muscle:'Dos', alts:[{name:'Close Grip Pull Down',equip:'câble'},{name:'One Arm Lat Pull Down',equip:'câble'}]},
+  {id:'e10', name:'Seated Cable Row',             muscle:'Dos', alts:[{name:'Machine Row',equip:'machine'},{name:'Dumbbell Row',equip:'haltères'}]},
+  {id:'e11', name:'Barbell Row',                  muscle:'Dos', alts:[{name:'T-Bar Row',equip:'barre'},{name:'Smith Barbell Row',equip:'smith'}]},
+  {id:'e12', name:'Dumbbell Row',                 muscle:'Dos', alts:[{name:'Single Arm Cable Row',equip:'câble'},{name:'Single Arm Machine Row',equip:'machine'}]},
+  {id:'e13', name:'Dumbbell Pullover',            muscle:'Dos', alts:[{name:'Cable Pullover',equip:'câble'},{name:'Machine Pullover',equip:'machine'}]},
+  {id:'e14', name:'Deadlift',                     muscle:'Dos', alts:[{name:'Rack Pull',equip:'barre'},{name:'Trap Bar Deadlift',equip:'barre'}]},
+  {id:'e15', name:'Good Morning',                 muscle:'Dos', alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'45° Back Extension',equip:'machine'}]},
+  {id:'e16', name:'Wide Grip Rowing',             muscle:'Dos', alts:[{name:'Seated Machine Row Neutral Grip',equip:'machine'},{name:'T-Bar Row',equip:'barre'}]},
+  // ÉPAULES
+  {id:'e17', name:'Seated Dumbbell Shoulder Press', muscle:'Épaules', alts:[{name:'Smith Shoulder Press',equip:'smith'},{name:'Machine Shoulder Press',equip:'machine'}]},
+  {id:'e18', name:'Standing Barbell Press',        muscle:'Épaules', alts:[{name:'Dumbbell Shoulder Press',equip:'haltères'},{name:'Machine Shoulder Press',equip:'machine'}]},
+  {id:'e19', name:'Lateral Raise',                muscle:'Épaules', alts:[{name:'Cable Lateral Raise',equip:'câble'},{name:'Machine Lateral Raise',equip:'machine'}]},
+  {id:'e20', name:'Front Raise',                  muscle:'Épaules', alts:[{name:'Cable Front Raise',equip:'câble'},{name:'Plate Front Raise',equip:'disque'}]},
+  {id:'e21', name:'Rear Delt Fly',                muscle:'Épaules', alts:[{name:'Rear Delt Fly Machine',equip:'machine'},{name:'Rear Delts Cable Pull',equip:'câble'}]},
+  {id:'e22', name:'Face Pull',                    muscle:'Épaules', alts:[{name:'Reverse Fly',equip:'haltères'},{name:'Cable Y Raise',equip:'câble'}]},
+  {id:'e23', name:'Upright Row',                  muscle:'Épaules', alts:[{name:'Dumbbell Upright Row',equip:'haltères'},{name:'Cable Upright Row',equip:'câble'}]},
+  {id:'e24', name:'Overhead Press',               muscle:'Épaules', alts:[{name:'Barbell Press',equip:'barre'},{name:'Smith Shoulder Press',equip:'smith'}]},
+  // QUADRICEPS
+  {id:'e25', name:'Barbell Back Squat',           muscle:'Quadriceps', alts:[{name:'Smith Squat',equip:'smith'},{name:'Hack Squat',equip:'machine'},{name:'Wall Sit',equip:'poids_corps'}]},
+  {id:'e26', name:'Front Squat',                  muscle:'Quadriceps', alts:[{name:'Goblet Squat',equip:'haltères'},{name:'Safety Bar Squat',equip:'barre'}]},
+  {id:'e27', name:'Leg Press',                    muscle:'Quadriceps', alts:[{name:'Seated Leg Press',equip:'machine'},{name:'Goblet Squat',equip:'haltères'}]},
+  {id:'e28', name:'Split Squat',                  muscle:'Quadriceps', alts:[{name:'Dumbbell Lunge',equip:'haltères'},{name:'Bodyweight Reverse Lunge',equip:'poids_corps'}]},
+  {id:'e29', name:'Walking Lunge',                muscle:'Quadriceps', alts:[{name:'Bodyweight Reverse Lunge',equip:'poids_corps'},{name:'Step-Up',equip:'poids_corps'}]},
+  {id:'e30', name:'Leg Extension',                muscle:'Quadriceps', alts:[{name:'Sissy Squat Bodyweight',equip:'poids_corps'},{name:'Single-Leg Extension',equip:'machine'}]},
+  {id:'e31', name:'Hack Squat',                   muscle:'Quadriceps', alts:[{name:'Leg Press',equip:'machine'},{name:'Smith Squat',equip:'smith'}]},
+  // ISCHIO-JAMBIERS
+  {id:'e32', name:'Romanian Deadlift',            muscle:'Ischio-jambiers', alts:[{name:'Smith Romanian Deadlift',equip:'smith'},{name:'Dumbbell RDL',equip:'haltères'}]},
+  {id:'e33', name:'Seated Leg Curl',              muscle:'Ischio-jambiers', alts:[{name:'Lying Leg Curl',equip:'machine'},{name:'Standing Leg Curl',equip:'machine'}]},
+  {id:'e34', name:'Good Morning',                 muscle:'Ischio-jambiers', alts:[{name:'Back Extension',equip:'machine'},{name:'Cable Pull Through',equip:'câble'}]},
+  // MOLLETS
+  {id:'e35', name:'Calf Raise Standing',          muscle:'Mollets', alts:[{name:'Seated Calf Raise',equip:'machine'},{name:'Donkey Calf Raise',equip:'machine'}]},
+  {id:'e36', name:'Single-Leg Calf Raise',        muscle:'Mollets', alts:[{name:'Smith Calf Raise',equip:'smith'},{name:'Machine Calf Raise',equip:'machine'}]},
+  // FESSIERS
+  {id:'e37', name:'Barbell Hip Thrust',           muscle:'Fessiers', alts:[{name:'Hip Thrusts Bodyweight',equip:'poids_corps'},{name:'Dumbbell Hip Thrust',equip:'haltères'}]},
+  {id:'e38', name:'Glute Bridge',                 muscle:'Fessiers', alts:[{name:'Single-Leg Bridge',equip:'poids_corps'},{name:'Frog Pump',equip:'poids_corps'}]},
+  {id:'e39', name:'Cable Kickback',               muscle:'Fessiers', alts:[{name:'Machine Kickback',equip:'machine'},{name:'Dumbbell Kickback',equip:'haltères'}]},
+  {id:'e40', name:'Cable Pull Through',           muscle:'Fessiers', alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'Dumbbell RDL',equip:'haltères'}]},
+  {id:'e41', name:'Banded Glute Abduction',       muscle:'Fessiers', alts:[{name:'Machine Abduction',equip:'machine'},{name:'Seated Abduction',equip:'machine'}]},
+  {id:'e42', name:'Single-Leg Hip Thrust',        muscle:'Fessiers', alts:[{name:'Barbell Hip Thrust',equip:'barre'},{name:'Glute Bridge',equip:'poids_corps'}]},
+  {id:'e43', name:'Sumo Deadlift',                muscle:'Fessiers', alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'Trap Bar Deadlift',equip:'barre'}]},
+  // BICEPS
+  {id:'e44', name:'Barbell Curl',                 muscle:'Biceps', alts:[{name:'Dumbbell Curl',equip:'haltères'},{name:'Cable Curl',equip:'câble'}]},
+  {id:'e45', name:'Incline Dumbbell Curl',        muscle:'Biceps', alts:[{name:'Incline Cable Biceps Curl',equip:'câble'}]},
+  {id:'e46', name:'Preacher Machine Curl',        muscle:'Biceps', alts:[{name:'Preacher Dumbbell Curl',equip:'haltères'},{name:'Spider Curl',equip:'haltères'}]},
+  {id:'e47', name:'Hammer Curl',                  muscle:'Biceps', alts:[{name:'Rope Hammer Curl',equip:'câble'},{name:'Cable Hammer Curl',equip:'câble'}]},
+  {id:'e48', name:'EZ Bar Curl',                  muscle:'Biceps', alts:[{name:'Barbell Curl',equip:'barre'},{name:'Dumbbell Curl',equip:'haltères'}]},
+  {id:'e49', name:'Machine Curl',                 muscle:'Biceps', alts:[{name:'Preacher Curl',equip:'machine'},{name:'Cable Curl',equip:'câble'}]},
+  // TRICEPS
+  {id:'e50', name:'Rope Pushdown',                muscle:'Triceps', alts:[{name:'Straight Bar Pushdown',equip:'câble'},{name:'Dumbbell Kickback',equip:'haltères'}]},
+  {id:'e51', name:'Skull Crusher',                muscle:'Triceps', alts:[{name:'Dumbbell Overhead Extension',equip:'haltères'},{name:'Cable Overhead Extension',equip:'câble'}]},
+  {id:'e52', name:'Close-Grip Bench Press',       muscle:'Triceps', alts:[{name:'Dips',equip:'poids_corps'},{name:'Smith Close Grip',equip:'smith'}]},
+  {id:'e53', name:'French Press',                 muscle:'Triceps', alts:[{name:'Overhead Barbell Extension',equip:'barre'},{name:'Rope Overhead Extension',equip:'câble'}]},
+  {id:'e54', name:'Overhead Rope Extension',      muscle:'Triceps', alts:[{name:'Barbell Overhead Extension',equip:'barre'},{name:'Dumbbell Overhead',equip:'haltères'}]},
+  {id:'e55', name:'Triceps Extension',            muscle:'Triceps', alts:[{name:'Rope Triceps Extension',equip:'câble'},{name:'Bar Triceps Extension',equip:'câble'}]},
+  // ABDOMINAUX
+  {id:'e56', name:'Hanging Leg Raise',            muscle:'Abdominaux', alts:[{name:'Captain Chair',equip:'machine'},{name:'Lying Leg Raise',equip:'poids_corps'}]},
+  {id:'e57', name:'Cable Crunch',                 muscle:'Abdominaux', alts:[{name:'Weighted Crunch',equip:'disque'},{name:'Decline Crunch',equip:'machine'}]},
+  {id:'e58', name:'Plank',                        muscle:'Abdominaux', alts:[{name:'Side Plank',equip:'poids_corps'},{name:'Weighted Plank',equip:'disque'}]},
+  {id:'e59', name:'Russian Twist',                muscle:'Abdominaux', alts:[{name:'Cable Twist',equip:'câble'},{name:'Medicine Ball Twist',equip:'médecine_ball'}]},
+  {id:'e60', name:'Reverse Crunch',               muscle:'Abdominaux', alts:[{name:'V-Up',equip:'poids_corps'},{name:'Jackknife',equip:'poids_corps'}]},
+  {id:'e61', name:'Lying Floor Leg Raise',        muscle:'Abdominaux', alts:[{name:'Alternate Leg Raises',equip:'poids_corps'}]},
+  // TRAPÈZES
+  {id:'e62', name:'Barbell Shrug',                muscle:'Trapèzes', alts:[{name:'Dumbbell Shrug',equip:'haltères'},{name:'Smith Shrug',equip:'smith'},{name:'Traps Mid Back Shrugs',equip:'câble'}]},
+  {id:'e63', name:'Farmer Carry',                 muscle:'Trapèzes', alts:[{name:'Barbell Shrug',equip:'barre'},{name:'Dumbbell Shrug',equip:'haltères'}]},
+  // JAMBES GLOBALES
+  {id:'e64', name:'Step-Up',                      muscle:'Quadriceps', alts:[{name:'Bulgarian Split Squat',equip:'haltères'},{name:'Walking Lunge',equip:'poids_corps'}]},
+  {id:'e65', name:'Barbell Upright Row',          muscle:'Épaules', alts:[{name:'Dumbbell Upright Row',equip:'haltères'},{name:'Rope Upright Row',equip:'câble'}]},
+  {id:'e66', name:'Lunges Bands',                 muscle:'Quadriceps', alts:[{name:'Reverse Bodyweight Lunges',equip:'poids_corps'}]},
+  {id:'e67', name:'Abductor Machine',             muscle:'Fessiers', alts:[{name:'Squat Abductors',equip:'poids_corps'},{name:'Dumbbell Abductors',equip:'haltères'}]},
+  // BICEPS manquants
+  {id:'e68', name:'Concentration Curl',           muscle:'Biceps',      alts:[{name:'Preacher Dumbbell Curl',equip:'haltères'},{name:'Spider Curl',equip:'haltères'}]},
+  {id:'e69', name:'Reverse Curl',                 muscle:'Biceps',      alts:[{name:'Zottman Curl',equip:'haltères'},{name:'Cable Reverse Curl',equip:'câble'}]},
+  // TRICEPS manquants
+  {id:'e70', name:'Bench Dips',                   muscle:'Triceps',     alts:[{name:'Diamond Push-Up',equip:'poids_corps'},{name:'Close Grip Push-Up',equip:'poids_corps'}]},
+  {id:'e71', name:'Machine Dip',                  muscle:'Triceps',     alts:[{name:'Bench Dip',equip:'poids_corps'},{name:'Close Grip Press',equip:'barre'}]},
+  {id:'e72', name:'One-Arm Cable Extension',      muscle:'Triceps',     alts:[{name:'Dumbbell Kickback',equip:'haltères'},{name:'Rope Pushdown',equip:'câble'}]},
+  {id:'e73', name:'Reverse Grip Pushdown',        muscle:'Triceps',     alts:[{name:'Rope Pushdown',equip:'câble'},{name:'V-Bar Pushdown',equip:'câble'}]},
+  {id:'e74', name:'Cable Kickback Triceps',       muscle:'Triceps',     alts:[{name:'Dumbbell Kickback',equip:'haltères'},{name:'Rope Pushdown',equip:'câble'}]},
+  // AVANT-BRAS
+  {id:'e75', name:'Wrist Curl',                   muscle:'Avant-bras',  alts:[{name:'Reverse Wrist Curl',equip:'barre'},{name:'Behind-the-Back Wrist Curl',equip:'barre'}]},
+  {id:'e76', name:'Barbell Reverse Curl',         muscle:'Avant-bras',  alts:[{name:'EZ Bar Reverse Curl',equip:'barre'},{name:'Cable Reverse Curl',equip:'câble'}]},
+  {id:'e77', name:'Seated Wrist Curl',            muscle:'Avant-bras',  alts:[{name:'Dumbbell Wrist Curl',equip:'haltères'},{name:'Barbell Wrist Curl',equip:'barre'}]},
+  {id:'e78', name:'Zottman Curl',                 muscle:'Avant-bras',  alts:[{name:'Reverse Curl',equip:'barre'},{name:'Cable Reverse Curl',equip:'câble'}]},
+  // ABDOMINAUX manquants
+  {id:'e79', name:'Pallof Press',                 muscle:'Abdominaux',  alts:[{name:'Side Plank Crunch',equip:'poids_corps'},{name:'Bird Dog',equip:'poids_corps'}]},
+  {id:'e80', name:'Stability Ball Crunch',        muscle:'Abdominaux',  alts:[{name:'Decline Crunch',equip:'machine'},{name:'Cable Crunch',equip:'câble'}]},
+  {id:'e81', name:'Hanging Windshield Wiper',     muscle:'Abdominaux',  alts:[{name:'Hanging Leg Raise',equip:'poids_corps'},{name:'V-Up',equip:'poids_corps'}]},
+  {id:'e82', name:'Toe Touches',                  muscle:'Abdominaux',  alts:[{name:'Jackknife',equip:'poids_corps'},{name:'Crunch',equip:'poids_corps'}]},
+  // TRAPÈZES manquants
+  {id:'e83', name:'Behind-the-Back Shrug',        muscle:'Trapèzes',    alts:[{name:'Cable Shrug',equip:'câble'},{name:'Upright Row',equip:'barre'}]},
+  {id:'e84', name:'Dumbbell Shrug',               muscle:'Trapèzes',    alts:[{name:'Smith Shrug',equip:'smith'},{name:'Cable Shrug',equip:'câble'}]},
+  // FESSIERS manquants
+  {id:'e85', name:'Frog Pump',                    muscle:'Fessiers',    alts:[{name:'Glute Bridge',equip:'poids_corps'},{name:'Dumbbell Hip Thrust',equip:'haltères'}]},
+  {id:'e86', name:'Glute Kickback',               muscle:'Fessiers',    alts:[{name:'Back Extension',equip:'machine'},{name:'Reverse Hyperextension',equip:'machine'}]},
+  {id:'e87', name:'Step-Up Glute Focus',          muscle:'Fessiers',    alts:[{name:'Reverse Lunge',equip:'poids_corps'},{name:'Bulgarian Split Squat',equip:'haltères'}]},
+];
+
+const MUSCLES  = [...new Set(EXERCISES.map(e=>e.muscle))];
+const EQUIPMENTS = [
+  {id:'barre',       label:'🏋️ Barre'},
+  {id:'haltères',    label:'🔵 Haltères'},
+  {id:'câble',       label:'〰️ Câble'},
+  {id:'machine',     label:'⚙️ Machine'},
+  {id:'smith',       label:'🔩 Smith'},
+  {id:'poids_corps', label:'🤸 Poids corps'},
+  {id:'disque',      label:'🥏 Disque'},
+];
+
+let activeMusclF = '';
+let activeEquips = new Set();
+
+function buildMuscleChips(){
+  const el = document.getElementById('muscleChips');
+  const all = document.createElement('div');
+  all.className='fchip active'; all.textContent='Tous';
+  all.onclick=()=>{ activeMusclF=''; document.querySelectorAll('#muscleChips .fchip').forEach(c=>c.classList.remove('active')); all.classList.add('active'); renderExercises(); };
+  el.appendChild(all);
+  MUSCLES.forEach(m=>{
+    const c=document.createElement('div'); c.className='fchip'; c.textContent=m;
+    c.onclick=()=>{ activeMusclF=m; document.querySelectorAll('#muscleChips .fchip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); renderExercises(); };
+    el.appendChild(c);
+  });
 }
-function buildWeekTabs(){
-  const wt=document.getElementById('weekTabs');
-  DAYS.forEach((d,i)=>{const btn=document.createElement('button');btn.className='day-tab'+(i===0?' active':'');btn.textContent=d.substring(0,3);btn.id='dt'+i;btn.onclick=()=>selectDay(i);wt.appendChild(btn);});
+
+function buildEquipChips(){
+  const el = document.getElementById('equipChips');
+  EQUIPMENTS.forEach(eq=>{
+    const c=document.createElement('div'); c.className='fchip'; c.textContent=eq.label;
+    c.onclick=()=>{ if(activeEquips.has(eq.id))activeEquips.delete(eq.id); else activeEquips.add(eq.id); c.classList.toggle('active',activeEquips.has(eq.id)); renderExercises(); };
+    el.appendChild(c);
+  });
 }
-function selectDay(i){curDay=i;document.querySelectorAll('.day-tab').forEach((b,j)=>b.classList.toggle('active',j===i));renderDayMeals();}
-function buildFoodOpts(){let h='<option value="">— Aliment —</option>';Object.entries(GROUPED).forEach(([cat,foods])=>{h+=`<optgroup label="${cat}">`;foods.forEach(f=>{h+=`<option value="${f.id}">${f.emoji} ${f.name}</option>`;});h+='</optgroup>';});return h;}
-function renderDayMeals(){
-  const c=document.getElementById('dayMeals');let h='';
-  MEALS.forEach(meal=>{
-    const items=weekData[curDay][meal.id];
-    h+=`<div class="card" style="margin-bottom:10px"><div class="meal-head"><div class="meal-lbl">${meal.emoji} ${meal.label}</div><button class="btn btn-s btn-sm" onclick="addIng(${curDay},'${meal.id}')">+ Ajouter</button></div>`;
-    items.forEach((item,idx)=>{
-      const food=FOODS.find(f=>f.id===item.foodId);
-      const unit=food?(food.unitType==='ml'?'ml':food.unitType==='unit'?food.unitLabel||'unités':'g'):'g';
-      const opts=buildFoodOpts().replace(`value="${item.foodId}"`,`value="${item.foodId}" selected`);
-      h+=`<div class="ing-row"><div class="fg food-sel"><select onchange="updIng(${curDay},'${meal.id}',${idx},'food',this.value)">${opts}</select></div><div class="fg qty-inp"><input type="number" value="${item.qty}" min="1" max="2000" step="${food&&food.unitType==='unit'?1:10}" onchange="updIng(${curDay},'${meal.id}',${idx},'qty',this.value)"></div><div class="unit-lbl">${unit}</div><button class="rm-btn" onclick="rmIng(${curDay},'${meal.id}',${idx})">✕</button></div>`;
+
+function renderExercises(){
+  const search = (document.getElementById('exSearch')?.value||'').toLowerCase().trim();
+  let list = EXERCISES;
+
+  if(activeMusclF) list = list.filter(e=>e.muscle===activeMusclF);
+
+  if(search) list = list.filter(e=>
+    e.name.toLowerCase().includes(search) ||
+    e.alts.some(a=>a.name.toLowerCase().includes(search))
+  );
+
+  if(activeEquips.size > 0){
+    list = list.filter(e=> e.alts.some(a=> activeEquips.has(a.equip)));
+  }
+
+  document.getElementById('exCount').textContent = list.length + ' exercice' + (list.length>1?'s':'');
+
+  if(!list.length){
+    document.getElementById('exResults').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px">Aucun résultat</div>';
+    return;
+  }
+
+  // Group by muscle
+  const grouped = {};
+  list.forEach(e=>{ if(!grouped[e.muscle]) grouped[e.muscle]=[]; grouped[e.muscle].push(e); });
+
+  let html='';
+  Object.entries(grouped).forEach(([muscle, exs])=>{
+    html += `<div class="ex-group-title">${muscleEmoji(muscle)} ${muscle}</div>`;
+    exs.forEach(ex=>{
+      const altsHtml = ex.alts.map((a,i)=>{
+        const badge = i===0 ? '<span class="alt-badge direct">Direct</span>' : '<span class="alt-badge accept">Acceptable</span>';
+        const eqLabel = EQUIPMENTS.find(eq=>eq.id===a.equip)?.label || a.equip;
+        const highlight = activeEquips.has(a.equip) ? ' style="border-color:var(--accent);background:rgba(74,222,128,.08)"' : '';
+        return `<div class="alt-item"${highlight}>
+          ${badge}
+          <span class="alt-name">${a.name}</span>
+          <span class="alt-equip">${eqLabel}</span>
+        </div>`;
+      }).join('');
+
+      html += `<div class="ex-card">
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-alts">${altsHtml}</div>
+      </div>`;
     });
-    const mM=compMealM(curDay,meal.id);const hd=items.some(i=>i.foodId);
-    h+=`<div class="meal-mb ${hd?'show':''}" id="mb-${meal.id}"><div class="mmr"><div class="mmc kcal"><div class="v">${fmt(mM.kcal)}</div><div class="k">kcal</div></div><div class="mmc prot"><div class="v">${fmt(mM.prot)}g</div><div class="k">Prot.</div></div><div class="mmc gluc"><div class="v">${fmt(mM.gluc)}g</div><div class="k">Gluc.</div></div><div class="mmc lip"><div class="v">${fmt(mM.lip)}g</div><div class="k">Lip.</div></div></div></div></div>`;
   });
-  c.innerHTML=h;updDayTot();
-}
-function addIng(d,m){weekData[d][m].push({foodId:null,qty:100});renderDayMeals();}
-function rmIng(d,m,i){weekData[d][m].splice(i,1);renderDayMeals();}
-function updIng(d,m,i,field,val){
-  if(field==='food')weekData[d][m][i].foodId=parseInt(val)||null;
-  if(field==='qty')weekData[d][m][i].qty=parseFloat(val)||0;
-  updDayTot();
-  const mM=compMealM(d,m);const hd=weekData[d][m].some(x=>x.foodId);
-  const mb=document.getElementById('mb-'+m);
-  if(mb){mb.innerHTML=`<div class="mmr"><div class="mmc kcal"><div class="v">${fmt(mM.kcal)}</div><div class="k">kcal</div></div><div class="mmc prot"><div class="v">${fmt(mM.prot)}g</div><div class="k">Prot.</div></div><div class="mmc gluc"><div class="v">${fmt(mM.gluc)}g</div><div class="k">Gluc.</div></div><div class="mmc lip"><div class="v">${fmt(mM.lip)}g</div><div class="k">Lip.</div></div></div>`;mb.classList.toggle('show',hd);}
-  document.getElementById('dt'+d)?.classList.toggle('hd',MEALS.some(ml=>weekData[d][ml.id].some(x=>x.foodId)));
-}
-function compMealM(d,m){return weekData[d][m].reduce((acc,item)=>{if(!item.foodId)return acc;const food=FOODS.find(f=>f.id===item.foodId);if(!food)return acc;const mac=compMacros(food,item.qty);return{kcal:acc.kcal+mac.kcal,prot:acc.prot+mac.prot,gluc:acc.gluc+mac.gluc,lip:acc.lip+mac.lip};},{kcal:0,prot:0,gluc:0,lip:0});}
-function updDayTot(){
-  const t=MEALS.reduce((acc,m)=>{const mac=compMealM(curDay,m.id);return{kcal:acc.kcal+mac.kcal,prot:acc.prot+mac.prot,gluc:acc.gluc+mac.gluc,lip:acc.lip+mac.lip};},{kcal:0,prot:0,gluc:0,lip:0});
-  const has=MEALS.some(m=>weekData[curDay][m.id].some(i=>i.foodId));
-  document.getElementById('dayTot').classList.toggle('show',has);
-  document.getElementById('dtKcal').textContent=fmt(t.kcal);document.getElementById('dtProt').textContent=fmt(t.prot)+'g';
-  document.getElementById('dtGluc').textContent=fmt(t.gluc)+'g';document.getElementById('dtLip').textContent=fmt(t.lip)+'g';
-}
-function parsePaste(){
-  const text=document.getElementById('pasteText').value.trim();if(!text)return;
-  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);let cDay=-1,cMeal=null;
-  lines.forEach(line=>{
-    const di=DAYS.findIndex(d=>line.toLowerCase().includes(d.toLowerCase()));if(di>=0)cDay=di;
-    if(line.toLowerCase().includes('petit')||line.toLowerCase().includes('matin'))cMeal='breakfast';
-    else if(line.toLowerCase().includes('déjeuner')||line.toLowerCase().includes('midi'))cMeal='lunch';
-    else if(line.toLowerCase().includes('dîner')||line.toLowerCase().includes('soir'))cMeal='dinner';
-    else if(line.toLowerCase().includes('collation')||line.toLowerCase().includes('snack'))cMeal='snack';
-    if(cDay>=0&&cMeal){line.split(',').map(p=>p.trim()).forEach(part=>{const m=part.match(/^(\d+(?:\.\d+)?)\s*(?:g|ml|oeuf|œuf)?s?\s+(.+)/i);if(m){const qty=parseFloat(m[1]);const name=m[2].toLowerCase();const food=FOODS.find(f=>f.name.toLowerCase().includes(name)||name.includes(f.name.toLowerCase().split('(')[0].trim()));if(food)weekData[cDay][cMeal].push({foodId:food.id,qty});}});}
-  });
-  setMenuMode('m');const fd=weekData.findIndex(d=>MEALS.some(m=>d[m.id].length>0));selectDay(fd>=0?fd:0);
-  DAYS.forEach((_,i)=>{document.getElementById('dt'+i)?.classList.toggle('hd',MEALS.some(m=>weekData[i][m.id].some(x=>x.foodId)));});
-}
-function findMenuRecipes(){
-  const sugg=[];
-  MEALS.forEach(meal=>{
-    const m=compMealM(curDay,meal.id);if(m.kcal<50)return;
-    RECIPES.filter(r=>r.meals.includes(meal.id)).forEach(r=>{sugg.push({recipe:r,mealLabel:meal.label,tm:m,score:mScore(macroDist(m,r.macros))});});
-  });
-  sugg.sort((a,b)=>b.score-a.score);
-  if(!sugg.length){alert('Ajoutez d\'abord vos repas !');return;}
-  switchTab('rec');renderSugg(sugg.slice(0,10));
+
+  document.getElementById('exResults').innerHTML = html;
 }
 
-// ══════════════════════════════════════════════════════
-// TAB 3 — RECETTES
-// ══════════════════════════════════════════════════════
-const MEAL_FILTERS=[{id:'breakfast',label:'🌅 Matin'},{id:'lunch',label:'☀️ Déjeuner'},{id:'dinner',label:'🌙 Dîner'},{id:'snack',label:'🍎 Collation'}];
-const TYPE_FILTERS=[{id:'moroccan',label:'🇲🇦 Marocain'},{id:'highprot',label:'💪 High-Prot +40g'},{id:'bulk',label:'📈 Bulk'},{id:'lowcarb',label:'🥗 Low-Carb'}];
+function muscleEmoji(m){
+  const map={Poitrine:'💪',Dos:'🔙',Épaules:'🏋️',Quadriceps:'🦵',Fessiers:'🍑','Ischio-jambiers':'🦵',Mollets:'🦵',Biceps:'💪',Triceps:'💪',Abdominaux:'🎯',Trapèzes:'🏆'};
+  return map[m]||'💪';
+}
 
-function buildMealChips(){
-  const el=document.getElementById('mealChips');
-  const all=document.createElement('div');all.className='fchip active';all.textContent='Tous';all.onclick=()=>setMealF('',all);el.appendChild(all);
-  MEAL_FILTERS.forEach(f=>{const c=document.createElement('div');c.className='fchip';c.textContent=f.label;c.onclick=()=>setMealF(f.id,c);el.appendChild(c);});
-}
-function buildTypeChips(){
-  const el=document.getElementById('typeChips');
-  TYPE_FILTERS.forEach(f=>{const c=document.createElement('div');c.className='fchip';c.textContent=f.label;c.onclick=()=>toggleTypeF(f.id,c);el.appendChild(c);});
-}
-function setMealF(id,el){activeMealF=id;document.querySelectorAll('#mealChips .fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderRecipes();}
-function toggleTypeF(id,el){if(activeTypeFs.has(id))activeTypeFs.delete(id);else activeTypeFs.add(id);el.classList.toggle('active',activeTypeFs.has(id));renderRecipes();}
-function renderRecipes(){
-  const fk=parseFloat(document.getElementById('fKcal').value)||Infinity;
-  const fp=parseFloat(document.getElementById('fProt').value)||0;
-  let recs=RECIPES;
-  if(activeMealF)recs=recs.filter(r=>r.meals.includes(activeMealF));
-  if(activeTypeFs.size>0)recs=recs.filter(r=>[...activeTypeFs].some(t=>r.tags.includes(t)));
-  recs=recs.filter(r=>r.macros.kcal<=fk&&r.macros.prot>=fp);
-  document.getElementById('recCount').textContent=recs.length+' recettes';
-  document.getElementById('recResults').innerHTML=recs.map(r=>rcHTML(r,null)).join('');
-  document.getElementById('suggHdr').style.display='none';
-  document.getElementById('recSugg').innerHTML='';
-}
-function renderSugg(sugg){
-  document.getElementById('suggHdr').style.display='block';
-  document.getElementById('suggCount').textContent=sugg.length+' suggestions';
-  document.getElementById('recSugg').innerHTML=sugg.map(x=>`
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:12px 0 5px">
-      ${x.mealLabel} — Cible : ${fmt(x.tm.kcal)} kcal · ${fmt(x.tm.prot)}g P
-    </div>${rcHTML(x.recipe,x.score)}`).join('');
-}
-function rcHTML(r,score){
-  const tags=r.tags.map(t=>`<span class="rtag ${t}">${
-    t==='breakfast'?'🌅 Matin':t==='lunch'?'☀️ Déj.':t==='dinner'?'🌙 Dîner':
-    t==='snack'?'🍎 Collation':t==='moroccan'?'🇲🇦 Marocain':
-    t==='highprot'?'💪 High-Prot':t==='bulk'?'📈 Bulk':t==='lowcarb'?'🥗 Low-Carb':t
-  }</span>`).join('');
-  const sc=score!==null?`<div class="rc-score"><div class="score-val">${score}%</div><div class="score-lbl">match</div></div>`:'';
-  const ings=r.ings.map(i=>`<div class="ing-item"><span class="ing-emoji">${i.e}</span><span class="ing-name">${i.n}</span><span class="ing-qty">${i.q}</span></div>`).join('');
-  const steps=r.steps.map((s,i)=>`<div class="step-item"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></div>`).join('');
-  return `<div class="rcrd">
-    <div class="rcrd-top" onclick="toggleRec('${r.id}')">
-      <div style="flex:1">
-        <div class="rcrd-name">${r.emoji} ${r.name}</div>
-        <div class="rcrd-tags">${tags}</div>
-        <div class="rc-macros" style="margin-top:7px">
-          <div class="rcm kcal"><strong>${r.macros.kcal}</strong><span>kcal</span></div>
-          <div class="rcm prot"><strong>${r.macros.prot}g</strong><span>Prot.</span></div>
-          <div class="rcm gluc"><strong>${r.macros.gluc}g</strong><span>Gluc.</span></div>
-          <div class="rcm lip"><strong>${r.macros.lip}g</strong><span>Lip.</span></div>
-        </div>
-      </div>
-      ${sc}
-      <div class="rc-chev" id="chev-${r.id}">▼</div>
-    </div>
-    <div class="rc-detail" id="det-${r.id}">
-      <div class="rd-title">🧺 Ingrédients</div>
-      <div class="ing-list">${ings}</div>
-      <div class="rd-title">👨‍🍳 Préparation</div>
-      <div class="step-list">${steps}</div>
-    </div>
-  </div>`;
-}
-function toggleRec(id){
-  const d=document.getElementById('det-'+id);const c=document.getElementById('chev-'+id);
-  const open=d.classList.toggle('open');c.classList.toggle('open',open);
-}
 </script>
 </body>
 </html>
