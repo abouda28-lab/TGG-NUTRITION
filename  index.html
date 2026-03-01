@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeamGreekGods — Nutrition</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--surface:#161921;--surface2:#1e2330;--border:#2a3040;
+  --accent:#4ade80;--accent2:#22d3ee;--accent3:#f97316;--text:#e8ecf4;--muted:#6b7a99;
+  --pink:#f472b6;--purple:#a78bfa;--r:16px;
+  --ok:#4ade80;--warn:#facc15;--bad:#f87171;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 0%,rgba(74,222,128,.08),transparent 60%)}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:40px 36px;width:100%;max-width:420px;text-align:center}
+.login-logo{font-size:48px;margin-bottom:16px}
+.login-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:6px}
+.login-title span{color:var(--accent)}
+.login-sub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6}
+.login-field{margin-bottom:12px;text-align:left}
+.login-field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.07em}
+.login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color .2s}
+.login-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,222,128,.1)}
+.login-btn{width:100%;padding:14px;border-radius:12px;border:none;cursor:pointer;background:var(--accent);color:#0d0f14;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;transition:all .2s;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px}
+.login-btn:hover{background:#22c55e;transform:translateY(-1px)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.login-error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:11px 13px;font-size:13px;color:#f87171;margin-top:12px;display:none;text-align:left}
+.login-error.show{display:block}
+.login-footer{font-size:11px;color:var(--muted);margin-top:18px;line-height:1.7}
+.spinner{width:17px;height:17px;border:2px solid rgba(13,15,20,.3);border-top-color:#0d0f14;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* WELCOME BAR */
+#welcomeBar{background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(34,211,238,.04));border-bottom:1px solid rgba(74,222,128,.2);padding:9px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.welcome-text{font-size:13px;color:var(--accent);font-weight:600}
+.welcome-name{color:var(--text)}
+.icon-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.icon-btn:hover{border-color:#f87171;color:#f87171}
+.icon-btn.admin:hover{border-color:var(--accent);color:var(--accent)}
+
+/* APP */
+#app{display:none;padding-bottom:60px}
+header{background:linear-gradient(135deg,#0d1117,#161d2e);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.app-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+.header-titles{flex:1}
+h1{font-family:'Syne',sans-serif;font-size:clamp(18px,4vw,25px);font-weight:800;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+
+.tabs-wrap{max-width:760px;margin:14px auto 0;padding:0 16px}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px}
+.tab-btn{flex:1;padding:9px 6px;border:none;background:transparent;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;text-align:center}
+.tab-btn.active{background:var(--accent);color:#0d0f14}
+main{max-width:760px;margin:0 auto;padding:0 16px}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.sp{height:14px}
+
+/* CARDS & FORMS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:12px}
+.card-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px}
+.toggle-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.toggle-info{flex:1}
+.toggle-lbl{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.toggle-note{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic}
+.toggle-btns{display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:3px}
+.toggle-btn{padding:5px 13px;border-radius:6px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--muted);background:transparent;transition:all .2s}
+.toggle-btn.active{background:var(--accent);color:#0d0f14}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.fg{flex:1;min-width:130px}
+.fg label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+select,input[type=number],input[type=text],input[type=email],input[type=password],textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;appearance:none}
+select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,222,128,.1)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a99' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
+textarea{resize:vertical;min-height:90px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .2s}
+.btn-p{background:var(--accent);color:#0d0f14}.btn-p:hover{background:#22c55e}
+.btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.btn-d{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.25)}.btn-d:hover{background:rgba(248,113,113,.22)}
+.btn-sm{padding:5px 11px;font-size:11px;border-radius:8px}
+
+/* MACROS */
+.macros-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.mc{background:var(--surface2);border-radius:9px;padding:9px 6px;text-align:center}
+.mc .v{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.mc .k{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.mc.kcal .v{color:var(--accent3)}.mc.prot .v{color:var(--accent)}.mc.gluc .v{color:var(--accent2)}.mc.lip .v{color:var(--pink)}
+
+/* SOURCE HIGHLIGHT */
+.src-card{background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(34,211,238,.04));border:1px solid rgba(74,222,128,.2);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;display:none}
+.src-card.show{display:block}
+.sh-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
+.sh-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:700}
+.badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 9px;border-radius:100px;border:1px solid;flex-shrink:0}
+.badge.cru{color:#4ade80;border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.1)}
+.badge.cuit{color:var(--accent3);border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.1)}
+.badge.ml{color:var(--purple);border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.1)}
+.badge.unit{color:var(--accent2);border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.1)}
+.group-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;margin-top:4px}
+.group-tag.prot{background:rgba(74,222,128,.12);color:var(--accent)}
+.group-tag.gluc{background:rgba(34,211,238,.12);color:var(--accent2)}
+.group-tag.lip{background:rgba(244,114,182,.12);color:var(--pink)}
+.group-tag.fruit{background:rgba(249,115,22,.12);color:var(--accent3)}
+.group-tag.veg{background:rgba(167,139,250,.12);color:var(--purple)}
+.ratio-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-top:6px}
+.ratio-badge.ok{background:rgba(74,222,128,.12);color:var(--ok);border:1px solid rgba(74,222,128,.3)}
+.ratio-badge.warn{background:rgba(250,204,21,.12);color:var(--warn);border:1px solid rgba(250,204,21,.3)}
+.ratio-badge.bad{background:rgba(248,113,113,.12);color:var(--bad);border:1px solid rgba(248,113,113,.3)}
+
+.compat-info{background:var(--surface2);border-radius:9px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:var(--muted);display:none}
+.compat-info.show{display:block}
+.compat-info strong{color:var(--text)}
+
+/* LEGEND FILTER */
+.legend-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;display:none}
+.legend-row.show{display:flex}
+.legend-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.lchip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;cursor:pointer;border:1px solid transparent;transition:all .2s}
+.lchip.ok{background:rgba(74,222,128,.1);color:var(--ok);border-color:rgba(74,222,128,.25)}
+.lchip.warn{background:rgba(250,204,21,.1);color:var(--warn);border-color:rgba(250,204,21,.25)}
+.lchip.bad{background:rgba(248,113,113,.1);color:var(--bad);border-color:rgba(248,113,113,.25)}
+.lchip.off{opacity:.3}
+
+/* FOOD CARDS */
+.food-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:7px;transition:border-color .2s;position:relative}
+.food-card.fc-ok{border-left:3px solid var(--ok)}
+.food-card.fc-warn{border-left:3px solid var(--warn)}
+.food-card.fc-bad{border-left:3px solid var(--bad)}
+.food-card:hover{border-color:var(--accent)}
+.food-card.gone{display:none}
+.food-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px}
+.food-info{display:flex;align-items:flex-start;gap:8px;flex:1}
+.food-emoji{font-size:18px;flex-shrink:0;margin-top:1px}
+.food-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.food-cat{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:1px}
+.rec-pill{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-top:4px;flex-wrap:wrap}
+.rec-pill.ok{background:rgba(74,222,128,.15);color:var(--ok)}
+.rec-pill.warn{background:rgba(250,204,21,.15);color:var(--warn)}
+.rec-pill.bad{background:rgba(248,113,113,.15);color:var(--bad)}
+.rec-detail{font-size:9px;opacity:.7}
+.qty-right{text-align:right;flex-shrink:0}
+.qty-badge{background:var(--accent);color:#0d0f14;border-radius:7px;padding:4px 10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;white-space:nowrap;display:inline-block}
+.qty-sub{font-size:9px;color:var(--muted);margin-top:2px}
+.food-macros{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.fm{background:var(--surface2);border-radius:6px;padding:5px 4px;text-align:center}
+.fm strong{display:block;font-family:'Syne',sans-serif;font-size:12px;font-weight:700}
+.fm span{color:var(--muted);font-size:8px;text-transform:uppercase}
+.fm.kcal strong{color:var(--accent3)}.fm.prot strong{color:var(--accent)}.fm.gluc strong{color:var(--accent2)}.fm.lip strong{color:var(--pink)}
+
+.sec-div{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:8px 0 5px;border-bottom:1px solid var(--border);margin-bottom:7px}
+.res-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.res-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.res-count{font-size:11px;color:var(--muted)}
+.placeholder{text-align:center;padding:40px 20px;color:var(--muted)}
+.placeholder .ico{font-size:40px;margin-bottom:12px;opacity:.4}
+.placeholder p{font-size:13px;line-height:1.6;max-width:250px;margin:0 auto}
+
+/* MENU */
+.week-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.day-tab{padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s}
+.day-tab.active{background:rgba(74,222,128,.12);border-color:var(--accent);color:var(--accent)}
+.day-tab.hd{border-color:rgba(74,222,128,.35)}
+.meal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.meal-lbl{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
+.ing-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.ing-row .fg{margin-bottom:0}
+.food-sel{flex:2;min-width:140px}.qty-inp{flex:0 0 72px}
+.unit-lbl{font-size:10px;color:var(--muted);white-space:nowrap;min-width:22px}
+.rm-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:3px;transition:color .2s;flex-shrink:0}
+.rm-btn:hover{color:#f87171}
+.meal-mb{background:var(--surface2);border-radius:8px;padding:9px 11px;margin-top:7px;display:none}
+.meal-mb.show{display:block}
+.mmr{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.mmc .v{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;text-align:center}
+.mmc .k{font-size:8px;color:var(--muted);text-transform:uppercase;text-align:center}
+.mmc.kcal .v{color:var(--accent3)}.mmc.prot .v{color:var(--accent)}.mmc.gluc .v{color:var(--accent2)}.mmc.lip .v{color:var(--pink)}
+.day-tot{background:linear-gradient(135deg,rgba(74,222,128,.07),rgba(34,211,238,.04));border:1px solid rgba(74,222,128,.2);border-radius:var(--r);padding:12px 14px;margin:10px 0 14px;display:none}
+.day-tot.show{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.day-tot-lbl{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;flex:1;min-width:70px}
+.dtm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;flex:2;min-width:180px}
+.dtm .v{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;text-align:center}
+.dtm .k{font-size:8px;color:var(--muted);text-transform:uppercase;text-align:center}
+.dtm.kcal .v{color:var(--accent3)}.dtm.prot .v{color:var(--accent)}.dtm.gluc .v{color:var(--accent2)}.dtm.lip .v{color:var(--pink)}
+
+/* RECIPES */
+.recipe-grid{display:flex;flex-direction:column;gap:9px}
+.rcrd{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.rcrd-top{display:flex;align-items:flex-start;justify-content:space-between;padding:13px 15px 10px;gap:8px;cursor:pointer}
+.rcrd-top:hover{background:rgba(255,255,255,.02)}
+.rcrd-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px}
+.rcrd-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px}
+.rtag{font-size:9px;font-weight:600;padding:2px 6px;border-radius:100px;text-transform:uppercase}
+.rtag.breakfast{color:var(--accent3);background:rgba(249,115,22,.1)}
+.rtag.lunch{color:var(--accent);background:rgba(74,222,128,.1)}
+.rtag.dinner{color:var(--accent2);background:rgba(34,211,238,.1)}
+.rtag.snack{color:var(--purple);background:rgba(167,139,250,.1)}
+.rtag.moroccan{color:var(--pink);background:rgba(244,114,182,.1)}
+.rtag.highprot{color:var(--ok);background:rgba(74,222,128,.1)}
+.rtag.bulk{color:var(--accent3);background:rgba(249,115,22,.1)}
+.rtag.lowcarb{color:var(--accent2);background:rgba(34,211,238,.1)}
+.rc-macros{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.rcm{background:var(--surface2);border-radius:6px;padding:5px;text-align:center}
+.rcm strong{display:block;font-family:'Syne',sans-serif;font-size:12px;font-weight:700}
+.rcm span{font-size:8px;color:var(--muted);text-transform:uppercase}
+.rcm.kcal strong{color:var(--accent3)}.rcm.prot strong{color:var(--accent)}.rcm.gluc strong{color:var(--accent2)}.rcm.lip strong{color:var(--pink)}
+.rc-score{text-align:right;flex-shrink:0}
+.score-val{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--accent)}
+.score-lbl{font-size:9px;color:var(--muted)}
+.rc-chev{font-size:14px;color:var(--muted);margin-left:5px;flex-shrink:0;transition:transform .2s}
+.rc-chev.open{transform:rotate(180deg)}
+.rc-detail{display:none;border-top:1px solid var(--border);padding:13px 15px}
+.rc-detail.open{display:block}
+.rd-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.ing-list{display:flex;flex-direction:column;gap:3px;margin-bottom:11px}
+.ing-item{display:flex;align-items:center;gap:7px;background:var(--surface2);border-radius:7px;padding:6px 9px}
+.ing-emoji{font-size:14px}
+.ing-name{font-size:12px;flex:1}
+.ing-qty{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap}
+.step-list{display:flex;flex-direction:column;gap:4px}
+.step-item{display:flex;gap:8px;align-items:flex-start}
+.step-num{background:var(--accent);color:#0d0f14;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;margin-top:1px}
+.step-text{font-size:12px;line-height:1.5}
+
+/* FILTER CHIPS */
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.fchip{padding:5px 12px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s}
+.fchip.active{background:rgba(74,222,128,.12);border-color:var(--accent);color:var(--accent)}
+
+/* ADMIN */
+#adminPanel{background:var(--bg);min-height:100vh;padding:20px;display:none}
+#adminPanel.show{display:block}
+.admin-wrap{max-width:720px;margin:0 auto}
+.admin-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.admin-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+.admin-title span{color:var(--accent)}
+.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.astat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center}
+.astat .v{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent)}
+.astat .k{font-size:11px;color:var(--muted);margin-top:2px}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.admin-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.admin-card-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px}
+.client-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
+.cr{background:var(--surface2);border-radius:8px;padding:9px 11px;display:flex;align-items:center;gap:8px}
+.cr-info{flex:1;min-width:0}
+.cr-email{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-meta{font-size:10px;color:var(--muted)}
+.cr-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;flex-shrink:0}
+.cr-status.actif{background:rgba(74,222,128,.15);color:var(--ok)}
+.cr-status.inactif{background:rgba(248,113,113,.1);color:var(--bad)}
+.cr-actions{display:flex;gap:4px;flex-shrink:0}
+.cr-btn{padding:4px 8px;border-radius:6px;border:none;cursor:pointer;font-size:10px;font-weight:700;font-family:'DM Sans',sans-serif;transition:all .2s}
+.cr-btn.ta{background:rgba(250,204,21,.12);color:var(--warn)}
+.cr-btn.ti{background:rgba(74,222,128,.12);color:var(--ok)}
+.cr-btn.rm{background:rgba(248,113,113,.1);color:var(--bad)}
+.afb{border-radius:8px;padding:9px 12px;font-size:12px;margin-top:8px;display:none}
+.afb.ok{display:block;color:var(--ok);background:rgba(74,222,128,.1)}
+.afb.err{display:block;color:var(--bad);background:rgba(248,113,113,.1)}
+
+.sep{border:none;border-top:1px solid var(--border);margin:14px 0}
+.paste-ex{background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--muted);font-family:monospace;line-height:1.7;margin-bottom:10px}
+.paste-ex strong{color:var(--accent)}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+@media(max-width:500px){
+  .macros-grid,.food-macros,.mmr,.dtm-grid,.rc-macros{grid-template-columns:repeat(2,1fr)}
+  .tab-btn{font-size:10px;padding:8px 3px}
+  .admin-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ LOGIN ════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🏛</div>
+    <div class="login-title">Team<span>GreekGods</span></div>
+    <div class="login-sub">Ton espace nutrition personnalisé.<br>Connecte-toi avec l'email enregistré par ton coach.</div>
+    <div class="login-field">
+      <label>Adresse email</label>
+      <input type="email" id="loginEmail" placeholder="ton@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">
+      <span id="loginBtnTxt">Accéder à mon espace</span>
+    </button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-footer">Accès réservé aux clients actifs TeamGreekGods.<br>Problème ? Contacte ton coach sur WhatsApp.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ APP ══════════════════════ -->
+<div id="app">
+  <div id="welcomeBar">
+    <div class="welcome-text">👋 Bienvenue <span class="welcome-name" id="welcomeName"></span></div>
+    <div style="display:flex;gap:7px">
+      <button class="icon-btn admin" id="adminBtn" onclick="openAdmin()" style="display:none">⚙️ Admin</button>
+      <button class="icon-btn" onclick="doLogout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-inner">
+      <div><div class="app-badge">🏛 TeamGreekGods</div></div>
+      <div class="header-titles">
+        <h1>Nutrition <span>Smart</span></h1>
+        <div class="subtitle">Équivalents • Plan hebdo • 50 Recettes</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('eq')">🔁 Équivalents</button>
+      <button class="tab-btn" onclick="switchTab('menu')">📅 Menu</button>
+      <button class="tab-btn" onclick="switchTab('rec')">🍽 Recettes</button>
+    </div>
+  </div>
+
+  <main>
+
+  <!-- ══════════════ TAB EQUIVALENTS ══════════════ -->
+  <div id="tab-eq" class="tab-panel active">
+    <div class="sp"></div>
+    <div class="card">
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-lbl">⚖️ Mode de pesage</div>
+          <div class="toggle-note" id="toggleNote">Aliments pesés CRU — standard coach</div>
+        </div>
+        <div class="toggle-btns">
+          <button class="toggle-btn active" id="btnCru" onclick="setMode('cru')">CRU</button>
+          <button class="toggle-btn" id="btnCuit" onclick="setMode('cuit')">CUIT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📌 Aliment de référence</div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Choisir l'aliment</label>
+          <select id="sourceSelect" onchange="renderEquiv()"><option value="">— Sélectionner —</option></select>
+        </div>
+        <div class="fg" style="max-width:140px">
+          <label id="qtyLabel">Quantité</label>
+          <input type="number" id="qtyInput" value="100" min="1" max="2000" step="10" oninput="renderEquiv()">
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;text-align:right;font-style:italic" id="qtyUnit">grammes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="src-card" id="srcCard">
+      <div class="sh-head">
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Macros — <span id="srcQtyLbl">100g</span></div>
+          <div class="sh-name" id="srcName">—</div>
+          <div id="srcGroupTag"></div>
+          <div id="srcRatioBadge"></div>
+        </div>
+        <div class="badge cru" id="srcBadge">CRU</div>
+      </div>
+      <div class="macros-grid">
+        <div class="mc kcal"><div class="v" id="srcKcal">—</div><div class="k">kcal</div></div>
+        <div class="mc prot"><div class="v" id="srcProt">—</div><div class="k">Prot.</div></div>
+        <div class="mc gluc"><div class="v" id="srcGluc">—</div><div class="k">Gluc.</div></div>
+        <div class="mc lip"><div class="v" id="srcLip">—</div><div class="k">Lip.</div></div>
+      </div>
+    </div>
+
+    <div class="compat-info" id="compatInfo"></div>
+    <div class="legend-row" id="legendRow">
+      <span class="legend-lbl">Filtrer :</span>
+      <div class="lchip ok" id="lc-ok" onclick="toggleLFilter('ok')">✅ Recommandé</div>
+      <div class="lchip warn" id="lc-warn" onclick="toggleLFilter('warn')">⚠️ Acceptable</div>
+      <div class="lchip bad" id="lc-bad" onclick="toggleLFilter('bad')">❌ Attention</div>
+    </div>
+
+    <div class="res-header">
+      <div class="res-title">Alternatives compatibles</div>
+      <div class="res-count" id="resCount"></div>
+    </div>
+    <div id="eqPh" class="placeholder"><div class="ico">🥩</div><p>Choisissez un aliment pour voir ses équivalents du même groupe nutritionnel</p></div>
+    <div id="eqResults"></div>
+  </div>
+
+  <!-- ══════════════ TAB MENU ══════════════ -->
+  <div id="tab-menu" class="tab-panel">
+    <div class="sp"></div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-title">✍️ Mode de saisie</div>
+      <div class="toggle-btns" style="width:100%">
+        <button class="toggle-btn active" id="modeManBtn" onclick="setMenuMode('m')" style="flex:1">Manuel</button>
+        <button class="toggle-btn" id="modePasteBtn" onclick="setMenuMode('p')" style="flex:1">Coller texte</button>
+      </div>
+    </div>
+    <div id="pastePanel" style="display:none">
+      <div class="card">
+        <div class="card-title">📋 Coller votre plan</div>
+        <div class="paste-ex"><strong>Format :</strong><br>Lundi - Petit-déjeuner<br>3 oeufs, 80g pain complet, 200g fromage blanc 0%<br>Lundi - Déjeuner<br>150g poulet blanc, 120g riz, 200g brocoli</div>
+        <label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase">Votre plan</label>
+        <textarea id="pasteText" placeholder="Collez votre plan alimentaire ici..."></textarea>
+        <button class="btn btn-p" style="margin-top:10px" onclick="parsePaste()">✨ Analyser</button>
+      </div>
+    </div>
+    <div id="manuelPanel">
+      <div class="week-tabs" id="weekTabs"></div>
+      <div id="dayMeals"></div>
+      <div class="day-tot" id="dayTot">
+        <div class="day-tot-lbl">📊 Total journée</div>
+        <div class="dtm-grid">
+          <div class="dtm kcal"><div class="v" id="dtKcal">0</div><div class="k">kcal</div></div>
+          <div class="dtm prot"><div class="v" id="dtProt">0</div><div class="k">Prot.</div></div>
+          <div class="dtm gluc"><div class="v" id="dtGluc">0</div><div class="k">Gluc.</div></div>
+          <div class="dtm lip"><div class="v" id="dtLip">0</div><div class="k">Lip.</div></div>
+        </div>
+      </div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-bottom:12px" onclick="findMenuRecipes()">🍽 Trouver des recettes équivalentes</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB RECETTES ══════════════ -->
+  <div id="tab-rec" class="tab-panel">
+    <div class="sp"></div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-title">🔍 Filtres</div>
+      <div class="fchips" id="mealChips"></div>
+      <div class="fchips" id="typeChips"></div>
+      <div class="form-row" style="margin-bottom:0">
+        <div class="fg"><label>Max calories</label><input type="number" id="fKcal" placeholder="illimité" oninput="renderRecipes()"></div>
+        <div class="fg"><label>Min protéines (g)</label><input type="number" id="fProt" placeholder="0" oninput="renderRecipes()"></div>
+      </div>
+    </div>
+    <div class="res-header">
+      <div class="res-title">Recettes</div>
+      <div class="res-count" id="recCount"></div>
+    </div>
+    <div id="recResults" class="recipe-grid"></div>
+    <div id="suggHdr" style="display:none"><hr class="sep">
+      <div class="res-header">
+        <div class="res-title">🎯 Suggestions pour votre menu</div>
+        <div class="res-count" id="suggCount"></div>
+      </div>
+    </div>
+    <div id="recSugg" class="recipe-grid"></div>
+  </div>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════ ADMIN ════════════════════ -->
+<div id="adminPanel">
+  <div class="admin-wrap">
+    <div class="admin-hdr">
+      <div class="admin-title">⚙️ Panel <span>Admin</span></div>
+      <button class="btn btn-s btn-sm" onclick="closeAdmin()">← Retour</button>
+    </div>
+    <div class="admin-stats">
+      <div class="astat"><div class="v" id="stTotal">—</div><div class="k">Total clients</div></div>
+      <div class="astat"><div class="v" id="stActif">—</div><div class="k">Actifs</div></div>
+      <div class="astat"><div class="v" id="stInactif">—</div><div class="k">Inactifs</div></div>
+    </div>
+    <div class="admin-grid">
+      <div class="admin-card">
+        <div class="admin-card-title">➕ Ajouter un client</div>
+        <div class="fg" style="margin-bottom:8px"><label>Email</label><input type="email" id="aEmail" placeholder="client@email.com"></div>
+        <div class="fg" style="margin-bottom:10px"><label>Prénom (optionnel)</label><input type="text" id="aNom" placeholder="Mohammed"></div>
+        <button class="btn btn-p" style="width:100%;justify-content:center" onclick="adminAdd()">Ajouter le client</button>
+        <div class="afb" id="addFb"></div>
+      </div>
+      <div class="admin-card">
+        <div class="admin-card-title">🔒 Session admin</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px">Connecté en tant qu'administrateur.<br>Toutes les actions sont enregistrées dans Google Sheets en temps réel.</p>
+        <button class="btn btn-d btn-sm" style="width:100%;justify-content:center" onclick="doLogout()">Déconnexion complète</button>
+      </div>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>📋 Clients enregistrés</span>
+        <button class="btn btn-s btn-sm" onclick="adminLoad()">🔄 Actualiser</button>
+      </div>
+      <div class="afb" id="listFb"></div>
+      <div class="client-list" id="clientList">
+        <div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Cliquez sur Actualiser</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ⚙️ CONFIG — À personnaliser
+// ══════════════════════════════════════════════════════
+const API_URL      = 'https://script.google.com/macros/s/AKfycbzKtk6cr6yhSqO8_OW-qswx_6naqMERdbDl3gW_btHW-Yi2UItMwnLIFJSGBCRZbY8RKQ/exec';
+const ADMIN_EMAILS = ['abouda28@gmail.com'];
+const ADMIN_PASS   = 'TGG2026';
+
+// ══════════════════════════════════════════════════════
+// DATA — RATING SYSTEM
+// ══════════════════════════════════════════════════════
+function getRating(food){
+  if(food.group!=='prot')return null;
+  const r=food.cru.prot/food.cru.kcal;
+  if(r>=0.17)return{level:'ok',  label:'✅ Recommandé',ratio:r};
+  if(r>=0.10)return{level:'warn',label:'⚠️ Acceptable', ratio:r};
+  return             {level:'bad', label:'❌ Attention',  ratio:r};
+}
+
+const GROUPS={
+  prot: {label:'🥩 Protéines',desc:'Viandes, poissons, œufs, laitiers'},
+  gluc: {label:'🍚 Féculents',desc:'Riz, pâtes, pain, légumineuses'},
+  lip:  {label:'🥑 Lipides',  desc:'Noix, huile, beurre, avocat'},
+  fruit:{label:'🍎 Fruits',   desc:'Fruits frais et jus'},
+  veg:  {label:'🥦 Légumes',  desc:'Légumes et crudités'},
+};
+
+// ══════════════════════════════════════════════════════
+// FOODS DATABASE
+// ══════════════════════════════════════════════════════
+const FOODS=[
+  // PROTÉINES ✅ ratio ≥ 0.17
+  {id:1, name:"Poulet (blanc)",      emoji:"🍗",cat:"Viandes & poissons",group:'prot',cru:{kcal:114,prot:24,  gluc:0,  lip:2},  cuitCoef:0.70,unitType:'g'},
+  {id:5, name:"Dinde (blanc)",        emoji:"🦃",cat:"Viandes & poissons",group:'prot',cru:{kcal:114,prot:24,  gluc:0,  lip:2},  cuitCoef:0.70,unitType:'g'},
+  {id:6, name:"Cabillaud",            emoji:"🐡",cat:"Viandes & poissons",group:'prot',cru:{kcal:82, prot:18,  gluc:0,  lip:0.7},cuitCoef:0.72,unitType:'g'},
+  {id:7, name:"Crevettes",            emoji:"🦐",cat:"Viandes & poissons",group:'prot',cru:{kcal:85, prot:18,  gluc:0.9,lip:1.1},cuitCoef:0.75,unitType:'g'},
+  {id:3, name:"Thon (boîte naturel)",emoji:"🐠",cat:"Viandes & poissons",group:'prot',cru:{kcal:172,prot:33,  gluc:0,  lip:4.4},cuitCoef:1.00,unitType:'g'},
+  {id:21,name:"Blanc d'œuf",          emoji:"🥚",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:52, prot:11,  gluc:0.7,lip:0.2},cuitCoef:1.00,unitType:'g'},
+  {id:26,name:"Whey protéine",        emoji:"🥤",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:370,prot:75,  gluc:7,  lip:5},  cuitCoef:1.00,unitType:'g'},
+  {id:24,name:"Yaourt grec 0%",       emoji:"🥛",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:57, prot:10,  gluc:3.5,lip:0.2},cuitCoef:1.00,unitType:'g'},
+  {id:23,name:"Skyr nature",           emoji:"🥛",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:63, prot:11,  gluc:4,  lip:0.2},cuitCoef:1.00,unitType:'g'},
+  {id:22,name:"Fromage blanc 0%",     emoji:"🥛",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:46, prot:8,   gluc:4,  lip:0.2},cuitCoef:1.00,unitType:'g'},
+  {id:9, name:"Bœuf (bavette)",       emoji:"🥩",cat:"Viandes & poissons",group:'prot',cru:{kcal:155,prot:27,  gluc:0,  lip:5},  cuitCoef:0.70,unitType:'g'},
+  // ⚠️ ratio 0.10-0.17
+  {id:8, name:"Sardines (naturel)",   emoji:"🐟",cat:"Viandes & poissons",group:'prot',cru:{kcal:135,prot:20,  gluc:0,  lip:6},  cuitCoef:1.00,unitType:'g'},
+  {id:29,name:"Chergui",              emoji:"🥛",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:59, prot:8.5, gluc:4.5,lip:0.8},cuitCoef:1.00,unitType:'g'},
+  {id:2, name:"Saumon",              emoji:"🐟",cat:"Viandes & poissons",group:'prot',cru:{kcal:168,prot:24,  gluc:0,  lip:8},  cuitCoef:0.75,unitType:'g'},
+  {id:4, name:"Bœuf haché 5%",       emoji:"🥩",cat:"Viandes & poissons",group:'prot',cru:{kcal:164,prot:23,  gluc:0,  lip:8},  cuitCoef:0.72,unitType:'g'},
+  {id:10,name:"Poulet (cuisse)",      emoji:"🍗",cat:"Viandes & poissons",group:'prot',cru:{kcal:209,prot:26,  gluc:0,  lip:11}, cuitCoef:0.70,unitType:'g'},
+  {id:25,name:"Cottage cheese",       emoji:"🧀",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:98, prot:11,  gluc:3.4,lip:4.3},cuitCoef:1.00,unitType:'g'},
+  // ❌ ratio < 0.10
+  {id:27,name:"Lait écrémé",          emoji:"🥛",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:34, prot:3.4, gluc:5,  lip:0.1},cuitCoef:1.00,unitType:'ml'},
+  {id:11,name:"Maquereau",            emoji:"🐟",cat:"Viandes & poissons",group:'prot',cru:{kcal:205,prot:19,  gluc:0,  lip:14}, cuitCoef:0.75,unitType:'g'},
+  {id:20,name:"Œuf entier",           emoji:"🥚",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:78, prot:6,   gluc:0.3,lip:6},  cuitCoef:1.00,unitType:'unit',unitLabel:"œuf(s)",unitWeight:55},
+  {id:28,name:"Ricotta",              emoji:"🧀",cat:"Œufs & laitiers",   group:'prot',cru:{kcal:174,prot:11,  gluc:3,  lip:13}, cuitCoef:1.00,unitType:'g'},
+  // FÉCULENTS
+  {id:40,name:"Riz blanc",            emoji:"🍚",cat:"Féculents",group:'gluc',cru:{kcal:357,prot:6.5,gluc:80, lip:0.7},cuitCoef:2.80,unitType:'g'},
+  {id:41,name:"Pâtes",                emoji:"🍝",cat:"Féculents",group:'gluc',cru:{kcal:358,prot:13, gluc:71, lip:2},  cuitCoef:2.30,unitType:'g'},
+  {id:42,name:"Lentilles",            emoji:"🫘",cat:"Féculents",group:'gluc',cru:{kcal:353,prot:25, gluc:60, lip:1.1},cuitCoef:2.50,unitType:'g'},
+  {id:43,name:"Pois chiches",         emoji:"🫘",cat:"Féculents",group:'gluc',cru:{kcal:364,prot:19, gluc:61, lip:6},  cuitCoef:2.50,unitType:'g'},
+  {id:44,name:"Flocons d'avoine",     emoji:"🌾",cat:"Féculents",group:'gluc',cru:{kcal:389,prot:17, gluc:66, lip:7},  cuitCoef:1.00,unitType:'g'},
+  {id:45,name:"Quinoa",               emoji:"🌾",cat:"Féculents",group:'gluc',cru:{kcal:368,prot:14, gluc:64, lip:6},  cuitCoef:2.70,unitType:'g'},
+  {id:46,name:"Pomme de terre",       emoji:"🥔",cat:"Féculents",group:'gluc',cru:{kcal:77, prot:2,  gluc:17, lip:0.1},cuitCoef:0.95,unitType:'g'},
+  {id:47,name:"Pain complet",         emoji:"🍞",cat:"Féculents",group:'gluc',cru:{kcal:247,prot:9,  gluc:42, lip:3.4},cuitCoef:1.00,unitType:'g'},
+  {id:48,name:"Haricots rouges",      emoji:"🫘",cat:"Féculents",group:'gluc',cru:{kcal:333,prot:23, gluc:60, lip:1.5},cuitCoef:2.50,unitType:'g'},
+  {id:49,name:"Patate douce",         emoji:"🍠",cat:"Féculents",group:'gluc',cru:{kcal:86, prot:1.6,gluc:20, lip:0.1},cuitCoef:0.90,unitType:'g'},
+  {id:50,name:"Bissara (pois cassé)", emoji:"🟢",cat:"Féculents",group:'gluc',cru:{kcal:341,prot:25, gluc:60, lip:1.2},cuitCoef:2.50,unitType:'g'},
+  {id:51,name:"Houmous",              emoji:"🫘",cat:"Féculents",group:'gluc',cru:{kcal:224,prot:10, gluc:28, lip:8},  cuitCoef:1.00,unitType:'g'},
+  {id:52,name:"Graines de chia",      emoji:"🌱",cat:"Féculents",group:'gluc',cru:{kcal:486,prot:17, gluc:42, lip:31}, cuitCoef:1.00,unitType:'g'},
+  {id:82,name:"Miel",                 emoji:"🍯",cat:"Féculents",group:'gluc',cru:{kcal:304,prot:0.3,gluc:82, lip:0},  cuitCoef:1.00,unitType:'g'},
+  // LIPIDES
+  {id:67,name:"Avocat",               emoji:"🥑",cat:"Lipides",group:'lip',cru:{kcal:160,prot:2,  gluc:9,  lip:15}, cuitCoef:1.00,unitType:'g'},
+  {id:80,name:"Huile d'olive",         emoji:"🫙",cat:"Lipides",group:'lip',cru:{kcal:884,prot:0,  gluc:0,  lip:100},cuitCoef:1.00,unitType:'ml'},
+  {id:81,name:"Beurre",               emoji:"🧈",cat:"Lipides",group:'lip',cru:{kcal:717,prot:0.9,gluc:0.1,lip:81}, cuitCoef:1.00,unitType:'g'},
+  {id:83,name:"Peanut butter",        emoji:"🥜",cat:"Lipides",group:'lip',cru:{kcal:588,prot:25, gluc:20, lip:50}, cuitCoef:1.00,unitType:'g'},
+  {id:84,name:"Amlou",                emoji:"🥣",cat:"Lipides",group:'lip',cru:{kcal:550,prot:13, gluc:25, lip:46}, cuitCoef:1.00,unitType:'g'},
+  {id:90,name:"Amandes",              emoji:"🌰",cat:"Lipides",group:'lip',cru:{kcal:579,prot:21, gluc:22, lip:50}, cuitCoef:1.00,unitType:'g'},
+  {id:91,name:"Noix",                 emoji:"🥜",cat:"Lipides",group:'lip',cru:{kcal:654,prot:15, gluc:14, lip:65}, cuitCoef:1.00,unitType:'g'},
+  {id:92,name:"Noix de cajou",        emoji:"🥜",cat:"Lipides",group:'lip',cru:{kcal:553,prot:18, gluc:30, lip:44}, cuitCoef:1.00,unitType:'g'},
+  {id:93,name:"Graines tournesol",    emoji:"🌻",cat:"Lipides",group:'lip',cru:{kcal:584,prot:21, gluc:20, lip:51}, cuitCoef:1.00,unitType:'g'},
+  {id:94,name:"Pistaches",            emoji:"🌰",cat:"Lipides",group:'lip',cru:{kcal:562,prot:20, gluc:28, lip:45}, cuitCoef:1.00,unitType:'g'},
+  // FRUITS
+  {id:63,name:"Banane",     emoji:"🍌",cat:"Fruits",group:'fruit',cru:{kcal:89, prot:1.1,gluc:23,  lip:0.3},cuitCoef:1.00,unitType:'g'},
+  {id:64,name:"Pomme",      emoji:"🍎",cat:"Fruits",group:'fruit',cru:{kcal:52, prot:0.3,gluc:14,  lip:0.2},cuitCoef:1.00,unitType:'g'},
+  {id:65,name:"Myrtilles",  emoji:"🫐",cat:"Fruits",group:'fruit',cru:{kcal:57, prot:0.7,gluc:14,  lip:0.3},cuitCoef:1.00,unitType:'g'},
+  {id:68,name:"Orange",     emoji:"🍊",cat:"Fruits",group:'fruit',cru:{kcal:47, prot:0.9,gluc:12,  lip:0.1},cuitCoef:1.00,unitType:'g'},
+  {id:71,name:"Fraises",    emoji:"🍓",cat:"Fruits",group:'fruit',cru:{kcal:32, prot:0.7,gluc:7.7, lip:0.3},cuitCoef:1.00,unitType:'g'},
+  {id:72,name:"Jus d'orange",emoji:"🍊",cat:"Fruits",group:'fruit',cru:{kcal:45,prot:0.7,gluc:10,  lip:0.2},cuitCoef:1.00,unitType:'ml'},
+  // LÉGUMES
+  {id:60,name:"Brocoli",      emoji:"🥦",cat:"Légumes",group:'veg',cru:{kcal:34, prot:2.8,gluc:7,  lip:0.4},cuitCoef:0.95,unitType:'g'},
+  {id:61,name:"Épinards",     emoji:"🥬",cat:"Légumes",group:'veg',cru:{kcal:23, prot:2.9,gluc:3.6,lip:0.4},cuitCoef:0.90,unitType:'g'},
+  {id:62,name:"Courgette",    emoji:"🥒",cat:"Légumes",group:'veg',cru:{kcal:17, prot:1.2,gluc:3.1,lip:0.3},cuitCoef:0.90,unitType:'g'},
+  {id:66,name:"Tomate",       emoji:"🍅",cat:"Légumes",group:'veg',cru:{kcal:18, prot:0.9,gluc:3.9,lip:0.2},cuitCoef:0.90,unitType:'g'},
+  {id:69,name:"Concombre",    emoji:"🥒",cat:"Légumes",group:'veg',cru:{kcal:15, prot:0.7,gluc:3.6,lip:0.1},cuitCoef:0.95,unitType:'g'},
+  {id:70,name:"Poivron rouge", emoji:"🫑",cat:"Légumes",group:'veg',cru:{kcal:31, prot:1,  gluc:7,  lip:0.3},cuitCoef:0.90,unitType:'g'},
+];
+
+// ══════════════════════════════════════════════════════
+// RECIPES — 50 recettes
+// ══════════════════════════════════════════════════════
+const RECIPES=[
+  // ── PETITS-DÉJEUNERS MAROCAINS
+  {id:'r1', name:"Bissara au cumin",emoji:"🟢",meals:['breakfast','lunch'],tags:['breakfast','moroccan'],macros:{kcal:380,prot:22,gluc:55,lip:8},ings:[{e:"🟢",n:"Bissara (pois cassé)",q:"120g cru"},{e:"🫙",n:"Huile d'olive",q:"10ml"},{e:"🧂",n:"Cumin, sel",q:"à volonté"}],steps:["Tremper les pois cassés 1h","Cuire à l'eau + cumin 30min","Mixer jusqu'à consistance crémeuse","Filet d'huile + cumin au service"]},
+  {id:'r2', name:"Khobz + chergui + miel",emoji:"🫓",meals:['breakfast'],tags:['breakfast','moroccan'],macros:{kcal:390,prot:28,gluc:42,lip:10},ings:[{e:"🍞",n:"Pain complet",q:"100g"},{e:"🥛",n:"Chergui",q:"200g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Chauffer le pain","Étaler généreusement le chergui","Filet de miel","Thé marocain sans sucre"]},
+  {id:'r3', name:"Khobz + thon + tomate",emoji:"🥙",meals:['breakfast','lunch'],tags:['breakfast','moroccan','highprot'],macros:{kcal:360,prot:32,gluc:38,lip:6},ings:[{e:"🍞",n:"Pain complet",q:"80g"},{e:"🐠",n:"Thon boîte naturel",q:"130g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Trancher le pain","Égoutter et émietter le thon","Couper les tomates en rondelles","Assembler + citron + cumin"]},
+  {id:'r4', name:"Omelette aux légumes (4 œufs)",emoji:"🍳",meals:['breakfast'],tags:['breakfast','highprot'],macros:{kcal:370,prot:28,gluc:8,lip:24},ings:[{e:"🥚",n:"Œuf entier",q:"4 œufs"},{e:"🫑",n:"Poivron rouge",q:"80g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Battre les œufs + sel + poivre","Faire revenir légumes 3min","Verser les œufs sur les légumes","Cuire à feu moyen jusqu'à prise"]},
+  {id:'r5', name:"Bol avoine-banane-amlou",emoji:"🥣",meals:['breakfast'],tags:['breakfast','bulk'],macros:{kcal:420,prot:14,gluc:65,lip:12},ings:[{e:"🌾",n:"Flocons d'avoine",q:"60g"},{e:"🍌",n:"Banane",q:"120g"},{e:"🥣",n:"Amlou",q:"15g"},{e:"🥛",n:"Lait écrémé",q:"150ml"}],steps:["Chauffer le lait","Verser sur les flocons","Laisser gonfler 5min","Ajouter banane tranchée + amlou en filet"]},
+  {id:'r6', name:"Pancakes whey protéine",emoji:"🥞",meals:['breakfast'],tags:['breakfast','highprot'],macros:{kcal:400,prot:42,gluc:30,lip:10},ings:[{e:"🥤",n:"Whey protéine",q:"60g"},{e:"🥚",n:"Œuf entier",q:"3 œufs"},{e:"🌾",n:"Flocons d'avoine mixés",q:"40g"},{e:"🥛",n:"Lait écrémé",q:"100ml"}],steps:["Mixer tous les ingrédients","Chauffer poêle antiadhésive sans matière grasse","Verser en petites portions","Cuire 2min/côté à feu moyen"]},
+  {id:'r7', name:"Pain + œufs brouillés + fromage blanc",emoji:"🍞",meals:['breakfast'],tags:['breakfast','highprot'],macros:{kcal:430,prot:35,gluc:40,lip:12},ings:[{e:"🍞",n:"Pain complet",q:"80g"},{e:"🥚",n:"Œuf entier",q:"3 œufs"},{e:"🥛",n:"Fromage blanc 0%",q:"150g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Griller le pain","Brouiller les œufs à feu doux","Mélanger fromage blanc + miel","Servir ensemble"]},
+  {id:'r8', name:"Bowl thon-avocat-quinoa",emoji:"🥗",meals:['breakfast','lunch'],tags:['breakfast','highprot','lowcarb'],macros:{kcal:450,prot:40,gluc:25,lip:18},ings:[{e:"🐠",n:"Thon boîte naturel",q:"150g"},{e:"🥑",n:"Avocat",q:"80g"},{e:"🌾",n:"Quinoa cuit",q:"100g"},{e:"🍋",n:"Citron + sel",q:"à volonté"}],steps:["Cuire le quinoa","Couper avocat en cubes","Égoutter et émietter le thon","Assembler + citron + herbes fraîches"]},
+  // ── DÉJEUNER / DÎNER MAROCAINS
+  {id:'r9', name:"Tajine poulet-légumes",emoji:"🫕",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan'],macros:{kcal:450,prot:38,gluc:30,lip:14},ings:[{e:"🍗",n:"Poulet (blanc)",q:"150g cru"},{e:"🥔",n:"Pomme de terre",q:"150g"},{e:"🥒",n:"Courgette",q:"150g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"15ml"}],steps:["Couper tous les légumes","Dorer le poulet avec épices marocaines","Ajouter légumes + verre d'eau","Cuire 35min couvert à feu doux","Servir dans le tajine"]},
+  {id:'r10',name:"Kefta bœuf + patate douce",emoji:"🥩",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan','highprot'],macros:{kcal:460,prot:35,gluc:38,lip:16},ings:[{e:"🥩",n:"Bœuf haché 5%",q:"150g cru"},{e:"🍠",n:"Patate douce",q:"200g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Assaisonner viande (cumin, persil, sel, poivre)","Former les kefta en brochettes","Griller 10min en retournant","Rôtir les patates 25min au four","Servir avec salade tomate"]},
+  {id:'r11',name:"Harira light aux lentilles",emoji:"🍲",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan'],macros:{kcal:400,prot:28,gluc:55,lip:8},ings:[{e:"🫘",n:"Lentilles",q:"100g cru"},{e:"🍅",n:"Tomate",q:"200g"},{e:"🫙",n:"Huile d'olive",q:"10ml"},{e:"🧂",n:"Cumin, coriandre, sel",q:"à volonté"}],steps:["Cuire lentilles 20min à l'eau salée","Préparer sauce tomate avec épices","Mélanger + mijoter 10min","Finir avec coriandre fraîche + jus de citron"]},
+  {id:'r12',name:"Pois chiches marocains épicés",emoji:"🫘",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan'],macros:{kcal:380,prot:20,gluc:52,lip:10},ings:[{e:"🫘",n:"Pois chiches",q:"100g cru"},{e:"🍅",n:"Tomate",q:"200g"},{e:"🫙",n:"Huile d'olive",q:"10ml"},{e:"🧂",n:"Ras-el-hanout, cumin",q:"à volonté"}],steps:["Cuire pois chiches 30min","Préparer chermoula (ail, persil, épices)","Mélanger + mijoter 15min","Servir chaud avec pain"]},
+  {id:'r13',name:"Sardines grillées + salade marocaine",emoji:"🐟",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan'],macros:{kcal:350,prot:30,gluc:12,lip:18},ings:[{e:"🐟",n:"Sardines fraîches",q:"250g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🥒",n:"Concombre",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Mariner sardines (cumin, paprika, citron)","Griller 4min de chaque côté","Préparer salade tomate-concombre","Servir avec chermoula maison"]},
+  {id:'r14',name:"Tajine dinde aux olives",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan','highprot'],macros:{kcal:430,prot:46,gluc:15,lip:18},ings:[{e:"🦃",n:"Dinde (blanc)",q:"200g cru"},{e:"🫒",n:"Olives vertes",q:"30g"},{e:"🍋",n:"Citron confit",q:"20g"},{e:"🧂",n:"Épices marocaines",q:"à volonté"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Mariner dinde avec épices + citron 30min","Dorer la dinde dans cocotte","Ajouter olives + citron confit + eau","Cuire 30min couvert à feu doux"]},
+  // ── REPAS HIGH-PROTEIN (+40g)
+  {id:'r15',name:"Poulet + riz + brocoli (meal prep)",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:480,prot:48,gluc:42,lip:8},ings:[{e:"🍗",n:"Poulet (blanc)",q:"200g cru"},{e:"🍚",n:"Riz blanc",q:"80g cru"},{e:"🥦",n:"Brocoli",q:"250g"}],steps:["Cuire riz à l'eau salée","Griller poulet 12min avec épices","Cuire brocoli vapeur 8min","Dresser + assaisonner"]},
+  {id:'r16',name:"Thon + patate douce + épinards",emoji:"🐠",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:440,prot:45,gluc:38,lip:6},ings:[{e:"🐠",n:"Thon boîte naturel",q:"200g"},{e:"🍠",n:"Patate douce",q:"200g"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🧂",n:"Épices, citron",q:"à volonté"}],steps:["Rôtir patate douce 25min au four","Cuire épinards à l'ail 5min","Égoutter et émietter le thon","Assembler + assaisonner"]},
+  {id:'r17',name:"Saumon grillé + quinoa + épinards",emoji:"🐟",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:490,prot:40,gluc:38,lip:16},ings:[{e:"🐟",n:"Saumon",q:"180g cru"},{e:"🌾",n:"Quinoa",q:"70g cru"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Cuire quinoa 15min","Griller saumon 4min de chaque côté","Faire sauter épinards à l'ail","Dresser + citron"]},
+  {id:'r18',name:"Dinde + haricots blancs + légumes",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:470,prot:52,gluc:35,lip:8},ings:[{e:"🦃",n:"Dinde (blanc)",q:"200g cru"},{e:"🫘",n:"Haricots blancs cuits",q:"150g"},{e:"🥦",n:"Brocoli",q:"200g"},{e:"🧂",n:"Herbes + épices",q:"à volonté"}],steps:["Mariner dinde (herbes, ail, citron)","Griller dinde 12min","Chauffer haricots avec épices","Cuire brocoli vapeur","Dresser ensemble"]},
+  {id:'r19',name:"Blanc de poulet fourré fromage blanc",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:390,prot:55,gluc:8,lip:12},ings:[{e:"🍗",n:"Poulet (blanc)",q:"200g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🧂",n:"Ail, herbes",q:"à volonté"}],steps:["Faire une poche dans le blanc de poulet","Mélanger fromage blanc + épinards + ail","Farcir le poulet + fermer avec cure-dent","Cuire au four 200°C pendant 20min"]},
+  {id:'r20',name:"Crevettes sautées + riz + courgettes",emoji:"🦐",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:420,prot:42,gluc:40,lip:8},ings:[{e:"🦐",n:"Crevettes",q:"200g"},{e:"🍚",n:"Riz blanc",q:"70g cru"},{e:"🥒",n:"Courgette",q:"200g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Cuire le riz à l'eau salée","Faire sauter crevettes 3-4min","Faire revenir courgettes 5min","Mélanger tout + épices à volonté"]},
+  {id:'r21',name:"Bowl bœuf haché + lentilles",emoji:"🥩",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:500,prot:48,gluc:35,lip:16},ings:[{e:"🥩",n:"Bœuf haché 5%",q:"150g cru"},{e:"🫘",n:"Lentilles",q:"80g cru"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🧂",n:"Épices marocaines",q:"à volonté"}],steps:["Cuire lentilles 20min","Faire dorer le bœuf dans poêle","Ajouter tomates + épices","Mélanger lentilles + bœuf et mijoter 5min"]},
+  {id:'r22',name:"Cabillaud en papillote + légumes",emoji:"🐡",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','lowcarb'],macros:{kcal:300,prot:42,gluc:12,lip:8},ings:[{e:"🐡",n:"Cabillaud",q:"200g"},{e:"🥒",n:"Courgette",q:"150g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Déposer poisson sur papier cuisson","Ajouter légumes + herbes + jus de citron","Fermer hermétiquement la papillote","Cuire 200°C pendant 18min"]},
+  {id:'r23',name:"Wraps dinde-houmous-légumes",emoji:"🌯",meals:['lunch'],tags:['lunch','highprot'],macros:{kcal:440,prot:42,gluc:38,lip:12},ings:[{e:"🦃",n:"Dinde grillée",q:"150g"},{e:"🫘",n:"Houmous",q:"60g"},{e:"🍞",n:"Galette pain complet",q:"80g"},{e:"🥬",n:"Épinards frais",q:"50g"}],steps:["Griller la dinde avec épices","Étaler houmous sur la galette","Ajouter dinde + épinards + tomate","Rouler serré et couper en deux"]},
+  // ── BULK (surplus calorique)
+  {id:'r24',name:"Riz sauté œufs + poulet (Bulk)",emoji:"🍚",meals:['lunch','dinner'],tags:['lunch','dinner','bulk'],macros:{kcal:700,prot:48,gluc:75,lip:18},ings:[{e:"🍚",n:"Riz blanc",q:"120g cru"},{e:"🍗",n:"Poulet (blanc)",q:"150g"},{e:"🥚",n:"Œuf entier",q:"2 œufs"},{e:"🫙",n:"Huile d'olive",q:"15ml"}],steps:["Cuire le riz","Griller poulet en dés","Faire sauter œufs brouillés","Mélanger riz + poulet + œufs + sauce soja légère"]},
+  {id:'r25',name:"Pâtes au saumon fromage blanc",emoji:"🍝",meals:['lunch','dinner'],tags:['lunch','dinner','bulk'],macros:{kcal:650,prot:42,gluc:65,lip:20},ings:[{e:"🍝",n:"Pâtes",q:"120g cru"},{e:"🐟",n:"Saumon",q:"150g"},{e:"🥛",n:"Fromage blanc 0%",q:"150g"},{e:"🧂",n:"Ail, persil, citron",q:"à volonté"}],steps:["Cuire pâtes al dente","Griller saumon + émietter","Mélanger fromage blanc + ail + herbes","Mélanger pâtes + saumon + sauce et servir"]},
+  {id:'r26',name:"Bowl bulk : riz + thon + avocat + œuf",emoji:"🥗",meals:['lunch','dinner'],tags:['lunch','dinner','bulk'],macros:{kcal:720,prot:50,gluc:60,lip:22},ings:[{e:"🍚",n:"Riz blanc",q:"120g cru"},{e:"🐠",n:"Thon boîte naturel",q:"150g"},{e:"🥑",n:"Avocat",q:"100g"},{e:"🥚",n:"Œuf entier",q:"2 œufs durs"}],steps:["Cuire riz","Cuire les œufs durs 9min","Égoutter thon + couper avocat en cubes","Assembler + sauce soja + sésame"]},
+  {id:'r27',name:"Flocons d'avoine protéinés (Bulk)",emoji:"🌾",meals:['breakfast'],tags:['breakfast','bulk'],macros:{kcal:580,prot:40,gluc:65,lip:12},ings:[{e:"🌾",n:"Flocons d'avoine",q:"100g"},{e:"🥤",n:"Whey protéine",q:"30g"},{e:"🍌",n:"Banane",q:"150g"},{e:"🥜",n:"Peanut butter",q:"20g"}],steps:["Cuire flocons dans 200ml lait écrémé","Retirer du feu + ajouter whey","Mélanger puis ajouter banane + PB","Servir chaud ou laisser refroidir overnight"]},
+  {id:'r28',name:"Pois chiches + riz + poulet (Bulk marocain)",emoji:"🍛",meals:['lunch','dinner'],tags:['lunch','dinner','bulk','moroccan'],macros:{kcal:680,prot:52,gluc:72,lip:14},ings:[{e:"🍗",n:"Poulet (blanc)",q:"180g cru"},{e:"🍚",n:"Riz basmati",q:"100g cru"},{e:"🫘",n:"Pois chiches cuits",q:"100g"},{e:"🧂",n:"Épices marocaines",q:"à volonté"}],steps:["Cuire riz + pois chiches séparément","Griller poulet avec ras-el-hanout","Préparer sauce tomate légère","Assembler riz + pois chiches + poulet + sauce"]},
+  {id:'r29',name:"Shake bulk whey + amlou + banane",emoji:"🥤",meals:['snack'],tags:['snack','bulk'],macros:{kcal:420,prot:34,gluc:35,lip:16},ings:[{e:"🥤",n:"Whey protéine",q:"30g"},{e:"🥣",n:"Amlou",q:"20g"},{e:"🍌",n:"Banane",q:"100g"},{e:"🥛",n:"Lait écrémé",q:"200ml"}],steps:["Tout mettre au blender","Mixer 30 secondes","Consommer dans les 30min post-entraînement"]},
+  {id:'r30',name:"Maquereau + patate douce + épinards",emoji:"🐟",meals:['dinner'],tags:['dinner','bulk'],macros:{kcal:520,prot:36,gluc:40,lip:22},ings:[{e:"🐟",n:"Maquereau",q:"200g"},{e:"🍠",n:"Patate douce",q:"200g"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Rôtir patate douce 25min au four","Griller maquereau 5min de chaque côté","Faire sauter épinards à l'ail","Dresser + citron + poivre noir"]},
+  // ── COLLATIONS RAPIDES
+  {id:'r31',name:"Skyr + fruits rouges + amandes",emoji:"🥛",meals:['snack'],tags:['snack','highprot'],macros:{kcal:220,prot:16,gluc:20,lip:7},ings:[{e:"🥛",n:"Skyr nature",q:"200g"},{e:"🍓",n:"Fraises",q:"100g"},{e:"🌰",n:"Amandes",q:"15g"}],steps:["Verser skyr dans un bol","Ajouter fraises coupées en deux","Parsemer d'amandes effilées"]},
+  {id:'r32',name:"Shake whey + banane + lait",emoji:"🥤",meals:['snack'],tags:['snack','highprot'],macros:{kcal:310,prot:32,gluc:38,lip:3},ings:[{e:"🥤",n:"Whey protéine",q:"30g"},{e:"🍌",n:"Banane",q:"120g"},{e:"🥛",n:"Lait écrémé",q:"250ml"}],steps:["Tout mettre au blender","Mixer 30 secondes","Consommer immédiatement après mixage"]},
+  {id:'r33',name:"Œufs durs + fromage blanc 0%",emoji:"🥚",meals:['snack'],tags:['snack','highprot','lowcarb'],macros:{kcal:230,prot:26,gluc:5,lip:10},ings:[{e:"🥚",n:"Œuf entier",q:"3 œufs durs"},{e:"🥛",n:"Fromage blanc 0%",q:"150g"}],steps:["Faire bouillir les œufs 9-10min","Refroidir à l'eau froide","Servir avec fromage blanc assaisonné herbes + sel"]},
+  {id:'r34',name:"Pomme + peanut butter",emoji:"🍎",meals:['snack'],tags:['snack'],macros:{kcal:240,prot:7,gluc:28,lip:12},ings:[{e:"🍎",n:"Pomme",q:"180g"},{e:"🥜",n:"Peanut butter",q:"25g"}],steps:["Laver et couper la pomme en tranches","Servir avec PB en dip","Optionnel : saupoudrer de cannelle"]},
+  {id:'r35',name:"Houmous + légumes crus",emoji:"🫘",meals:['snack','lunch'],tags:['snack','moroccan'],macros:{kcal:250,prot:10,gluc:30,lip:10},ings:[{e:"🫘",n:"Houmous",q:"100g"},{e:"🥒",n:"Concombre",q:"150g"},{e:"🫑",n:"Poivron rouge",q:"100g"}],steps:["Couper légumes en bâtonnets","Servir houmous dans un bol","Ajouter paprika + filet d'huile d'olive"]},
+  {id:'r36',name:"Fraises + skyr + graines chia",emoji:"🍓",meals:['snack','breakfast'],tags:['snack','highprot'],macros:{kcal:190,prot:14,gluc:24,lip:4},ings:[{e:"🍓",n:"Fraises",q:"200g"},{e:"🥛",n:"Skyr nature",q:"150g"},{e:"🌱",n:"Graines de chia",q:"8g"}],steps:["Laver et couper les fraises","Verser skyr dans un bol","Ajouter fraises + chia","Laisser 5min pour que le chia gonfle"]},
+  {id:'r37',name:"Cottage cheese + myrtilles + noix",emoji:"🧀",meals:['snack'],tags:['snack'],macros:{kcal:210,prot:14,gluc:16,lip:9},ings:[{e:"🧀",n:"Cottage cheese",q:"150g"},{e:"🫐",n:"Myrtilles",q:"80g"},{e:"🥜",n:"Noix",q:"15g"}],steps:["Verser cottage cheese dans bol","Ajouter myrtilles et noix","Optionnel : filet de miel"]},
+  {id:'r38',name:"Bowl yaourt grec + granola maison",emoji:"🥛",meals:['snack','breakfast'],tags:['snack','breakfast'],macros:{kcal:300,prot:16,gluc:38,lip:8},ings:[{e:"🥛",n:"Yaourt grec 0%",q:"200g"},{e:"🌾",n:"Flocons d'avoine",q:"30g"},{e:"🍯",n:"Miel",q:"10g"},{e:"🌰",n:"Amandes",q:"10g"}],steps:["Verser yaourt dans un bol","Ajouter flocons + amandes concassées","Filet de miel","Optionnel : ajouter fruits rouges"]},
+  {id:'r39',name:"Pain + blanc d'œuf + avocat",emoji:"🥑",meals:['snack','breakfast'],tags:['snack','breakfast'],macros:{kcal:280,prot:16,gluc:28,lip:10},ings:[{e:"🍞",n:"Pain complet",q:"60g"},{e:"🥚",n:"Blanc d'œuf",q:"100g (3 blancs)"},{e:"🥑",n:"Avocat",q:"60g"},{e:"🧂",n:"Sel, poivre, citron",q:"à volonté"}],steps:["Griller le pain","Cuire les blancs d'œufs à la poêle","Écraser avocat + citron + sel","Assembler : pain + blancs + avocat"]},
+  // ── LOW-CARB
+  {id:'r40',name:"Poulet grillé + salade verte + avocat",emoji:"🥗",meals:['lunch','dinner'],tags:['lunch','dinner','lowcarb'],macros:{kcal:380,prot:40,gluc:8,lip:20},ings:[{e:"🍗",n:"Poulet (blanc)",q:"180g cru"},{e:"🥑",n:"Avocat",q:"80g"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Griller poulet avec herbes de Provence","Préparer salade épinards + tomate","Couper avocat en cubes","Assaisonner avec vinaigrette légère citron-olive"]},
+  {id:'r41',name:"Omelette épinards-fromage blanc (low-carb)",emoji:"🍳",meals:['breakfast','lunch'],tags:['breakfast','lowcarb'],macros:{kcal:350,prot:30,gluc:5,lip:22},ings:[{e:"🥚",n:"Œuf entier",q:"4 œufs"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Faire revenir épinards à l'ail","Battre œufs + fromage blanc + sel","Verser sur les épinards","Cuire à feu moyen-doux jusqu'à prise"]},
+  {id:'r42',name:"Saumon + salade concombre-menthe",emoji:"🐟",meals:['lunch','dinner'],tags:['lunch','dinner','lowcarb'],macros:{kcal:360,prot:38,gluc:8,lip:18},ings:[{e:"🐟",n:"Saumon",q:"180g cru"},{e:"🥒",n:"Concombre",q:"200g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Griller saumon 4min de chaque côté","Couper concombre + tomate en cubes","Assaisonner citron + menthe fraîche + sel","Dresser salade + saumon par-dessus"]},
+  {id:'r43',name:"Thon en salade niçoise légère",emoji:"🐠",meals:['lunch'],tags:['lunch','lowcarb','highprot'],macros:{kcal:330,prot:38,gluc:10,lip:14},ings:[{e:"🐠",n:"Thon boîte naturel",q:"150g"},{e:"🥚",n:"Œuf entier",q:"2 œufs durs"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Cuire les œufs 9min","Préparer légumes variés","Égoutter et émietter le thon","Assembler + vinaigrette moutarde-citron"]},
+  {id:'r44',name:"Crevettes à l'ail + courgettes spirales",emoji:"🦐",meals:['lunch','dinner'],tags:['lunch','dinner','lowcarb','highprot'],macros:{kcal:280,prot:36,gluc:8,lip:10},ings:[{e:"🦐",n:"Crevettes",q:"200g"},{e:"🥒",n:"Courgette",q:"300g"},{e:"🧄",n:"Ail",q:"3 gousses"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Couper courgettes en spirales (ou tagliatelles)","Faire revenir ail dans l'huile 1min","Ajouter courgettes 5min","Ajouter crevettes 3-4min + citron + persil"]},
+  // ── DÎNERS RAPIDES
+  {id:'r45',name:"Riz sauté thon + légumes",emoji:"🍚",meals:['lunch','dinner'],tags:['lunch','dinner'],macros:{kcal:480,prot:36,gluc:55,lip:10},ings:[{e:"🍚",n:"Riz blanc",q:"80g cru"},{e:"🐠",n:"Thon boîte naturel",q:"130g"},{e:"🫑",n:"Poivron rouge",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Cuire le riz","Faire revenir le poivron 5min","Ajouter thon émietté","Mélanger + assaisonner + servir"]},
+  {id:'r46',name:"Poêlée bœuf + légumes marocaine",emoji:"🥩",meals:['dinner'],tags:['dinner','moroccan'],macros:{kcal:420,prot:38,gluc:18,lip:20},ings:[{e:"🥩",n:"Bœuf haché 5%",q:"150g"},{e:"🫑",n:"Poivron rouge",q:"100g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Faire dorer le bœuf dans poêle chaude","Ajouter légumes coupés en dés","Assaisonner cumin + paprika + sel","Cuire 10min à feu moyen + servir"]},
+  {id:'r47',name:"Dinde + quinoa + épinards (meal prep)",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:430,prot:46,gluc:32,lip:8},ings:[{e:"🦃",n:"Dinde (blanc)",q:"180g cru"},{e:"🌾",n:"Quinoa",q:"60g cru"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Cuire quinoa 15min à l'eau","Griller dinde marinée 12min","Faire sauter épinards à l'ail","Assembler + herbes fraîches + citron"]},
+  {id:'r48',name:"Poisson pané maison (four)",emoji:"🐡",meals:['dinner'],tags:['dinner','highprot'],macros:{kcal:400,prot:42,gluc:28,lip:12},ings:[{e:"🐡",n:"Cabillaud",q:"200g"},{e:"🌾",n:"Flocons d'avoine (panure)",q:"30g"},{e:"🥚",n:"Blanc d'œuf",q:"2 blancs"},{e:"🧂",n:"Épices + citron",q:"à volonté"}],steps:["Tremper poisson dans blanc d'œuf battu","Paner avec flocons mixés + épices","Déposer sur plaque légèrement huilée","Cuire 200°C pendant 18-20min"]},
+  {id:'r49',name:"Lentilles + cabillaud + légumes",emoji:"🫘",meals:['dinner'],tags:['dinner','highprot'],macros:{kcal:450,prot:50,gluc:38,lip:8},ings:[{e:"🫘",n:"Lentilles",q:"80g cru"},{e:"🐡",n:"Cabillaud",q:"180g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Cuire lentilles 20min avec cumin + sel","Griller cabillaud 6min","Préparer sauce tomate rapide","Servir poisson sur lit de lentilles"]},
+  {id:'r50',name:"Bowl 3 protéines (mega high-prot)",emoji:"💪",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','bulk'],macros:{kcal:600,prot:65,gluc:35,lip:18},ings:[{e:"🥤",n:"Whey dans sauce",q:"30g"},{e:"🍗",n:"Poulet (blanc)",q:"150g"},{e:"🥚",n:"Œuf entier",q:"2 œufs"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🍚",n:"Riz blanc",q:"60g cru"}],steps:["Cuire riz","Griller poulet avec épices","Cuire œufs brouillés","Assembler tout dans un grand bol","Mélanger whey + eau tiède + épices → sauce protéinée par-dessus"]},
+];
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let mode='cru';
+let activeLFilters=new Set(['ok','warn','bad']);
+let activeMealF='';
+let activeTypeFs=new Set();
+const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const MEALS=[
+  {id:'breakfast',label:'Petit-déjeuner',emoji:'🌅'},
+  {id:'lunch',    label:'Déjeuner',      emoji:'☀️'},
+  {id:'dinner',   label:'Dîner',         emoji:'🌙'},
+  {id:'snack',    label:'Collation',     emoji:'🍎'},
+];
+let curDay=0;
+let weekData=Array.from({length:7},()=>({breakfast:[],lunch:[],dinner:[],snack:[]}));
+let curUser=null;
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function fmt(n){if(!n||n===0)return'0';return n>=10?Math.round(n):parseFloat(n.toFixed(1));}
+function getMPer100(food){
+  if(food.unitType!=='g'||food.cuitCoef===1.00)return{...food.cru};
+  if(mode==='cru')return{...food.cru};
+  const c=food.cuitCoef;return{kcal:food.cru.kcal/c,prot:food.cru.prot/c,gluc:food.cru.gluc/c,lip:food.cru.lip/c};
+}
+function compMacros(food,qty){
+  if(food.unitType==='unit')return{kcal:food.cru.kcal*qty,prot:food.cru.prot*qty,gluc:food.cru.gluc*qty,lip:food.cru.lip*qty};
+  const m=getMPer100(food);const r=qty/100;return{kcal:m.kcal*r,prot:m.prot*r,gluc:m.gluc*r,lip:m.lip*r};
+}
+function macroDist(a,b){
+  const kd=a.kcal>0?Math.abs(a.kcal-b.kcal)/a.kcal:0;const pd=a.prot>0?Math.abs(a.prot-b.prot)/a.prot:0;
+  const gd=a.gluc>0?Math.abs(a.gluc-b.gluc)/a.gluc:0;const ld=a.lip>0?Math.abs(a.lip-b.lip)/a.lip:0;
+  return kd*0.4+pd*0.3+gd*0.15+ld*0.15;
+}
+function mScore(d){return Math.max(0,Math.round((1-Math.min(d,1))*100));}
+
+// ══════════════════════════════════════════════════════
+// API — JSONP wrapper (contourne les limitations CORS
+//        de Google Apps Script)
+// ══════════════════════════════════════════════════════
+function apiCall(params){
+  return new Promise((resolve,reject)=>{
+    const cbName='_tgg_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+    const url=API_URL+'?'+qs+'&callback='+cbName;
+    const script=document.createElement('script');
+    const timer=setTimeout(()=>{cleanup();reject(new Error('Timeout — vérifie ton URL Apps Script'));},12000);
+    function cleanup(){try{delete window[cbName];}catch(e){}script.remove();clearTimeout(timer);}
+    window[cbName]=function(data){cleanup();resolve(data);};
+    script.onerror=()=>{cleanup();reject(new Error('Impossible de contacter le serveur'));};
+    document.head.appendChild(script);
+    script.src=url;
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  if(!email)return showLErr('Veuillez entrer votre email');
+  const btn=document.getElementById('loginBtn');
+  const txt=document.getElementById('loginBtnTxt');
+  btn.disabled=true;
+  txt.innerHTML='<div class="spinner"></div> Vérification...';
+  hideLErr();
+  try{
+    const data=await apiCall({action:'check',email});
+    if(data.access){curUser={email,nom:data.nom||email.split('@')[0]};showApp();}
+    else showLErr(data.message||'Accès non autorisé — contacte ton coach');
+  }catch(e){showLErr('Erreur : '+e.message);}
+  btn.disabled=false;
+  txt.textContent='Accéder à mon espace';
+}
+function showApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('welcomeName').textContent=curUser.nom;
+  if(ADMIN_EMAILS.includes(curUser.email))document.getElementById('adminBtn').style.display='block';
+  initApp();
+}
+function doLogout(){
+  curUser=null;
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('adminPanel').classList.remove('show');
+  document.getElementById('loginEmail').value='';
+  hideLErr();
+}
+function showLErr(m){const e=document.getElementById('loginError');e.textContent='⚠️ '+m;e.classList.add('show');}
+function hideLErr(){document.getElementById('loginError').classList.remove('show');}
+
+// ══════════════════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════════════════
+function openAdmin(){document.getElementById('app').style.display='none';document.getElementById('adminPanel').classList.add('show');adminLoad();}
+function closeAdmin(){document.getElementById('adminPanel').classList.remove('show');document.getElementById('app').style.display='block';}
+
+async function adminLoad(){
+  document.getElementById('clientList').innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Chargement...</div>';
+  try{
+    const data=await apiCall({action:'list',adminPass:ADMIN_PASS});
+    if(!data.success)return showFb('listFb',data.error,'err');
+    const cl=data.clients||[];
+    const actif=cl.filter(c=>c.statut==='actif').length;
+    document.getElementById('stTotal').textContent=cl.length;
+    document.getElementById('stActif').textContent=actif;
+    document.getElementById('stInactif').textContent=cl.length-actif;
+    if(!cl.length){document.getElementById('clientList').innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Aucun client enregistré</div>';return;}
+    document.getElementById('clientList').innerHTML=cl.map(c=>`
+      <div class="cr">
+        <div class="cr-info"><div class="cr-email">${c.email}</div><div class="cr-meta">${c.nom||'—'} · ${c.date||''}</div></div>
+        <span class="cr-status ${c.statut}">${c.statut}</span>
+        <div class="cr-actions">
+          <button class="cr-btn ${c.statut==='actif'?'ta':'ti'}" onclick="adminToggle('${c.email}')">${c.statut==='actif'?'Désactiver':'Activer'}</button>
+          <button class="cr-btn rm" onclick="adminRm('${c.email}')">✕</button>
+        </div>
+      </div>`).join('');
+  }catch(e){showFb('listFb','Erreur réseau','err');}
+}
+async function adminAdd(){
+  const email=document.getElementById('aEmail').value.trim().toLowerCase();
+  const nom=document.getElementById('aNom').value.trim();
+  if(!email)return showFb('addFb','Email requis','err');
+  try{
+    const data=await apiCall({action:'add',adminPass:ADMIN_PASS,email,nom});
+    if(data.success){showFb('addFb','✅ '+data.message,'ok');document.getElementById('aEmail').value='';document.getElementById('aNom').value='';adminLoad();}
+    else showFb('addFb','❌ '+data.error,'err');
+  }catch(e){showFb('addFb','Erreur réseau','err');}
+}
+async function adminToggle(email){
+  try{
+    const data=await apiCall({action:'toggle',adminPass:ADMIN_PASS,email});
+    if(data.success)adminLoad();else showFb('listFb','❌ '+data.error,'err');
+  }catch(e){showFb('listFb','Erreur réseau','err');}
+}
+async function adminRm(email){
+  if(!confirm(`Supprimer ${email} définitivement ?`))return;
+  try{
+    const data=await apiCall({action:'remove',adminPass:ADMIN_PASS,email});
+    if(data.success)adminLoad();else showFb('listFb','❌ '+data.error,'err');
+  }catch(e){showFb('listFb','Erreur réseau','err');}
+}
+function showFb(id,msg,cls){const e=document.getElementById(id);e.textContent=msg;e.className='afb '+cls;setTimeout(()=>e.className='afb',4000);}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+const GROUPED={};
+FOODS.forEach(f=>{if(!GROUPED[f.cat])GROUPED[f.cat]=[];GROUPED[f.cat].push(f);});
+
+function initApp(){
+  buildSourceSelect();buildMealChips();buildTypeChips();buildWeekTabs();selectDay(0);renderRecipes();
+}
+function switchTab(t){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  ['eq','menu','rec'].forEach((x,i)=>{if(x===t)document.querySelectorAll('.tab-btn')[i].classList.add('active');});
+  if(t==='rec')renderRecipes();
+}
+
+// ══════════════════════════════════════════════════════
+// TAB 1 — ÉQUIVALENTS
+// ══════════════════════════════════════════════════════
+function buildSourceSelect(){
+  const sel=document.getElementById('sourceSelect');
+  Object.entries(GROUPED).forEach(([cat,foods])=>{
+    const og=document.createElement('optgroup');og.label=cat;
+    foods.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.emoji+' '+f.name;og.appendChild(o);});
+    sel.appendChild(og);
+  });
+}
+function setMode(m){
+  mode=m;
+  document.getElementById('btnCru').classList.toggle('active',m==='cru');
+  document.getElementById('btnCuit').classList.toggle('active',m==='cuit');
+  document.getElementById('toggleNote').textContent=m==='cru'?'Aliments pesés CRU — standard coach':'Aliments pesés CUIT — pratique au quotidien';
+  renderEquiv();
+}
+function toggleLFilter(l){
+  if(activeLFilters.has(l)){if(activeLFilters.size===1)return;activeLFilters.delete(l);}else activeLFilters.add(l);
+  ['ok','warn','bad'].forEach(x=>document.getElementById('lc-'+x)?.classList.toggle('off',!activeLFilters.has(x)));
+  applyLVis();
+}
+function applyLVis(){
+  document.querySelectorAll('.food-card[data-level]').forEach(c=>{const l=c.dataset.level;c.classList.toggle('gone',l&&!activeLFilters.has(l));});
+  const v=document.querySelectorAll('.food-card:not(.gone)').length;
+  document.getElementById('resCount').textContent=v+' aliments compatibles';
+}
+function renderEquiv(){
+  const src=FOODS.find(f=>f.id===parseInt(document.getElementById('sourceSelect').value));
+  const qty=parseFloat(document.getElementById('qtyInput').value)||1;
+  const sc=document.getElementById('srcCard');
+  const ph=document.getElementById('eqPh');
+  const res=document.getElementById('eqResults');
+  const ci=document.getElementById('compatInfo');
+  const lr=document.getElementById('legendRow');
+  if(src){
+    if(src.unitType==='unit'){document.getElementById('qtyLabel').textContent='Nombre d\'œufs';document.getElementById('qtyUnit').textContent='1 œuf ≈ 55g';document.getElementById('qtyInput').step=1;document.getElementById('qtyInput').min=1;}
+    else if(src.unitType==='ml'){document.getElementById('qtyLabel').textContent='Quantité (ml)';document.getElementById('qtyUnit').textContent='millilitres';document.getElementById('qtyInput').step=10;document.getElementById('qtyInput').min=10;}
+    else{document.getElementById('qtyLabel').textContent='Quantité (g)';document.getElementById('qtyUnit').textContent=mode==='cru'?'g — pesé cru':'g — pesé cuit';document.getElementById('qtyInput').step=10;document.getElementById('qtyInput').min=10;}
+  }
+  if(!src){sc.classList.remove('show');ph.style.display='block';res.innerHTML='';ci.classList.remove('show');lr.classList.remove('show');document.getElementById('resCount').textContent='';return;}
+  ph.style.display='none';
+  let sKcal,sProt,sGluc,sLip,sLbl;
+  if(src.unitType==='unit'){sKcal=src.cru.kcal*qty;sProt=src.cru.prot*qty;sGluc=src.cru.gluc*qty;sLip=src.cru.lip*qty;sLbl=qty+' '+src.unitLabel+' ('+Math.round(qty*src.unitWeight)+'g)';}
+  else{const m=getMPer100(src);const r=qty/100;sKcal=m.kcal*r;sProt=m.prot*r;sGluc=m.gluc*r;sLip=m.lip*r;sLbl=qty+(src.unitType==='ml'?'ml':('g '+(src.cuitCoef!==1?mode:'')));}
+  sc.classList.add('show');
+  document.getElementById('srcName').textContent=src.emoji+' '+src.name;
+  document.getElementById('srcQtyLbl').textContent=sLbl;
+  const bi=src.unitType==='unit'?{cls:'unit',txt:'UNITÉ'}:src.unitType==='ml'?{cls:'ml',txt:'ML'}:{cls:mode,txt:mode.toUpperCase()};
+  const bdg=document.getElementById('srcBadge');bdg.textContent=bi.txt;bdg.className='badge '+bi.cls;
+  document.getElementById('srcKcal').textContent=fmt(sKcal);
+  document.getElementById('srcProt').textContent=fmt(sProt)+'g';
+  document.getElementById('srcGluc').textContent=fmt(sGluc)+'g';
+  document.getElementById('srcLip').textContent=fmt(sLip)+'g';
+  const g=GROUPS[src.group];
+  document.getElementById('srcGroupTag').innerHTML=`<span class="group-tag ${src.group}">${g.label}</span>`;
+  const srt=getRating(src);
+  if(srt){document.getElementById('srcRatioBadge').innerHTML=`<div class="ratio-badge ${srt.level}">${srt.label} <span style="font-size:10px;opacity:.7">(${(srt.ratio*100).toFixed(0)}g prot/100kcal)</span></div>`;}
+  else document.getElementById('srcRatioBadge').innerHTML='';
+  ci.classList.add('show');ci.innerHTML=`🔒 Équivalents filtrés : <strong>${g.label}</strong> — ${g.desc}`;
+  const isProt=src.group==='prot';
+  isProt?lr.classList.add('show'):lr.classList.remove('show');
+  const foods=FOODS.filter(f=>f.id!==src.id&&f.group===src.group);
+  if(!foods.length){res.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px">Aucun équivalent dans ce groupe</div>';document.getElementById('resCount').textContent='';return;}
+  let sorted=foods;
+  if(isProt){const ord={ok:0,warn:1,bad:2};sorted=[...foods].sort((a,b)=>{const ra=getRating(a);const rb=getRating(b);const la=ra?ord[ra.level]:3;const lb=rb?ord[rb.level]:3;if(la!==lb)return la-lb;return(b.cru.prot/b.cru.kcal)-(a.cru.prot/a.cru.kcal);});}
+  let html='';let lastS='';
+  sorted.forEach(f=>{
+    let eqD,eqS,eK,eP,eG,eL;
+    if(f.unitType==='unit'){const nb=sKcal/f.cru.kcal;eqD=fmt(nb)+' '+f.unitLabel;eqS='≈'+Math.round(nb*(f.unitWeight||55))+'g';eK=f.cru.kcal*nb;eP=f.cru.prot*nb;eG=f.cru.gluc*nb;eL=f.cru.lip*nb;}
+    else{const m=getMPer100(f);const eqG=(sKcal/m.kcal)*100;const r=eqG/100;eK=m.kcal*r;eP=m.prot*r;eG=m.gluc*r;eL=m.lip*r;eqD=Math.round(eqG)+(f.unitType==='ml'?'ml':'g');eqS=f.unitType==='ml'?'ml':f.cuitCoef!==1?'pesé '+mode:'tel quel';}
+    const rt=getRating(f);let pill='';let cc='food-card';let dl='';
+    if(rt){
+      const warn=rt.level==='bad'?`→ seulement ${fmt(eP)}g prot pour ${fmt(eK)} kcal`:`→ ${fmt(eP)}g prot pour ${fmt(eK)} kcal`;
+      pill=`<div class="rec-pill ${rt.level}">${rt.label} <span class="rec-detail">${warn}</span></div>`;
+      cc+=` fc-${rt.level}`;dl=rt.level;
+      if(isProt&&rt.level!==lastS){lastS=rt.level;const sl={ok:'✅ Recommandés — haute densité protéique',warn:'⚠️ Acceptables — plus de lipides',bad:'❌ Attention — faible densité protéique'};html+=`<div class="sec-div">${sl[rt.level]}</div>`;}
+    }
+    html+=`<div class="${cc}" data-level="${dl}">
+      <div class="food-top">
+        <div class="food-info"><div class="food-emoji">${f.emoji}</div><div><div class="food-name">${f.name}</div><div class="food-cat">${f.cat}</div>${pill}</div></div>
+        <div class="qty-right"><div class="qty-badge">${eqD}</div><div class="qty-sub">${eqS}</div></div>
+      </div>
+      <div class="food-macros">
+        <div class="fm kcal"><strong>${fmt(eK)}</strong><span>kcal</span></div>
+        <div class="fm prot"><strong>${fmt(eP)}g</strong><span>Prot.</span></div>
+        <div class="fm gluc"><strong>${fmt(eG)}g</strong><span>Gluc.</span></div>
+        <div class="fm lip"><strong>${fmt(eL)}g</strong><span>Lip.</span></div>
+      </div></div>`;
+  });
+  res.innerHTML=html;document.getElementById('resCount').textContent=sorted.length+' aliments compatibles';
+  if(isProt)applyLVis();
+}
+
+// ══════════════════════════════════════════════════════
+// TAB 2 — MENU
+// ══════════════════════════════════════════════════════
+function setMenuMode(m){
+  document.getElementById('modeManBtn').classList.toggle('active',m==='m');
+  document.getElementById('modePasteBtn').classList.toggle('active',m==='p');
+  document.getElementById('pastePanel').style.display=m==='p'?'block':'none';
+  document.getElementById('manuelPanel').style.display=m==='m'?'block':'none';
+}
+function buildWeekTabs(){
+  const wt=document.getElementById('weekTabs');
+  DAYS.forEach((d,i)=>{const btn=document.createElement('button');btn.className='day-tab'+(i===0?' active':'');btn.textContent=d.substring(0,3);btn.id='dt'+i;btn.onclick=()=>selectDay(i);wt.appendChild(btn);});
+}
+function selectDay(i){curDay=i;document.querySelectorAll('.day-tab').forEach((b,j)=>b.classList.toggle('active',j===i));renderDayMeals();}
+function buildFoodOpts(){let h='<option value="">— Aliment —</option>';Object.entries(GROUPED).forEach(([cat,foods])=>{h+=`<optgroup label="${cat}">`;foods.forEach(f=>{h+=`<option value="${f.id}">${f.emoji} ${f.name}</option>`;});h+='</optgroup>';});return h;}
+function renderDayMeals(){
+  const c=document.getElementById('dayMeals');let h='';
+  MEALS.forEach(meal=>{
+    const items=weekData[curDay][meal.id];
+    h+=`<div class="card" style="margin-bottom:10px"><div class="meal-head"><div class="meal-lbl">${meal.emoji} ${meal.label}</div><button class="btn btn-s btn-sm" onclick="addIng(${curDay},'${meal.id}')">+ Ajouter</button></div>`;
+    items.forEach((item,idx)=>{
+      const food=FOODS.find(f=>f.id===item.foodId);
+      const unit=food?(food.unitType==='ml'?'ml':food.unitType==='unit'?food.unitLabel||'unités':'g'):'g';
+      const opts=buildFoodOpts().replace(`value="${item.foodId}"`,`value="${item.foodId}" selected`);
+      h+=`<div class="ing-row"><div class="fg food-sel"><select onchange="updIng(${curDay},'${meal.id}',${idx},'food',this.value)">${opts}</select></div><div class="fg qty-inp"><input type="number" value="${item.qty}" min="1" max="2000" step="${food&&food.unitType==='unit'?1:10}" onchange="updIng(${curDay},'${meal.id}',${idx},'qty',this.value)"></div><div class="unit-lbl">${unit}</div><button class="rm-btn" onclick="rmIng(${curDay},'${meal.id}',${idx})">✕</button></div>`;
+    });
+    const mM=compMealM(curDay,meal.id);const hd=items.some(i=>i.foodId);
+    h+=`<div class="meal-mb ${hd?'show':''}" id="mb-${meal.id}"><div class="mmr"><div class="mmc kcal"><div class="v">${fmt(mM.kcal)}</div><div class="k">kcal</div></div><div class="mmc prot"><div class="v">${fmt(mM.prot)}g</div><div class="k">Prot.</div></div><div class="mmc gluc"><div class="v">${fmt(mM.gluc)}g</div><div class="k">Gluc.</div></div><div class="mmc lip"><div class="v">${fmt(mM.lip)}g</div><div class="k">Lip.</div></div></div></div></div>`;
+  });
+  c.innerHTML=h;updDayTot();
+}
+function addIng(d,m){weekData[d][m].push({foodId:null,qty:100});renderDayMeals();}
+function rmIng(d,m,i){weekData[d][m].splice(i,1);renderDayMeals();}
+function updIng(d,m,i,field,val){
+  if(field==='food')weekData[d][m][i].foodId=parseInt(val)||null;
+  if(field==='qty')weekData[d][m][i].qty=parseFloat(val)||0;
+  updDayTot();
+  const mM=compMealM(d,m);const hd=weekData[d][m].some(x=>x.foodId);
+  const mb=document.getElementById('mb-'+m);
+  if(mb){mb.innerHTML=`<div class="mmr"><div class="mmc kcal"><div class="v">${fmt(mM.kcal)}</div><div class="k">kcal</div></div><div class="mmc prot"><div class="v">${fmt(mM.prot)}g</div><div class="k">Prot.</div></div><div class="mmc gluc"><div class="v">${fmt(mM.gluc)}g</div><div class="k">Gluc.</div></div><div class="mmc lip"><div class="v">${fmt(mM.lip)}g</div><div class="k">Lip.</div></div></div>`;mb.classList.toggle('show',hd);}
+  document.getElementById('dt'+d)?.classList.toggle('hd',MEALS.some(ml=>weekData[d][ml.id].some(x=>x.foodId)));
+}
+function compMealM(d,m){return weekData[d][m].reduce((acc,item)=>{if(!item.foodId)return acc;const food=FOODS.find(f=>f.id===item.foodId);if(!food)return acc;const mac=compMacros(food,item.qty);return{kcal:acc.kcal+mac.kcal,prot:acc.prot+mac.prot,gluc:acc.gluc+mac.gluc,lip:acc.lip+mac.lip};},{kcal:0,prot:0,gluc:0,lip:0});}
+function updDayTot(){
+  const t=MEALS.reduce((acc,m)=>{const mac=compMealM(curDay,m.id);return{kcal:acc.kcal+mac.kcal,prot:acc.prot+mac.prot,gluc:acc.gluc+mac.gluc,lip:acc.lip+mac.lip};},{kcal:0,prot:0,gluc:0,lip:0});
+  const has=MEALS.some(m=>weekData[curDay][m.id].some(i=>i.foodId));
+  document.getElementById('dayTot').classList.toggle('show',has);
+  document.getElementById('dtKcal').textContent=fmt(t.kcal);document.getElementById('dtProt').textContent=fmt(t.prot)+'g';
+  document.getElementById('dtGluc').textContent=fmt(t.gluc)+'g';document.getElementById('dtLip').textContent=fmt(t.lip)+'g';
+}
+function parsePaste(){
+  const text=document.getElementById('pasteText').value.trim();if(!text)return;
+  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);let cDay=-1,cMeal=null;
+  lines.forEach(line=>{
+    const di=DAYS.findIndex(d=>line.toLowerCase().includes(d.toLowerCase()));if(di>=0)cDay=di;
+    if(line.toLowerCase().includes('petit')||line.toLowerCase().includes('matin'))cMeal='breakfast';
+    else if(line.toLowerCase().includes('déjeuner')||line.toLowerCase().includes('midi'))cMeal='lunch';
+    else if(line.toLowerCase().includes('dîner')||line.toLowerCase().includes('soir'))cMeal='dinner';
+    else if(line.toLowerCase().includes('collation')||line.toLowerCase().includes('snack'))cMeal='snack';
+    if(cDay>=0&&cMeal){line.split(',').map(p=>p.trim()).forEach(part=>{const m=part.match(/^(\d+(?:\.\d+)?)\s*(?:g|ml|oeuf|œuf)?s?\s+(.+)/i);if(m){const qty=parseFloat(m[1]);const name=m[2].toLowerCase();const food=FOODS.find(f=>f.name.toLowerCase().includes(name)||name.includes(f.name.toLowerCase().split('(')[0].trim()));if(food)weekData[cDay][cMeal].push({foodId:food.id,qty});}});}
+  });
+  setMenuMode('m');const fd=weekData.findIndex(d=>MEALS.some(m=>d[m.id].length>0));selectDay(fd>=0?fd:0);
+  DAYS.forEach((_,i)=>{document.getElementById('dt'+i)?.classList.toggle('hd',MEALS.some(m=>weekData[i][m.id].some(x=>x.foodId)));});
+}
+function findMenuRecipes(){
+  const sugg=[];
+  MEALS.forEach(meal=>{
+    const m=compMealM(curDay,meal.id);if(m.kcal<50)return;
+    RECIPES.filter(r=>r.meals.includes(meal.id)).forEach(r=>{sugg.push({recipe:r,mealLabel:meal.label,tm:m,score:mScore(macroDist(m,r.macros))});});
+  });
+  sugg.sort((a,b)=>b.score-a.score);
+  if(!sugg.length){alert('Ajoutez d\'abord vos repas !');return;}
+  switchTab('rec');renderSugg(sugg.slice(0,10));
+}
+
+// ══════════════════════════════════════════════════════
+// TAB 3 — RECETTES
+// ══════════════════════════════════════════════════════
+const MEAL_FILTERS=[{id:'breakfast',label:'🌅 Matin'},{id:'lunch',label:'☀️ Déjeuner'},{id:'dinner',label:'🌙 Dîner'},{id:'snack',label:'🍎 Collation'}];
+const TYPE_FILTERS=[{id:'moroccan',label:'🇲🇦 Marocain'},{id:'highprot',label:'💪 High-Prot +40g'},{id:'bulk',label:'📈 Bulk'},{id:'lowcarb',label:'🥗 Low-Carb'}];
+
+function buildMealChips(){
+  const el=document.getElementById('mealChips');
+  const all=document.createElement('div');all.className='fchip active';all.textContent='Tous';all.onclick=()=>setMealF('',all);el.appendChild(all);
+  MEAL_FILTERS.forEach(f=>{const c=document.createElement('div');c.className='fchip';c.textContent=f.label;c.onclick=()=>setMealF(f.id,c);el.appendChild(c);});
+}
+function buildTypeChips(){
+  const el=document.getElementById('typeChips');
+  TYPE_FILTERS.forEach(f=>{const c=document.createElement('div');c.className='fchip';c.textContent=f.label;c.onclick=()=>toggleTypeF(f.id,c);el.appendChild(c);});
+}
+function setMealF(id,el){activeMealF=id;document.querySelectorAll('#mealChips .fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderRecipes();}
+function toggleTypeF(id,el){if(activeTypeFs.has(id))activeTypeFs.delete(id);else activeTypeFs.add(id);el.classList.toggle('active',activeTypeFs.has(id));renderRecipes();}
+function renderRecipes(){
+  const fk=parseFloat(document.getElementById('fKcal').value)||Infinity;
+  const fp=parseFloat(document.getElementById('fProt').value)||0;
+  let recs=RECIPES;
+  if(activeMealF)recs=recs.filter(r=>r.meals.includes(activeMealF));
+  if(activeTypeFs.size>0)recs=recs.filter(r=>[...activeTypeFs].some(t=>r.tags.includes(t)));
+  recs=recs.filter(r=>r.macros.kcal<=fk&&r.macros.prot>=fp);
+  document.getElementById('recCount').textContent=recs.length+' recettes';
+  document.getElementById('recResults').innerHTML=recs.map(r=>rcHTML(r,null)).join('');
+  document.getElementById('suggHdr').style.display='none';
+  document.getElementById('recSugg').innerHTML='';
+}
+function renderSugg(sugg){
+  document.getElementById('suggHdr').style.display='block';
+  document.getElementById('suggCount').textContent=sugg.length+' suggestions';
+  document.getElementById('recSugg').innerHTML=sugg.map(x=>`
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:12px 0 5px">
+      ${x.mealLabel} — Cible : ${fmt(x.tm.kcal)} kcal · ${fmt(x.tm.prot)}g P
+    </div>${rcHTML(x.recipe,x.score)}`).join('');
+}
+function rcHTML(r,score){
+  const tags=r.tags.map(t=>`<span class="rtag ${t}">${
+    t==='breakfast'?'🌅 Matin':t==='lunch'?'☀️ Déj.':t==='dinner'?'🌙 Dîner':
+    t==='snack'?'🍎 Collation':t==='moroccan'?'🇲🇦 Marocain':
+    t==='highprot'?'💪 High-Prot':t==='bulk'?'📈 Bulk':t==='lowcarb'?'🥗 Low-Carb':t
+  }</span>`).join('');
+  const sc=score!==null?`<div class="rc-score"><div class="score-val">${score}%</div><div class="score-lbl">match</div></div>`:'';
+  const ings=r.ings.map(i=>`<div class="ing-item"><span class="ing-emoji">${i.e}</span><span class="ing-name">${i.n}</span><span class="ing-qty">${i.q}</span></div>`).join('');
+  const steps=r.steps.map((s,i)=>`<div class="step-item"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></div>`).join('');
+  return `<div class="rcrd">
+    <div class="rcrd-top" onclick="toggleRec('${r.id}')">
+      <div style="flex:1">
+        <div class="rcrd-name">${r.emoji} ${r.name}</div>
+        <div class="rcrd-tags">${tags}</div>
+        <div class="rc-macros" style="margin-top:7px">
+          <div class="rcm kcal"><strong>${r.macros.kcal}</strong><span>kcal</span></div>
+          <div class="rcm prot"><strong>${r.macros.prot}g</strong><span>Prot.</span></div>
+          <div class="rcm gluc"><strong>${r.macros.gluc}g</strong><span>Gluc.</span></div>
+          <div class="rcm lip"><strong>${r.macros.lip}g</strong><span>Lip.</span></div>
+        </div>
+      </div>
+      ${sc}
+      <div class="rc-chev" id="chev-${r.id}">▼</div>
+    </div>
+    <div class="rc-detail" id="det-${r.id}">
+      <div class="rd-title">🧺 Ingrédients</div>
+      <div class="ing-list">${ings}</div>
+      <div class="rd-title">👨‍🍳 Préparation</div>
+      <div class="step-list">${steps}</div>
+    </div>
+  </div>`;
+}
+function toggleRec(id){
+  const d=document.getElementById('det-'+id);const c=document.getElementById('chev-'+id);
+  const open=d.classList.toggle('open');c.classList.toggle('open',open);
+}
+</script>
+</body>
+</html>
