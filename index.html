@@ -398,6 +398,10 @@ textarea{resize:vertical;min-height:90px}
 .rplan-food-tag{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text)}
 .rplan-food-tag.warn-tag{border-color:rgba(251,191,36,.5);color:#fbbf24}
 .alert-box{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:11px 13px;font-size:12px;color:#fbbf24;margin-bottom:12px;line-height:1.6}
+
+.ex-warn{font-size:11px;padding:5px 9px;border-radius:7px;margin:5px 0 6px;line-height:1.4;font-weight:600}
+.ex-warn.red{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#f87171}
+.ex-warn.orange{background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);color:#fb923c}
 </style>
 </head>
 <body onload="initApp()">
@@ -1001,110 +1005,84 @@ function renderEquiv(){
 
 const EXERCISES = [
   // POITRINE
-  {id:'e1',  name:'Flat Barbell Bench Press',     muscle:'Poitrine', alts:[{name:'Dumbbell Chest Press',equip:'haltères'},{name:'Machine Chest Press',equip:'machine'}]},
-  {id:'e2',  name:'Incline Barbell Bench Press',  muscle:'Poitrine', alts:[{name:'Smith Incline Press',equip:'smith'},{name:'Dumbbell Incline Press',equip:'haltères'}]},
-  {id:'e3',  name:'Incline Dumbbell Fly',         muscle:'Poitrine', alts:[{name:'Cable Crossover High to Low',equip:'câble'},{name:'Pec Deck Machine',equip:'machine'},{name:'Mid Cross Cables Fly',equip:'câble'}]},
-  {id:'e4',  name:'Chest Dips',                   muscle:'Poitrine', alts:[{name:'Assisted Chest Dip',equip:'machine'},{name:'Decline Push-Up Weighted',equip:'poids_corps'}]},
-  {id:'e5',  name:'Low Crossover',                muscle:'Poitrine', alts:[{name:'Dumbbell Low Crossover',equip:'haltères'}]},
-  {id:'e6',  name:'Incline Dumbbell Press',        muscle:'Poitrine', alts:[{name:'Incline Bench Press',equip:'barre'},{name:'Smith Incline Press',equip:'smith'}]},
-  {id:'e7',  name:'Push-Up',                      muscle:'Poitrine', alts:[{name:'Push-Ups Easy Version',equip:'poids_corps'}]},
+  {id:'e1',  name:'Flat Barbell Bench Press',     muscle:'Poitrine',         alts:[{name:'Dumbbell Chest Press',equip:'haltères'},{name:'Machine Chest Press',equip:'machine'}],                                                                         warn:'⚠️ Épaules — grip trop large = pression acromiale. Largeur de prise modérée recommandée.',warnLevel:'orange'},
+  {id:'e2',  name:'Incline Barbell Bench Press',  muscle:'Poitrine',         alts:[{name:'Smith Incline Press',equip:'smith'},{name:'Dumbbell Incline Press',equip:'haltères'}]},
+  {id:'e3',  name:'Incline Dumbbell Fly',         muscle:'Poitrine',         alts:[{name:'Cable Crossover High to Low',equip:'câble'},{name:'Pec Deck Machine',equip:'machine'},{name:'Mid Cross Cables Fly',equip:'câble'}],                             warn:'⚠️ Épaules — descente trop large = risque labrum. Contrôler l\'amplitude.',warnLevel:'orange'},
+  {id:'e4',  name:'Chest Dips',                   muscle:'Poitrine',         alts:[{name:'Assisted Chest Dip',equip:'machine'},{name:'Decline Push-Up Weighted',equip:'poids_corps'}],                                                                   warn:'⚠️ Épaules — pression articulaire élevée en fond de mouvement. Ne pas descendre trop bas.',warnLevel:'orange'},
+  {id:'e5',  name:'Low Crossover',                muscle:'Poitrine',         alts:[{name:'Dumbbell Low Crossover',equip:'haltères'}]},
+  {id:'e6',  name:'Incline Dumbbell Press',        muscle:'Poitrine',         alts:[{name:'Incline Bench Press',equip:'barre'},{name:'Smith Incline Press',equip:'smith'}]},
+  {id:'e7',  name:'Push-Up',                      muscle:'Poitrine',         alts:[{name:'Push-Ups Easy Version',equip:'poids_corps'}]},
   // DOS
-  {id:'e8',  name:'Lat Pulldown',                 muscle:'Dos', alts:[{name:'Pull-Ups',equip:'poids_corps'},{name:'Assisted Pull-Up',equip:'machine'}]},
-  {id:'e9',  name:'Reverse Grip Pulldown',        muscle:'Dos', alts:[{name:'Close Grip Pull Down',equip:'câble'},{name:'One Arm Lat Pull Down',equip:'câble'}]},
-  {id:'e10', name:'Seated Cable Row',             muscle:'Dos', alts:[{name:'Machine Row',equip:'machine'},{name:'Dumbbell Row',equip:'haltères'}]},
-  {id:'e11', name:'Barbell Row',                  muscle:'Dos', alts:[{name:'T-Bar Row',equip:'barre'},{name:'Smith Barbell Row',equip:'smith'}]},
-  {id:'e12', name:'Dumbbell Row',                 muscle:'Dos', alts:[{name:'Single Arm Cable Row',equip:'câble'},{name:'Single Arm Machine Row',equip:'machine'}]},
-  {id:'e13', name:'Dumbbell Pullover',            muscle:'Dos', alts:[{name:'Cable Pullover',equip:'câble'},{name:'Machine Pullover',equip:'machine'}]},
-  {id:'e14', name:'Deadlift',                     muscle:'Dos', alts:[{name:'Rack Pull',equip:'barre'},{name:'Trap Bar Deadlift',equip:'barre'}]},
-  {id:'e15', name:'Good Morning',                 muscle:'Dos', alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'45° Back Extension',equip:'machine'}]},
-  {id:'e16', name:'Wide Grip Rowing',             muscle:'Dos', alts:[{name:'Seated Machine Row Neutral Grip',equip:'machine'},{name:'T-Bar Row',equip:'barre'}]},
+  {id:'e8',  name:'Lat Pulldown',                 muscle:'Dos',              alts:[{name:'Pull-Ups',equip:'poids_corps'},{name:'Assisted Pull-Up',equip:'machine'},{name:'Straight Arm Pulldown',equip:'câble'}]},
+  {id:'e9',  name:'Reverse Grip Pulldown',        muscle:'Dos',              alts:[{name:'Close Grip Pull Down',equip:'câble'},{name:'One Arm Lat Pull Down',equip:'câble'}]},
+  {id:'e10', name:'Seated Cable Row',             muscle:'Dos',              alts:[{name:'Machine Row',equip:'machine'},{name:'Dumbbell Row',equip:'haltères'},{name:'Meadows Row',equip:'barre'}],                                                      warn:'⚠️ Dos — ne pas arrondir les lombaires en fin de mouvement. Buste stable.',warnLevel:'orange'},
+  {id:'e11', name:'Barbell Row',                  muscle:'Dos',              alts:[{name:'T-Bar Row',equip:'barre'},{name:'Smith Barbell Row',equip:'smith'},{name:'Chest Supported Row',equip:'machine'},{name:'Seal Row',equip:'barre'}],              warn:'⚠️ Dos — pression lombaire élevée en position charnière. Éviter si lombalgie.',warnLevel:'orange'},
+  {id:'e12', name:'Dumbbell Row',                 muscle:'Dos',              alts:[{name:'Single Arm Cable Row',equip:'câble'},{name:'Single Arm Machine Row',equip:'machine'}]},
+  {id:'e13', name:'Dumbbell Pullover',            muscle:'Dos',              alts:[{name:'Cable Pullover',equip:'câble'},{name:'Machine Pullover',equip:'machine'}]},
+  {id:'e14', name:'Deadlift',                     muscle:'Dos',              alts:[{name:'Rack Pull',equip:'barre'},{name:'Trap Bar Deadlift',equip:'barre'},{name:'Hex Bar Deadlift',equip:'barre'},{name:'Cable Pull Through',equip:'câble'}],        warn:'⚠️ Dos — gainage strict, dos plat obligatoire. Déconseillé si hernie discale.',warnLevel:'red'},
+  {id:'e15', name:'Good Morning',                 muscle:'Dos',              alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'45° Back Extension',equip:'machine'}],                                                                                warn:'⚠️ Dos — risque élevé, levier très défavorable sur les lombaires. Déconseillé si douleur dorsale.',warnLevel:'red'},
+  {id:'e16', name:'Wide Grip Rowing',             muscle:'Dos',              alts:[{name:'Seated Machine Row Neutral Grip',equip:'machine'},{name:'T-Bar Row',equip:'barre'}]},
   // ÉPAULES
-  {id:'e17', name:'Seated Dumbbell Shoulder Press', muscle:'Épaules', alts:[{name:'Smith Shoulder Press',equip:'smith'},{name:'Machine Shoulder Press',equip:'machine'}]},
-  {id:'e18', name:'Standing Barbell Press',        muscle:'Épaules', alts:[{name:'Dumbbell Shoulder Press',equip:'haltères'},{name:'Machine Shoulder Press',equip:'machine'}]},
-  {id:'e19', name:'Lateral Raise',                muscle:'Épaules', alts:[{name:'Cable Lateral Raise',equip:'câble'},{name:'Machine Lateral Raise',equip:'machine'}]},
-  {id:'e20', name:'Front Raise',                  muscle:'Épaules', alts:[{name:'Cable Front Raise',equip:'câble'},{name:'Plate Front Raise',equip:'disque'}]},
-  {id:'e21', name:'Rear Delt Fly',                muscle:'Épaules', alts:[{name:'Rear Delt Fly Machine',equip:'machine'},{name:'Rear Delts Cable Pull',equip:'câble'}]},
-  {id:'e22', name:'Face Pull',                    muscle:'Épaules', alts:[{name:'Reverse Fly',equip:'haltères'},{name:'Cable Y Raise',equip:'câble'}]},
-  {id:'e23', name:'Upright Row',                  muscle:'Épaules', alts:[{name:'Dumbbell Upright Row',equip:'haltères'},{name:'Cable Upright Row',equip:'câble'}]},
-  {id:'e24', name:'Overhead Press',               muscle:'Épaules', alts:[{name:'Barbell Press',equip:'barre'},{name:'Smith Shoulder Press',equip:'smith'}]},
+  {id:'e17', name:'Seated Dumbbell Shoulder Press',muscle:'Épaules',         alts:[{name:'Smith Shoulder Press',equip:'smith'},{name:'Machine Shoulder Press',equip:'machine'}]},
+  {id:'e18', name:'Standing Barbell Press',        muscle:'Épaules',         alts:[{name:'Dumbbell Shoulder Press',equip:'haltères'},{name:'Machine Shoulder Press',equip:'machine'}]},
+  {id:'e19', name:'Lateral Raise',                muscle:'Épaules',          alts:[{name:'Cable Lateral Raise',equip:'câble'},{name:'Machine Lateral Raise',equip:'machine'}],                                                                           warn:'⚠️ Épaules — risque si impingement. Effectuer légèrement incliné vers l\'avant.',warnLevel:'orange'},
+  {id:'e20', name:'Front Raise',                  muscle:'Épaules',          alts:[{name:'Cable Front Raise',equip:'câble'},{name:'Plate Front Raise',equip:'disque'}]},
+  {id:'e21', name:'Rear Delt Fly',                muscle:'Épaules',          alts:[{name:'Rear Delt Fly Machine',equip:'machine'},{name:'Rear Delts Cable Pull',equip:'câble'}]},
+  {id:'e22', name:'Face Pull',                    muscle:'Épaules',          alts:[{name:'Reverse Fly',equip:'haltères'},{name:'Cable Y Raise',equip:'câble'},{name:'Band Pull Apart',equip:'poids_corps'}]},
+  {id:'e23', name:'Upright Row',                  muscle:'Épaules',          alts:[{name:'Dumbbell Upright Row',equip:'haltères'},{name:'Cable Upright Row',equip:'câble'}],                                                                             warn:'⚠️ Épaules — risque de conflit sous-acromial. Coudes ne dépassent pas la hauteur des épaules.',warnLevel:'red'},
+  {id:'e24', name:'Overhead Press',               muscle:'Épaules',          alts:[{name:'Barbell Press',equip:'barre'},{name:'Smith Shoulder Press',equip:'smith'},{name:'Arnold Press',equip:'haltères'},{name:'Landmine Press',equip:'barre'}],      warn:'⚠️ Dos & Épaules — hyperlordose si core non gainé. Déconseillé si conflit sous-acromial.',warnLevel:'orange'},
   // QUADRICEPS
-  {id:'e25', name:'Barbell Back Squat',           muscle:'Quadriceps', alts:[{name:'Smith Squat',equip:'smith'},{name:'Hack Squat',equip:'machine'},{name:'Wall Sit',equip:'poids_corps'}]},
-  {id:'e26', name:'Front Squat',                  muscle:'Quadriceps', alts:[{name:'Goblet Squat',equip:'haltères'},{name:'Safety Bar Squat',equip:'barre'}]},
-  {id:'e27', name:'Leg Press',                    muscle:'Quadriceps', alts:[{name:'Seated Leg Press',equip:'machine'},{name:'Goblet Squat',equip:'haltères'}]},
-  {id:'e28', name:'Split Squat',                  muscle:'Quadriceps', alts:[{name:'Dumbbell Lunge',equip:'haltères'},{name:'Bodyweight Reverse Lunge',equip:'poids_corps'}]},
-  {id:'e29', name:'Walking Lunge',                muscle:'Quadriceps', alts:[{name:'Bodyweight Reverse Lunge',equip:'poids_corps'},{name:'Step-Up',equip:'poids_corps'}]},
-  {id:'e30', name:'Leg Extension',                muscle:'Quadriceps', alts:[{name:'Sissy Squat Bodyweight',equip:'poids_corps'},{name:'Single-Leg Extension',equip:'machine'}]},
-  {id:'e31', name:'Hack Squat',                   muscle:'Quadriceps', alts:[{name:'Leg Press',equip:'machine'},{name:'Smith Squat',equip:'smith'}]},
+  {id:'e25', name:'Barbell Back Squat',           muscle:'Quadriceps',       alts:[{name:'Smith Squat',equip:'smith'},{name:'Hack Squat',equip:'machine'},{name:'Wall Sit',equip:'poids_corps'},{name:'Belt Squat',equip:'machine'}],                   warn:'⚠️ Dos & Genoux — charge sur vertèbres, genoux dans l\'axe. Remplacer par Hack Squat si douleur.',warnLevel:'orange'},
+  {id:'e26', name:'Front Squat',                  muscle:'Quadriceps',       alts:[{name:'Goblet Squat',equip:'haltères'},{name:'Safety Bar Squat',equip:'barre'}]},
+  {id:'e27', name:'Leg Press',                    muscle:'Quadriceps',       alts:[{name:'Seated Leg Press',equip:'machine'},{name:'Goblet Squat',equip:'haltères'},{name:'Pendulum Squat',equip:'machine'}],                                          warn:'⚠️ Genoux — ne pas verrouiller en extension. Déconseillé si chondropathie rotulienne.',warnLevel:'orange'},
+  {id:'e28', name:'Split Squat',                  muscle:'Quadriceps',       alts:[{name:'Dumbbell Lunge',equip:'haltères'},{name:'Bodyweight Reverse Lunge',equip:'poids_corps'}],                                                                     warn:'⚠️ Genoux — pression rotulienne élevée. Réduire l\'amplitude si douleur.',warnLevel:'orange'},
+  {id:'e29', name:'Walking Lunge',                muscle:'Quadriceps',       alts:[{name:'Bodyweight Reverse Lunge',equip:'poids_corps'},{name:'Step-Up',equip:'poids_corps'}],                                                                         warn:'⚠️ Genoux — impact fort sur le genou avant. Remplacer par Reverse Lunge si douleur.',warnLevel:'orange'},
+  {id:'e30', name:'Leg Extension',                muscle:'Quadriceps',       alts:[{name:'Sissy Squat Bodyweight',equip:'poids_corps'},{name:'Single-Leg Extension',equip:'machine'}],                                                                  warn:'⚠️ Genoux — cisaillement en extension complète. Déconseillé si ligaments fragiles ou opéré.',warnLevel:'red'},
+  {id:'e31', name:'Hack Squat',                   muscle:'Quadriceps',       alts:[{name:'Leg Press',equip:'machine'},{name:'Smith Squat',equip:'smith'}],                                                                                              warn:'⚠️ Genoux — pression rotulienne importante. Éviter descente trop profonde.',warnLevel:'orange'},
   // ISCHIO-JAMBIERS
-  {id:'e32', name:'Romanian Deadlift',            muscle:'Ischio-jambiers', alts:[{name:'Smith Romanian Deadlift',equip:'smith'},{name:'Dumbbell RDL',equip:'haltères'}]},
-  {id:'e33', name:'Seated Leg Curl',              muscle:'Ischio-jambiers', alts:[{name:'Lying Leg Curl',equip:'machine'},{name:'Standing Leg Curl',equip:'machine'}]},
-  {id:'e34', name:'Good Morning',                 muscle:'Ischio-jambiers', alts:[{name:'Back Extension',equip:'machine'},{name:'Cable Pull Through',equip:'câble'}]},
+  {id:'e32', name:'Romanian Deadlift',            muscle:'Ischio-jambiers',  alts:[{name:'Smith Romanian Deadlift',equip:'smith'},{name:'Dumbbell RDL',equip:'haltères'},{name:'Glute Ham Raise',equip:'machine'}],                                    warn:'⚠️ Dos — étirement ischio sous charge lourde. Dos strictement plat à tout moment.',warnLevel:'orange'},
+  {id:'e33', name:'Seated Leg Curl',              muscle:'Ischio-jambiers',  alts:[{name:'Lying Leg Curl',equip:'machine'},{name:'Standing Leg Curl',equip:'machine'}]},
+  {id:'e34', name:'Good Morning',                 muscle:'Ischio-jambiers',  alts:[{name:'Back Extension',equip:'machine'},{name:'Cable Pull Through',equip:'câble'}],                                                                                  warn:'⚠️ Dos — risque élevé. Déconseillé si lombalgie.',warnLevel:'red'},
   // MOLLETS
-  {id:'e35', name:'Calf Raise Standing',          muscle:'Mollets', alts:[{name:'Seated Calf Raise',equip:'machine'},{name:'Donkey Calf Raise',equip:'machine'}]},
-  {id:'e36', name:'Single-Leg Calf Raise',        muscle:'Mollets', alts:[{name:'Smith Calf Raise',equip:'smith'},{name:'Machine Calf Raise',equip:'machine'}]},
+  {id:'e35', name:'Calf Raise Standing',          muscle:'Mollets',          alts:[{name:'Seated Calf Raise',equip:'machine'},{name:'Donkey Calf Raise',equip:'machine'}]},
+  {id:'e36', name:'Single-Leg Calf Raise',        muscle:'Mollets',          alts:[{name:'Smith Calf Raise',equip:'smith'},{name:'Machine Calf Raise',equip:'machine'}]},
   // FESSIERS
-  {id:'e37', name:'Barbell Hip Thrust',           muscle:'Fessiers', alts:[{name:'Hip Thrusts Bodyweight',equip:'poids_corps'},{name:'Dumbbell Hip Thrust',equip:'haltères'}]},
-  {id:'e38', name:'Glute Bridge',                 muscle:'Fessiers', alts:[{name:'Single-Leg Bridge',equip:'poids_corps'},{name:'Frog Pump',equip:'poids_corps'}]},
-  {id:'e39', name:'Cable Kickback',               muscle:'Fessiers', alts:[{name:'Machine Kickback',equip:'machine'},{name:'Dumbbell Kickback',equip:'haltères'}]},
-  {id:'e40', name:'Cable Pull Through',           muscle:'Fessiers', alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'Dumbbell RDL',equip:'haltères'}]},
-  {id:'e41', name:'Banded Glute Abduction',       muscle:'Fessiers', alts:[{name:'Machine Abduction',equip:'machine'},{name:'Seated Abduction',equip:'machine'}]},
-  {id:'e42', name:'Single-Leg Hip Thrust',        muscle:'Fessiers', alts:[{name:'Barbell Hip Thrust',equip:'barre'},{name:'Glute Bridge',equip:'poids_corps'}]},
-  {id:'e43', name:'Sumo Deadlift',                muscle:'Fessiers', alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'Trap Bar Deadlift',equip:'barre'}]},
+  {id:'e37', name:'Barbell Hip Thrust',           muscle:'Fessiers',         alts:[{name:'Hip Thrusts Bodyweight',equip:'poids_corps'},{name:'Dumbbell Hip Thrust',equip:'haltères'},{name:'Smith Hip Thrust',equip:'smith'},{name:'Cable Hip Extension',equip:'câble'}]},
+  {id:'e38', name:'Glute Bridge',                 muscle:'Fessiers',         alts:[{name:'Single-Leg Bridge',equip:'poids_corps'},{name:'Frog Pump',equip:'poids_corps'}]},
+  {id:'e39', name:'Cable Kickback',               muscle:'Fessiers',         alts:[{name:'Machine Kickback',equip:'machine'},{name:'Dumbbell Kickback',equip:'haltères'}]},
+  {id:'e40', name:'Cable Pull Through',           muscle:'Fessiers',         alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'Dumbbell RDL',equip:'haltères'}]},
+  {id:'e41', name:'Banded Glute Abduction',       muscle:'Fessiers',         alts:[{name:'Machine Abduction',equip:'machine'},{name:'Seated Abduction',equip:'machine'}]},
+  {id:'e42', name:'Single-Leg Hip Thrust',        muscle:'Fessiers',         alts:[{name:'Barbell Hip Thrust',equip:'barre'},{name:'Glute Bridge',equip:'poids_corps'}]},
+  {id:'e43', name:'Sumo Deadlift',                muscle:'Fessiers',         alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'Trap Bar Deadlift',equip:'barre'}]},
   // BICEPS
-  {id:'e44', name:'Barbell Curl',                 muscle:'Biceps', alts:[{name:'Dumbbell Curl',equip:'haltères'},{name:'Cable Curl',equip:'câble'}]},
-  {id:'e45', name:'Incline Dumbbell Curl',        muscle:'Biceps', alts:[{name:'Incline Cable Biceps Curl',equip:'câble'}]},
-  {id:'e46', name:'Preacher Machine Curl',        muscle:'Biceps', alts:[{name:'Preacher Dumbbell Curl',equip:'haltères'},{name:'Spider Curl',equip:'haltères'}]},
-  {id:'e47', name:'Hammer Curl',                  muscle:'Biceps', alts:[{name:'Rope Hammer Curl',equip:'câble'},{name:'Cable Hammer Curl',equip:'câble'}]},
-  {id:'e48', name:'EZ Bar Curl',                  muscle:'Biceps', alts:[{name:'Barbell Curl',equip:'barre'},{name:'Dumbbell Curl',equip:'haltères'}]},
-  {id:'e49', name:'Machine Curl',                 muscle:'Biceps', alts:[{name:'Preacher Curl',equip:'machine'},{name:'Cable Curl',equip:'câble'}]},
+  {id:'e44', name:'Barbell Curl',                 muscle:'Biceps',           alts:[{name:'Dumbbell Curl',equip:'haltères'},{name:'Cable Curl',equip:'câble'},{name:'Scott Curl',equip:'barre'},{name:'Cable Preacher Curl',equip:'câble'}],            warn:'⚠️ Coude — tendinite possible si charge trop lourde. Contrôler la descente.',warnLevel:'orange'},
+  {id:'e45', name:'Incline Dumbbell Curl',        muscle:'Biceps',           alts:[{name:'Incline Cable Biceps Curl',equip:'câble'}]},
+  {id:'e46', name:'Preacher Machine Curl',        muscle:'Biceps',           alts:[{name:'Preacher Dumbbell Curl',equip:'haltères'},{name:'Spider Curl',equip:'haltères'}]},
+  {id:'e47', name:'Hammer Curl',                  muscle:'Biceps',           alts:[{name:'Rope Hammer Curl',equip:'câble'},{name:'Cable Hammer Curl',equip:'câble'}]},
+  {id:'e48', name:'EZ Bar Curl',                  muscle:'Biceps',           alts:[{name:'Barbell Curl',equip:'barre'},{name:'Dumbbell Curl',equip:'haltères'}],                                                                                        warn:'⚠️ Poignet/Coude — préférer la barre EZ à la barre droite pour réduire la torsion.',warnLevel:'orange'},
+  {id:'e49', name:'Machine Curl',                 muscle:'Biceps',           alts:[{name:'Preacher Curl',equip:'machine'},{name:'Cable Curl',equip:'câble'}]},
   // TRICEPS
-  {id:'e50', name:'Rope Pushdown',                muscle:'Triceps', alts:[{name:'Straight Bar Pushdown',equip:'câble'},{name:'Dumbbell Kickback',equip:'haltères'}]},
-  {id:'e51', name:'Skull Crusher',                muscle:'Triceps', alts:[{name:'Dumbbell Overhead Extension',equip:'haltères'},{name:'Cable Overhead Extension',equip:'câble'}]},
-  {id:'e52', name:'Close-Grip Bench Press',       muscle:'Triceps', alts:[{name:'Dips',equip:'poids_corps'},{name:'Smith Close Grip',equip:'smith'}]},
-  {id:'e53', name:'French Press',                 muscle:'Triceps', alts:[{name:'Overhead Barbell Extension',equip:'barre'},{name:'Rope Overhead Extension',equip:'câble'}]},
-  {id:'e54', name:'Overhead Rope Extension',      muscle:'Triceps', alts:[{name:'Barbell Overhead Extension',equip:'barre'},{name:'Dumbbell Overhead',equip:'haltères'}]},
-  {id:'e55', name:'Triceps Extension',            muscle:'Triceps', alts:[{name:'Rope Triceps Extension',equip:'câble'},{name:'Bar Triceps Extension',equip:'câble'}]},
+  {id:'e50', name:'Rope Pushdown',                muscle:'Triceps',          alts:[{name:'Straight Bar Pushdown',equip:'câble'},{name:'Dumbbell Kickback',equip:'haltères'}]},
+  {id:'e51', name:'Skull Crusher',                muscle:'Triceps',          alts:[{name:'Dumbbell Overhead Extension',equip:'haltères'},{name:'Cable Overhead Extension',equip:'câble'},{name:'JM Press',equip:'barre'}],                             warn:'⚠️ Coude — pression élevée sur l\'articulation. Éviter si épicondylite.',warnLevel:'orange'},
+  {id:'e52', name:'Close-Grip Bench Press',       muscle:'Triceps',          alts:[{name:'Dips',equip:'poids_corps'},{name:'Smith Close Grip',equip:'smith'}],                                                                                         warn:'⚠️ Poignet — prise neutre recommandée pour éviter l\'hyperextension.',warnLevel:'orange'},
+  {id:'e53', name:'French Press',                 muscle:'Triceps',          alts:[{name:'Overhead Barbell Extension',equip:'barre'},{name:'Rope Overhead Extension',equip:'câble'}],                                                                  warn:'⚠️ Coude — charge derrière la tête. Éviter si douleur au coude.',warnLevel:'orange'},
+  {id:'e54', name:'Overhead Rope Extension',      muscle:'Triceps',          alts:[{name:'Barbell Overhead Extension',equip:'barre'},{name:'Dumbbell Overhead',equip:'haltères'}]},
+  {id:'e55', name:'Triceps Extension',            muscle:'Triceps',          alts:[{name:'Rope Triceps Extension',equip:'câble'},{name:'Bar Triceps Extension',equip:'câble'}]},
   // ABDOMINAUX
-  {id:'e56', name:'Hanging Leg Raise',            muscle:'Abdominaux', alts:[{name:'Captain Chair',equip:'machine'},{name:'Lying Leg Raise',equip:'poids_corps'}]},
-  {id:'e57', name:'Cable Crunch',                 muscle:'Abdominaux', alts:[{name:'Weighted Crunch',equip:'disque'},{name:'Decline Crunch',equip:'machine'}]},
-  {id:'e58', name:'Plank',                        muscle:'Abdominaux', alts:[{name:'Side Plank',equip:'poids_corps'},{name:'Weighted Plank',equip:'disque'}]},
-  {id:'e59', name:'Russian Twist',                muscle:'Abdominaux', alts:[{name:'Cable Twist',equip:'câble'},{name:'Medicine Ball Twist',equip:'médecine_ball'}]},
-  {id:'e60', name:'Reverse Crunch',               muscle:'Abdominaux', alts:[{name:'V-Up',equip:'poids_corps'},{name:'Jackknife',equip:'poids_corps'}]},
-  {id:'e61', name:'Lying Floor Leg Raise',        muscle:'Abdominaux', alts:[{name:'Alternate Leg Raises',equip:'poids_corps'}]},
+  {id:'e56', name:'Hanging Leg Raise',            muscle:'Abdominaux',       alts:[{name:'Captain Chair',equip:'machine'},{name:'Lying Leg Raise',equip:'poids_corps'}]},
+  {id:'e57', name:'Cable Crunch',                 muscle:'Abdominaux',       alts:[{name:'Weighted Crunch',equip:'disque'},{name:'Decline Crunch',equip:'machine'}]},
+  {id:'e58', name:'Plank',                        muscle:'Abdominaux',       alts:[{name:'Side Plank',equip:'poids_corps'},{name:'Weighted Plank',equip:'disque'}]},
+  {id:'e59', name:'Russian Twist',                muscle:'Abdominaux',       alts:[{name:'Cable Twist',equip:'câble'},{name:'Medicine Ball Twist',equip:'médecine_ball'}]},
+  {id:'e60', name:'Reverse Crunch',               muscle:'Abdominaux',       alts:[{name:'V-Up',equip:'poids_corps'},{name:'Jackknife',equip:'poids_corps'}]},
+  {id:'e61', name:'Lying Floor Leg Raise',        muscle:'Abdominaux',       alts:[{name:'Alternate Leg Raises',equip:'poids_corps'}]},
   // TRAPÈZES
-  {id:'e62', name:'Barbell Shrug',                muscle:'Trapèzes', alts:[{name:'Dumbbell Shrug',equip:'haltères'},{name:'Smith Shrug',equip:'smith'},{name:'Traps Mid Back Shrugs',equip:'câble'}]},
-  {id:'e63', name:'Farmer Carry',                 muscle:'Trapèzes', alts:[{name:'Barbell Shrug',equip:'barre'},{name:'Dumbbell Shrug',equip:'haltères'}]},
-  // JAMBES GLOBALES
-  {id:'e64', name:'Step-Up',                      muscle:'Quadriceps', alts:[{name:'Bulgarian Split Squat',equip:'haltères'},{name:'Walking Lunge',equip:'poids_corps'}]},
-  {id:'e65', name:'Barbell Upright Row',          muscle:'Épaules', alts:[{name:'Dumbbell Upright Row',equip:'haltères'},{name:'Rope Upright Row',equip:'câble'}]},
-  {id:'e66', name:'Lunges Bands',                 muscle:'Quadriceps', alts:[{name:'Reverse Bodyweight Lunges',equip:'poids_corps'}]},
-  {id:'e67', name:'Abductor Machine',             muscle:'Fessiers', alts:[{name:'Squat Abductors',equip:'poids_corps'},{name:'Dumbbell Abductors',equip:'haltères'}]},
-  // BICEPS manquants
-  {id:'e68', name:'Concentration Curl',           muscle:'Biceps',      alts:[{name:'Preacher Dumbbell Curl',equip:'haltères'},{name:'Spider Curl',equip:'haltères'}]},
-  {id:'e69', name:'Reverse Curl',                 muscle:'Biceps',      alts:[{name:'Zottman Curl',equip:'haltères'},{name:'Cable Reverse Curl',equip:'câble'}]},
-  // TRICEPS manquants
-  {id:'e70', name:'Bench Dips',                   muscle:'Triceps',     alts:[{name:'Diamond Push-Up',equip:'poids_corps'},{name:'Close Grip Push-Up',equip:'poids_corps'}]},
-  {id:'e71', name:'Machine Dip',                  muscle:'Triceps',     alts:[{name:'Bench Dip',equip:'poids_corps'},{name:'Close Grip Press',equip:'barre'}]},
-  {id:'e72', name:'One-Arm Cable Extension',      muscle:'Triceps',     alts:[{name:'Dumbbell Kickback',equip:'haltères'},{name:'Rope Pushdown',equip:'câble'}]},
-  {id:'e73', name:'Reverse Grip Pushdown',        muscle:'Triceps',     alts:[{name:'Rope Pushdown',equip:'câble'},{name:'V-Bar Pushdown',equip:'câble'}]},
-  {id:'e74', name:'Cable Kickback Triceps',       muscle:'Triceps',     alts:[{name:'Dumbbell Kickback',equip:'haltères'},{name:'Rope Pushdown',equip:'câble'}]},
-  // AVANT-BRAS
-  {id:'e75', name:'Wrist Curl',                   muscle:'Avant-bras',  alts:[{name:'Reverse Wrist Curl',equip:'barre'},{name:'Behind-the-Back Wrist Curl',equip:'barre'}]},
-  {id:'e76', name:'Barbell Reverse Curl',         muscle:'Avant-bras',  alts:[{name:'EZ Bar Reverse Curl',equip:'barre'},{name:'Cable Reverse Curl',equip:'câble'}]},
-  {id:'e77', name:'Seated Wrist Curl',            muscle:'Avant-bras',  alts:[{name:'Dumbbell Wrist Curl',equip:'haltères'},{name:'Barbell Wrist Curl',equip:'barre'}]},
-  {id:'e78', name:'Zottman Curl',                 muscle:'Avant-bras',  alts:[{name:'Reverse Curl',equip:'barre'},{name:'Cable Reverse Curl',equip:'câble'}]},
-  // ABDOMINAUX manquants
-  {id:'e79', name:'Pallof Press',                 muscle:'Abdominaux',  alts:[{name:'Side Plank Crunch',equip:'poids_corps'},{name:'Bird Dog',equip:'poids_corps'}]},
-  {id:'e80', name:'Stability Ball Crunch',        muscle:'Abdominaux',  alts:[{name:'Decline Crunch',equip:'machine'},{name:'Cable Crunch',equip:'câble'}]},
-  {id:'e81', name:'Hanging Windshield Wiper',     muscle:'Abdominaux',  alts:[{name:'Hanging Leg Raise',equip:'poids_corps'},{name:'V-Up',equip:'poids_corps'}]},
-  {id:'e82', name:'Toe Touches',                  muscle:'Abdominaux',  alts:[{name:'Jackknife',equip:'poids_corps'},{name:'Crunch',equip:'poids_corps'}]},
-  // TRAPÈZES manquants
-  {id:'e83', name:'Behind-the-Back Shrug',        muscle:'Trapèzes',    alts:[{name:'Cable Shrug',equip:'câble'},{name:'Upright Row',equip:'barre'}]},
-  {id:'e84', name:'Dumbbell Shrug',               muscle:'Trapèzes',    alts:[{name:'Smith Shrug',equip:'smith'},{name:'Cable Shrug',equip:'câble'}]},
-  // FESSIERS manquants
-  {id:'e85', name:'Frog Pump',                    muscle:'Fessiers',    alts:[{name:'Glute Bridge',equip:'poids_corps'},{name:'Dumbbell Hip Thrust',equip:'haltères'}]},
-  {id:'e86', name:'Glute Kickback',               muscle:'Fessiers',    alts:[{name:'Back Extension',equip:'machine'},{name:'Reverse Hyperextension',equip:'machine'}]},
-  {id:'e87', name:'Step-Up Glute Focus',          muscle:'Fessiers',    alts:[{name:'Reverse Lunge',equip:'poids_corps'},{name:'Bulgarian Split Squat',equip:'haltères'}]},
+  {id:'e62', name:'Barbell Shrug',                muscle:'Trapèzes',         alts:[{name:'Dumbbell Shrug',equip:'haltères'},{name:'Smith Shrug',equip:'smith'},{name:'Traps Mid Back Shrugs',equip:'câble'}]},
+  {id:'e63', name:'Farmer Carry',                 muscle:'Trapèzes',         alts:[{name:'Barbell Shrug',equip:'barre'},{name:'Dumbbell Shrug',equip:'haltères'}]},
+  // DIVERS
+  {id:'e64', name:'Step-Up',                      muscle:'Quadriceps',       alts:[{name:'Bulgarian Split Squat',equip:'haltères'},{name:'Walking Lunge',equip:'poids_corps'}],                                                                         warn:'⚠️ Genoux — stabilité critique. Contrôler la descente lentement.',warnLevel:'orange'},
+  {id:'e65', name:'Barbell Upright Row',          muscle:'Épaules',          alts:[{name:'Dumbbell Upright Row',equip:'haltères'},{name:'Rope Upright Row',equip:'câble'}],                                                                             warn:'⚠️ Épaules — risque de conflit sous-acromial. Coudes ne dépassent pas les épaules.',warnLevel:'red'},
+  {id:'e66', name:'Lunges Bands',                 muscle:'Quadriceps',       alts:[{name:'Reverse Bodyweight Lunges',equip:'poids_corps'}]},
+  {id:'e67', name:'Abductor Machine',             muscle:'Fessiers',         alts:[{name:'Squat Abductors',equip:'poids_corps'},{name:'Dumbbell Abductors',equip:'haltères'}]},
 ];
 
 const MUSCLES  = [...new Set(EXERCISES.map(e=>e.muscle))];
@@ -1184,8 +1162,12 @@ function renderExercises(){
         </div>`;
       }).join('');
 
+      const warnHtml = ex.warn
+        ? `<div class="ex-warn ${ex.warnLevel||'orange'}">${ex.warn}</div>`
+        : '';
       html += `<div class="ex-card">
         <div class="ex-name">${ex.name}</div>
+        ${warnHtml}
         <div class="ex-alts">${altsHtml}</div>
       </div>`;
     });
