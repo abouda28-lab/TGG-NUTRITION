@@ -622,7 +622,7 @@ textarea{resize:vertical;min-height:90px}
 // ══════════════════════════════════════════════════════
 // ⚙️ CONFIG — À personnaliser
 // ══════════════════════════════════════════════════════
-const API_URL      = 'https://script.google.com/macros/s/AKfycbzLAFY4T5gY_H1ZS3ITa2QyxKAA5C8NehXt5z8v9xl0b_iiVvz_DD0JjbaXkdmdpIc/exec';
+const API_URL      = 'https://script.google.com/macros/s/AKfycbzpzjDgM9uTRJhBq9zBCPlBcADVNGcEAMBq3ykpg7MjiK0riaD2I3Vnz1Jpgdulowj_/exec';
 const ADMIN_EMAILS = ['abouda28@gmail.com'];
 const ADMIN_PASS   = 'TGG2026';
 
@@ -1973,209 +1973,6 @@ function toggleAIMode() {
 }
 
 async function generateAIPlan() {
-  const kcal   = parseFloat(document.getElementById('rKcal').value) || 2000;
-  const prot   = parseFloat(document.getElementById('rProt').value) || 150;
-  const gluc   = parseFloat(document.getElementById('rGluc').value) || 200;
-  const lip    = parseFloat(document.getElementById('rLip').value)  || 70;
-  const checks = [...rActiveChecks];
-  const out    = document.getElementById('rPlanOutput');
-  if (!out) return;
-
-  out.innerHTML = '<div style="text-align:center;padding:40px 20px">'
-    + '<div style="font-size:32px;margin-bottom:12px;animation:aiSpin 1s linear infinite;display:inline-block">\u2728</div>'
-    + '<div style="font-weight:600;color:var(--text);margin-bottom:6px">Claude g\u00e9n\u00e8re ton plan alimentaire...</div>'
-    + '<div style="font-size:12px;color:var(--muted)">Recettes personnalis\u00e9es en cours de cr\u00e9ation</div>'
-    + '<div id="aiStreamLog" style="margin-top:16px;font-size:11px;color:var(--muted);font-style:italic;min-height:20px"></div>'
-    + '</div>';
-
-  const restrictionMap = {
-    diabetes:'Diab\u00e8te', hypertension:'Hypertension', cholesterol:'Cholest\u00e9rol \u00e9lev\u00e9',
-    kidney:'Maladie r\u00e9nale', ibs:'C\u00f4lon irritable', helico:'Helicobacter pylori',
-    goutte:'Goutte', foie:'St\u00e9atose h\u00e9patique', osteo:'Ost\u00e9oporose',
-    reflux:'Reflux gastrique', ballonnement:'Ballonnements',
-    gluten:'Intol\u00e9rance gluten', lactose:'Intol\u00e9rance lactose',
-    eggs:'Allergie \u0153ufs', nuts:'Allergie fruits \u00e0 coque', seafood:'Allergie fruits de mer',
-    noSeafood:'Sans fruits de mer', noRedMeat:'Sans viande rouge',
-    moroccan:'Cuisine marocaine', lowcarb:'Low-carb', anemie:'An\u00e9mie'
-  };
-  const restrictionsList = checks.map(k => restrictionMap[k] || k).join(', ');
-
-  const SYSTEM_PROMPT = 'Tu es un coach nutrition expert qui g\u00e9n\u00e8re des plans alimentaires en fran\u00e7ais pour des clients marocains. Tu dois g\u00e9n\u00e9rer un plan alimentaire sur 7 jours avec exactement 4 repas par jour. R\u00e9ponds UNIQUEMENT avec du JSON valide, sans texte avant ni apr\u00e8s, sans backticks markdown.';
-
-  const USER_PROMPT = 'G\u00e9n\u00e8re un plan alimentaire 7 jours pour ce profil :\n'
-    + '- Calories cibles : ' + kcal + ' kcal/jour\n'
-    + '- Prot\u00e9ines : ' + prot + 'g | Glucides : ' + gluc + 'g | Lipides : ' + lip + 'g\n'
-    + '- Restrictions : ' + (restrictionsList || 'Aucune') + '\n'
-    + '- Cuisine : marocaine et m\u00e9diterran\u00e9enne, ingr\u00e9dients accessibles au Maroc\n\n'
-    + 'Format JSON exact (UNIQUEMENT ce JSON) :\n'
-    + '{\n'
-    + '  "plan": [\n'
-    + '    {\n'
-    + '      "day": "Lundi",\n'
-    + '      "meals": {\n'
-    + '        "breakfast": {"name":"...","emoji":"\ud83c\udf73","kcal":500,"prot":30,"gluc":50,"lip":15,"ingredients":[{"name":"Poulet blanc","qty":"150g"}],"prep":"Instructions courtes"},\n'
-    + '        "lunch": {"name":"...","emoji":"\ud83e\udd57","kcal":700,"prot":50,"gluc":70,"lip":20,"ingredients":[{"name":"...","qty":"..."}],"prep":"..."},\n'
-    + '        "dinner": {"name":"...","emoji":"\ud83c\udf72","kcal":600,"prot":45,"gluc":60,"lip":18,"ingredients":[{"name":"...","qty":"..."}],"prep":"..."},\n'
-    + '        "snack": {"name":"...","emoji":"\ud83c\udf4e","kcal":200,"prot":15,"gluc":20,"lip":7,"ingredients":[{"name":"...","qty":"..."}],"prep":"..."}\n'
-    + '      }\n'
-    + '    }\n'
-    + '  ],\n'
-    + '  "tips": ["conseil 1", "conseil 2", "conseil 3"]\n'
-    + '}\n\n'
-    + 'Jours : Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, Dimanche\n'
-    + 'R\u00e8gles : varier les prot\u00e9ines, grammages pr\u00e9cis arrondis \u00e0 5 ou 10, respecter les restrictions, recettes simples du march\u00e9 marocain.';
-
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 8000,
-        stream: true,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: USER_PROMPT }]
-      })
-    });
-
-    if (!resp.ok) throw new Error('API error ' + resp.status);
-
-    const reader  = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let   fullText = '';
-    let   dayCount = 0;
-    const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const lines = decoder.decode(value).split('\n');
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const raw = line.slice(6);
-        if (raw === '[DONE]') continue;
-        try {
-          const ev = JSON.parse(raw);
-          if (ev.type === 'content_block_delta' && ev.delta && ev.delta.text) {
-            fullText += ev.delta.text;
-            const days = (fullText.match(/"day":/g) || []).length;
-            if (days > dayCount) {
-              dayCount = days;
-              const logEl = document.getElementById('aiStreamLog');
-              if (logEl) logEl.textContent = '\u2705 ' + dayNames.slice(0, days).join(', ') + '...';
-            }
-          }
-        } catch(e) {}
-      }
-    }
-
-    const clean = fullText.replace(/```json|```/g, '').trim();
-    const data  = JSON.parse(clean);
-    renderAIPlan(data);
-
-  } catch(err) {
-    console.error('AI plan error:', err);
-    const out2 = document.getElementById('rPlanOutput');
-    if (out2) out2.innerHTML = '<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:#fbbf24">'
-      + '\u26a0\ufe0f Mode IA indisponible (' + err.message + ') \u2014 plan statique g\u00e9n\u00e9r\u00e9.</div>';
-    setTimeout(() => { aiModeActive = false; generateRegimePlan(); }, 400);
-  }
-}
-
-function renderAIPlan(data) {
-  const out = document.getElementById('rPlanOutput');
-  if (!out || !data || !data.plan) return;
-
-  const mealMeta = {
-    breakfast: { label: 'Petit-d\u00e9jeuner', emoji: '\ud83c\udf05' },
-    lunch:     { label: 'D\u00e9jeuner',       emoji: '\u2600\ufe0f' },
-    dinner:    { label: 'D\u00eener',          emoji: '\ud83c\udf19' },
-    snack:     { label: 'Collation',      emoji: '\ud83c\udf4e' }
-  };
-
-  const daysHtml = data.plan.map(function(day) {
-    const mealsHtml = ['breakfast','lunch','dinner','snack'].map(function(mId) {
-      const m    = day.meals[mId];
-      if (!m) return '';
-      const meta = mealMeta[mId];
-      const ings = (m.ingredients || []).map(function(i) {
-        return '<span class="rplan-food-tag">' + i.name + ' <strong>' + i.qty + '</strong></span>';
-      }).join('');
-      return '<div class="rplan-meal">'
-        + '<div class="rplan-meal-icon">' + meta.emoji + '</div>'
-        + '<div class="rplan-meal-body">'
-        + '<div class="rplan-meal-name">' + (m.emoji || '') + ' ' + m.name + '</div>'
-        + '<div class="rplan-meal-kcal">' + m.kcal + ' kcal</div>'
-        + '<div class="rplan-foods">' + ings + '</div>'
-        + (m.prep ? '<div style="font-size:11px;color:var(--muted);margin-top:6px;font-style:italic">\ud83d\udccb ' + m.prep + '</div>' : '')
-        + '<div class="macro-block" style="display:flex;gap:10px;margin-top:6px;font-size:11px">'
-        + '<span style="color:#60a5fa">P: ' + m.prot + 'g</span>'
-        + '<span style="color:#34d399">G: ' + m.gluc + 'g</span>'
-        + '<span style="color:#f59e0b">L: ' + m.lip + 'g</span>'
-        + '</div></div></div>';
-    }).join('');
-
-    const dayKcal = ['breakfast','lunch','dinner','snack'].reduce(function(s,k){ return s + ((day.meals[k] && day.meals[k].kcal) || 0); }, 0);
-    const dayProt = ['breakfast','lunch','dinner','snack'].reduce(function(s,k){ return s + ((day.meals[k] && day.meals[k].prot) || 0); }, 0);
-
-    return '<div class="rplan-day">'
-      + '<div class="rplan-day-hd"><span>\ud83d\udcc5 ' + day.day + '</span>'
-      + '<div class="macro-block" style="display:flex;gap:8px;font-size:11px">'
-      + '<span style="color:#facc15">\u26a1 ' + dayKcal + ' kcal</span>'
-      + '<span style="color:#60a5fa">P:' + dayProt + 'g</span>'
-      + '</div></div>' + mealsHtml + '</div>';
-  }).join('');
-
-  const tipsHtml = (data.tips && data.tips.length) ? '<div class="card" style="margin-top:12px">'
-    + '<div class="card-title">\ud83d\udca1 Conseils personnalis\u00e9s</div>'
-    + data.tips.map(function(t){ return '<div style="font-size:12px;color:var(--muted);padding:5px 0;border-bottom:1px solid var(--border)">' + t + '</div>'; }).join('')
-    + '</div>' : '';
-
-  const exportHtml = '<div class="export-row" style="margin-top:12px">'
-    + '<button class="btn-export" onclick="copyAIPlan()" title="Copier">\ud83d\udccb</button>'
-    + '<button id="btnToggleMacros" class="btn-toggle-macros" onclick="toggleMacros()" title="Macros">\ud83d\ude48</button>'
-    + '<span style="font-size:11px;color:var(--muted);flex:1">\u2728 G\u00e9n\u00e9r\u00e9 par Claude AI</span>'
-    + '</div>';
-
-  out.innerHTML = '<div id="aiPlanData" style="display:none">' + JSON.stringify(data) + '</div>'
-    + daysHtml + tipsHtml + exportHtml;
-}
-
-function copyAIPlan() {
-  const planEl = document.getElementById('aiPlanData');
-  if (!planEl) return;
-  try {
-    const data  = JSON.parse(planEl.textContent);
-    const lines = ['PLAN ALIMENTAIRE 7 JOURS \u2014 TGG (Mode IA)', '\u2550'.repeat(40)];
-    const mLabels = {breakfast:'\ud83c\udf05 Petit-d\u00e9jeuner',lunch:'\u2600\ufe0f D\u00e9jeuner',dinner:'\ud83c\udf19 D\u00eener',snack:'\ud83c\udf4e Collation'};
-    data.plan.forEach(function(day) {
-      lines.push('', '\ud83d\udcc5 ' + day.day.toUpperCase());
-      ['breakfast','lunch','dinner','snack'].forEach(function(mId) {
-        const m = day.meals[mId];
-        if (!m) return;
-        lines.push(mLabels[mId] + ' : ' + (m.emoji||'') + ' ' + m.name + ' (' + m.kcal + ' kcal)');
-        (m.ingredients||[]).forEach(function(i){ lines.push('  \u2022 ' + i.name + ' : ' + i.qty); });
-      });
-    });
-    navigator.clipboard.writeText(lines.join('\n'));
-  } catch(e) {}
-}
-
-
-// ══════════════════════════════════════════════════════
-// AI GENERATION MODE
-// ══════════════════════════════════════════════════════
-let genMode = 'static';
-
-function setGenMode(m) {
-  genMode = m;
-  document.getElementById('btnModeStatic').classList.toggle('active', m === 'static');
-  document.getElementById('btnModeAI').classList.toggle('active', m === 'ai');
-  const note = document.getElementById('aiModeNote');
-  if (note) note.style.display = m === 'ai' ? 'block' : 'none';
-}
-
-async function generateAIPlan() {
   const kcal = parseInt(document.getElementById('rKcal').value) || 2000;
   const prot = parseInt(document.getElementById('rProt').value) || 150;
   const gluc = parseInt(document.getElementById('rGluc').value) || 200;
@@ -2183,11 +1980,11 @@ async function generateAIPlan() {
 
   const checkLabels = {
     diabetes:'Diabète type 2', hypertension:'Hypertension', cholesterol:'Cholestérol',
-    kidney:'Insuffisance rénale', ibs:'Côlon irritable / SOPK', helico:'Helicobacter pylori',
-    goutte:'Goutte', anemie:'Anémie', foie:'Foie gras (stéatose)', osteo:'Ostéoporose',
-    reflux:"Brûlures d'estomac", ballonnement:'Gaz & ballonnement',
-    gluten:'Intolérance gluten', lactose:'Intolérance lactose',
-    seafood:'Allergie fruits de mer', eggs:'Allergie oeufs', nuts:'Allergie noix/oléagineux',
+    kidney:'Insuffisance rénale', ibs:'Côlon irritable', helico:'Helicobacter pylori',
+    goutte:'Goutte', anemie:'Anémie', foie:'Foie gras', osteo:'Ostéoporose',
+    reflux:"Brûlures d'estomac", ballonnement:'Ballonnement',
+    gluten:'Sans gluten', lactose:'Sans lactose',
+    seafood:'Sans fruits de mer', eggs:'Sans oeufs', nuts:'Sans noix',
     noSeafood:'Sans fruits de mer', noRedMeat:'Sans viande rouge',
     moroccan:'Cuisine marocaine', lowcarb:'Low-carb', highprot:'High-protein', bulk:'Prise de masse'
   };
@@ -2195,63 +1992,35 @@ async function generateAIPlan() {
 
   let voyageCtx = '';
   if (rVoyageMode && rVoyageDest && VOYAGES[rVoyageDest]) {
-    const v = VOYAGES[rVoyageDest];
-    voyageCtx = '\nDestination voyage : ' + v.label + '\nConseils locaux : ' + v.tip;
+    voyageCtx = ' Voyage:' + VOYAGES[rVoyageDest].label + '.';
   }
 
-  const systemPrompt = `Tu es un expert en nutrition sportive et diététicien pour des athlètes marocains.
-Tu génères des plans alimentaires 7 jours STRICTS en JSON.
-Cuisine : marocaine + méditerranéenne + internationale.
-Aliments de base disponibles au Maroc.
-RÈGLE ABSOLUE : Réponds UNIQUEMENT en JSON valide, sans texte avant ou après.`;
+  const systemPrompt = 'Tu es diététicien sportif expert cuisine marocaine. Réponds UNIQUEMENT en JSON valide, sans texte avant ou après, sans markdown.';
 
-  const userPrompt = `Génère un plan alimentaire 7 jours complet.
+  // Compact prompt = shorter output = no truncation
+  const userPrompt = `Plan 7 jours. Objectifs/jour: ${kcal}kcal ${prot}gP ${gluc}gG ${lip}gL.${voyageCtx}
+Restrictions: ${activeLabels.length ? activeLabels.join(', ') : 'aucune'}.
 
-OBJECTIFS JOURNALIERS :
-- Calories : ${kcal} kcal
-- Protéines : ${prot}g
-- Glucides : ${gluc}g  
-- Lipides : ${lip}g
+JSON EXACT (pas d'autres champs) :
+{"days":[{"day":"Lundi","meals":{"breakfast":{"name":"Nom court","emoji":"🍳","kcal":500,"prot":35,"gluc":50,"lip":15,"ingredients":[{"name":"Aliment","qty":"150g"},{"name":"Aliment2","qty":"80g"},{"name":"Aliment3","qty":"30g"}],"steps":["Etape 1","Etape 2","Etape 3"]},"lunch":{...},"dinner":{...},"snack":{...}}},...7 jours...]}
 
-RESTRICTIONS : ${activeLabels.length ? activeLabels.join(', ') : 'Aucune'}${voyageCtx}
-
-FORMAT JSON EXACTEMENT :
-{
-  "days": [
-    {
-      "day": "Lundi",
-      "meals": {
-        "breakfast": {"name":"Nom","emoji":"🍳","kcal":500,"prot":35,"gluc":50,"lip":15,
-          "ingredients":[{"name":"Poulet blanc","qty":"150g"}],
-          "steps":["Étape 1","Étape 2"]},
-        "lunch":    { /* même structure */ },
-        "dinner":   { /* même structure */ },
-        "snack":    { /* même structure */ }
-      }
-    }
-  ],
-  "shopping_list": ["Poulet blanc","Riz","..."],
-  "tips": ["Conseil 1","Conseil 2"]
-}
-
-RÈGLES :
-- Petit-déjeuner = 25% des kcal, Déjeuner = 35%, Dîner = 30%, Collation = 10%
-- Macros à ±5% par repas
-- 7 jours DIFFERENTS, aucun plat répété 2x
-- Quantités précises en grammes
-- Recettes simples < 30 min
+Règles strictes:
+- Exactement 3 ingrédients par repas
+- Exactement 3 étapes max (< 10 mots chacune)
+- Noms de plats < 5 mots
+- Macros: ptitdej=25%, déj=35%, diner=30%, collation=10% des objectifs journaliers
+- 7 jours différents, 0 répétition
 - Ingrédients disponibles au Maroc
-${activeLabels.length ? '- STRICTEMENT INTERDIT : ' + activeLabels.join(', ') : ''}`;
+${activeLabels.length ? '- INTERDIT: ' + activeLabels.join(', ') : ''}`;
 
   const output = document.getElementById('rPlanOutput');
   output.innerHTML = '<div style="text-align:center;padding:40px 20px">' +
     '<div style="font-size:36px;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block">⚙️</div>' +
-    '<div style="font-family:\'Syne\',sans-serif;font-size:16px;font-weight:700;color:var(--accent);margin-bottom:8px">Claude génère ton plan...</div>' +
-    '<div style="font-size:12px;color:var(--muted);line-height:1.6">Recettes originales adaptées à tes macros<br>et restrictions. Patiente 15-20 secondes.</div>' +
+    '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:8px">Claude génère ton plan...</div>' +
+    '<div style="font-size:12px;color:var(--muted);line-height:1.6">Recettes originales adaptées à tes macros.<br>Patiente 20-30 secondes.</div>' +
     '</div>';
 
   try {
-    // Appel via proxy GAS (contourne CORS)
     const gasUrl = API_URL + '?action=ai_plan&payload=' + encodeURIComponent(JSON.stringify({
       system: systemPrompt,
       user: userPrompt
@@ -2261,15 +2030,33 @@ ${activeLabels.length ? '- STRICTEMENT INTERDIT : ' + activeLabels.join(', ') : 
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Erreur GAS');
 
-    const raw = (data.text || '').trim();
-    const jsonStr = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
-    const plan = JSON.parse(jsonStr);
+    const raw = (data.text || '').trim()
+      .replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+
+    let plan;
+    try {
+      plan = JSON.parse(raw);
+    } catch(parseErr) {
+      // Essaie de récupérer les jours complets si JSON tronqué
+      const m = raw.match(/"days"\s*:\s*\[([\s\S]*)/);
+      if (m) {
+        const parts = m[1].split(/(?<=\}\s*\}\s*\}\s*\}),/);
+        const complete = parts.slice(0, -1);
+        if (complete.length > 0) {
+          try {
+            plan = JSON.parse('{"days":[' + complete.join(',') + ']}');
+            plan._truncated = true;
+          } catch(e2) { throw parseErr; }
+        } else throw parseErr;
+      } else throw parseErr;
+    }
+
     renderAIPlan(plan, kcal, prot, gluc, lip);
 
   } catch(err) {
     output.innerHTML = '<div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:12px;padding:16px;text-align:center">' +
       '<div style="font-size:24px;margin-bottom:8px">⚠️</div>' +
-      '<div style="font-weight:600;color:#f87171;margin-bottom:6px">Erreur de génération</div>' +
+      '<div style="font-weight:600;color:#f87171;margin-bottom:6px">Erreur</div>' +
       '<div style="font-size:12px;color:var(--muted)">' + err.message + '</div>' +
       '<button class="btn btn-s" style="margin-top:12px;background:var(--surface2)" onclick="generateAIPlan()">Réessayer</button>' +
       '</div>';
