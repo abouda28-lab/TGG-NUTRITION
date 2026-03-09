@@ -60,6 +60,8 @@ h1 span{color:var(--accent)}
 main{max-width:760px;margin:0 auto;padding:0 16px}
 .tab-panel{display:none}.tab-panel.active{display:block}
 .sp{height:14px}
+.rplan-prep{font-size:11px;color:var(--muted);margin-top:5px;font-style:italic;line-height:1.4}
+.rplan-prep{font-size:11px;color:var(--muted);margin-top:5px;font-style:italic;line-height:1.4}
 
 /* CARDS & FORMS */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:12px}
@@ -402,6 +404,8 @@ textarea{resize:vertical;min-height:90px}
 .ex-warn{font-size:11px;padding:5px 9px;border-radius:7px;margin:5px 0 6px;line-height:1.4;font-weight:600}
 .ex-warn.red{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#f87171}
 .ex-warn.orange{background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);color:#fb923c}
+.btn-toggle-macros{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#ccc;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
+.btn-toggle-macros:hover{background:rgba(255,255,255,.14);color:#fff}
 </style>
 </head>
 <body onload="initApp()">
@@ -554,7 +558,15 @@ textarea{resize:vertical;min-height:90px}
           <div class="fg"><label>Glucides (g)</label><input type="number" id="rGluc" value="200" min="0" max="600" step="5"></div>
           <div class="fg"><label>Lipides (g)</label><input type="number" id="rLip" value="70" min="20" max="200" step="5"></div>
         </div>
-        <div class="section-title" style="margin-top:16px">Mode Voyage</div>
+        <div class="section-title" style="margin-top:16px">Mode de génération</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="toggle-btn active" id="btnModeStatic" onclick="setGenMode('static')" style="flex:1;padding:10px 6px;font-size:12px">⚡ Base locale</button>
+          <button class="toggle-btn" id="btnModeAI" onclick="setGenMode('ai')" style="flex:1;padding:10px 6px;font-size:12px">✨ Génération IA</button>
+        </div>
+        <div id="aiModeNote" style="display:none;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.15);border-radius:10px;padding:10px 13px;font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+          <strong style="color:var(--accent)">✨ Mode IA actif</strong> — Claude génère des recettes originales 100% adaptées à tes macros, restrictions et préférences. Chaque plan est unique.
+        </div>
+        <div class="section-title" style="margin-top:4px">Mode Voyage</div>
         <button class="voyage-toggle" id="voyageToggleBtn" onclick="toggleVoyage()">
           <span>Je suis en voyage / pelerinage</span>
           <span style="font-size:11px;color:var(--muted);font-weight:400">Adapter aux aliments locaux</span>
@@ -575,13 +587,27 @@ textarea{resize:vertical;min-height:90px}
       </div>
       <div style="display:flex;gap:8px;padding:0 0 16px">
         <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="rNextStep(0)">Retour</button>
-        <button class="btn btn-s" style="flex:2" onclick="rNextStep(2)">Generer le plan</button>
+        <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="rNextStep(2)">🔄 Classique</button>
+        <button class="btn btn-s" style="flex:2;background:linear-gradient(135deg,#6c63ff,#a855f7)" onclick="rNextStep(2,'ai')">✨ IA</button>
+      </div>
+      <div style="padding:4px 0 12px">
+        <button class="voyage-toggle" id="aiModeToggleBtn" onclick="toggleAIMode()" style="border:1px solid rgba(99,102,241,.35)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:18px">✨</span>
+            <div>
+              <div style="font-weight:600;font-size:13px">Mode IA — Recettes générées par Claude</div>
+              <div style="font-size:11px;color:var(--muted);font-weight:400">Recettes uniques adaptées à ton profil</div>
+            </div>
+          </div>
+          <div id="aiModeStatus" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(99,102,241,.1);color:#818cf8;font-weight:600">OFF</div>
+        </button>
       </div>
     </div>
     <div id="rStep2" style="display:none">
       <div style="display:flex;gap:8px;padding:0 0 10px">
         <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="rNextStep(1)">Modifier</button>
-        <button class="btn btn-s" style="flex:2" onclick="generateRegimePlan()">Regenerer</button>
+        <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="generateRegimePlan()">🔄 Classique</button>
+        <button class="btn btn-s" style="flex:2;background:linear-gradient(135deg,#6c63ff,#a855f7)" onclick="generateAIPlan()">✨ Générer IA</button>
       </div>
       <div id="rPlanOutput"></div>
     </div>
@@ -596,7 +622,7 @@ textarea{resize:vertical;min-height:90px}
 // ══════════════════════════════════════════════════════
 // ⚙️ CONFIG — À personnaliser
 // ══════════════════════════════════════════════════════
-const API_URL      = 'https://script.google.com/macros/s/AKfycbz5ZLM0-GySf6izEkAQGtZzsB5xsmmffDz4QncaFTIEnIbD4Bxnzsk5m_R8Be_KTy2anQ/exec';
+const API_URL      = 'https://script.google.com/macros/s/AKfycbzpzjDgM9uTRJhBq9zBCPlBcADVNGcEAMBq3ykpg7MjiK0riaD2I3Vnz1Jpgdulowj_/exec';
 const ADMIN_EMAILS = ['abouda28@gmail.com'];
 const ADMIN_PASS   = 'TGG2026';
 
@@ -702,44 +728,36 @@ FOODS.forEach(f => {
 // ══════════════════════════════════════════════════════
 const RECIPES=[
   // ── PETITS-DÉJEUNERS MAROCAINS
-  {id:'r1', name:"Bissara au cumin",emoji:"🟢",meals:['breakfast','lunch'],tags:['breakfast','moroccan'],macros:{kcal:380,prot:22,gluc:55,lip:8},ings:[{e:"🟢",n:"Bissara (pois cassé)",q:"120g cru"},{e:"🫙",n:"Huile d'olive",q:"10ml"},{e:"🧂",n:"Cumin, sel",q:"à volonté"}],steps:["Tremper les pois cassés 1h","Cuire à l'eau + cumin 30min","Mixer jusqu'à consistance crémeuse","Filet d'huile + cumin au service"]},
-  {id:'r2', name:"Pain complet + ricotta + miel",emoji:"🫓",meals:['breakfast'],tags:['breakfast','moroccan'],macros:{kcal:318,prot:14,gluc:37,lip:12},ings:[{e:"🍞",n:"Pain complet",q:"60g"},{e:"🧀",n:"Ricotta",q:"80g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Griller légèrement le pain","Étaler généreusement la ricotta","Filet de miel par-dessus","Optionnel : quelques noix concassées"]},
+  {id:'r2', name:"Pain complet + ricotta + miel",emoji:"🫓",meals:['breakfast'],tags:['breakfast','moroccan','dairy'],macros:{kcal:318,prot:14,gluc:37,lip:12},ings:[{e:"🍞",n:"Pain complet",q:"60g"},{e:"🧀",n:"Ricotta",q:"80g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Griller légèrement le pain","Étaler généreusement la ricotta","Filet de miel par-dessus","Optionnel : quelques noix concassées"]},
   {id:'r3', name:"Pain complet + thon + tomate",emoji:"🥙",meals:['breakfast','lunch'],tags:['breakfast','moroccan','highprot'],macros:{kcal:360,prot:32,gluc:38,lip:6},ings:[{e:"🍞",n:"Pain complet",q:"80g"},{e:"🐠",n:"Thon boîte naturel",q:"130g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Trancher le pain","Égoutter et émietter le thon","Couper les tomates en rondelles","Assembler + citron + cumin"]},
   {id:'r4', name:"Omelette aux légumes (4 œufs)",emoji:"🍳",meals:['breakfast'],tags:['breakfast','highprot'],macros:{kcal:370,prot:28,gluc:8,lip:24},ings:[{e:"🥚",n:"Œuf entier",q:"4 œufs"},{e:"🫑",n:"Poivron rouge",q:"80g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Battre les œufs + épices","Faire revenir légumes 3min","Verser les œufs sur les légumes","Cuire à feu moyen jusqu'à prise"]},
   {id:'r5', name:"Bol avoine-banane-amlou",emoji:"🥣",meals:['breakfast'],tags:['breakfast','bulk'],macros:{kcal:420,prot:14,gluc:65,lip:12},ings:[{e:"🌾",n:"Flocons d'avoine",q:"60g"},{e:"🍌",n:"Banane",q:"120g"},{e:"🥣",n:"Amlou",q:"15g"},{e:"🥛",n:"Lait écrémé",q:"150ml"}],steps:["Chauffer le lait","Verser sur les flocons","Laisser gonfler 5min","Ajouter banane tranchée + amlou en filet"]},
-  {id:'r7', name:"Pain + œufs brouillés + fromage blanc",emoji:"🍞",meals:['breakfast'],tags:['breakfast','highprot'],macros:{kcal:430,prot:35,gluc:40,lip:12},ings:[{e:"🍞",n:"Pain complet",q:"80g"},{e:"🥚",n:"Œuf entier",q:"3 œufs"},{e:"🥛",n:"Fromage blanc 0%",q:"150g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Griller le pain","Brouiller les œufs à feu doux","Mélanger fromage blanc + miel","Servir ensemble"]},
+  {id:'r7', name:"Pain + œufs brouillés + fromage blanc",emoji:"🍞",meals:['breakfast'],tags:['breakfast','highprot','dairy'],macros:{kcal:430,prot:35,gluc:40,lip:12},ings:[{e:"🍞",n:"Pain complet",q:"80g"},{e:"🥚",n:"Œuf entier",q:"3 œufs"},{e:"🥛",n:"Fromage blanc 0%",q:"150g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Griller le pain","Brouiller les œufs à feu doux","Mélanger fromage blanc + miel","Servir ensemble"]},
   {id:'r8', name:"Bowl thon-avocat-quinoa",emoji:"🥗",meals:['breakfast','lunch'],tags:['breakfast','highprot','lowcarb'],macros:{kcal:450,prot:40,gluc:25,lip:18},ings:[{e:"🐠",n:"Thon boîte naturel",q:"150g"},{e:"🥑",n:"Avocat",q:"80g"},{e:"🌾",n:"Quinoa cuit",q:"100g"},{e:"🍋",n:"Citron + sel",q:"à volonté"}],steps:["Cuire le quinoa","Couper avocat en cubes","Égoutter et émietter le thon","Assembler + citron + herbes fraîches"]},
   // ── DÉJEUNER / DÎNER MAROCAINS
   {id:'r9', name:"Tajine poulet-légumes",emoji:"🫕",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan'],macros:{kcal:450,prot:38,gluc:30,lip:14},ings:[{e:"🍗",n:"Poulet (blanc)",q:"150g cru"},{e:"🥔",n:"Pomme de terre",q:"150g"},{e:"🥒",n:"Courgette",q:"150g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"15ml"}],steps:["Couper tous les légumes","Dorer le poulet avec épices marocaines","Ajouter légumes + verre d'eau","Cuire 35min couvert à feu doux","Servir dans le tajine"]},
   {id:'r10',name:"Kefta bœuf + patate douce",emoji:"🥩",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan','highprot'],macros:{kcal:460,prot:35,gluc:38,lip:16},ings:[{e:"🥩",n:"Bœuf haché 5%",q:"150g cru"},{e:"🍠",n:"Patate douce",q:"200g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Assaisonner viande (cumin, persil, poivre)","Former les kefta en brochettes","Griller 10min en retournant","Rôtir les patates 25min au four","Servir avec salade tomate"]},
-  {id:'r11',name:"Harira dinde + lentilles",emoji:"🍲",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan'],macros:{kcal:400,prot:28,gluc:55,lip:8},ings:[{e:"🦃",n:"Dinde hachée",q:"100g"},{e:"🫘",n:"Lentilles",q:"80g cru"},{e:"🍅",n:"Tomate",q:"200g"},{e:"🫙",n:"Huile d'olive",q:"10ml"},{e:"🧂",n:"Cumin, coriandre, sel",q:"à volonté"}],steps:["Cuire lentilles 20min à l'eau salée","Préparer sauce tomate avec épices","Mélanger + mijoter 10min","Finir avec coriandre fraîche + jus de citron"]},
   {id:'r13',name:"Sardines grillées + salade marocaine",emoji:"🐟",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan'],macros:{kcal:350,prot:30,gluc:12,lip:18},ings:[{e:"🐟",n:"Sardines fraîches",q:"250g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🥒",n:"Concombre",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Mariner sardines (cumin, paprika, citron)","Griller 4min de chaque côté","Préparer salade tomate-concombre","Servir avec chermoula maison"]},
   {id:'r14',name:"Tajine dinde aux olives",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan','highprot'],macros:{kcal:430,prot:46,gluc:15,lip:18},ings:[{e:"🦃",n:"Dinde (blanc)",q:"200g cru"},{e:"🫒",n:"Olives vertes",q:"30g"},{e:"🍋",n:"Citron confit",q:"20g"},{e:"🧂",n:"Épices marocaines",q:"à volonté"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Mariner dinde avec épices + citron 30min","Dorer la dinde dans cocotte","Ajouter olives + citron confit + eau","Cuire 30min couvert à feu doux"]},
   // ── REPAS HIGH-PROTEIN (+40g)
   {id:'r15',name:"Poulet + riz + brocoli (meal prep)",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:480,prot:48,gluc:42,lip:8},ings:[{e:"🍗",n:"Poulet (blanc)",q:"200g cru"},{e:"🍚",n:"Riz blanc",q:"80g cru"},{e:"🥦",n:"Brocoli",q:"250g"}],steps:["Cuire riz à l'eau salée","Griller poulet 12min avec épices","Cuire brocoli vapeur 8min","Dresser + assaisonner"]},
   {id:'r16',name:"Thon + patate douce + épinards",emoji:"🐠",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:440,prot:45,gluc:38,lip:6},ings:[{e:"🐠",n:"Thon boîte naturel",q:"200g"},{e:"🍠",n:"Patate douce",q:"200g"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🧂",n:"Épices, citron",q:"à volonté"}],steps:["Rôtir patate douce 25min au four","Cuire épinards à l'ail 5min","Égoutter et émietter le thon","Assembler + assaisonner"]},
   {id:'r18',name:"Dinde + haricots blancs + légumes",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:470,prot:52,gluc:35,lip:8},ings:[{e:"🦃",n:"Dinde (blanc)",q:"200g cru"},{e:"🫘",n:"Haricots blancs cuits",q:"150g"},{e:"🥦",n:"Brocoli",q:"200g"},{e:"🧂",n:"Herbes + épices",q:"à volonté"}],steps:["Mariner dinde (herbes, ail, citron)","Griller dinde 12min","Chauffer haricots avec épices","Cuire brocoli vapeur","Dresser ensemble"]},
-  {id:'r19',name:"Blanc de poulet fourré fromage blanc",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:390,prot:55,gluc:8,lip:12},ings:[{e:"🍗",n:"Poulet",q:"200g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🧂",n:"Ail, herbes",q:"à volonté"}],steps:["Faire une poche dans le blanc de poulet","Mélanger fromage blanc + épinards + ail","Farcir le poulet + fermer avec cure-dent","Cuire au four 200°C pendant 20min"]},
+  {id:'r19',name:"Blanc de poulet fourré fromage blanc",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','dairy'],macros:{kcal:390,prot:55,gluc:8,lip:12},ings:[{e:"🍗",n:"Poulet",q:"200g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🧂",n:"Ail, herbes",q:"à volonté"}],steps:["Faire une poche dans le blanc de poulet","Mélanger fromage blanc + épinards + ail","Farcir le poulet + fermer avec cure-dent","Cuire au four 200°C pendant 20min"]},
   {id:'r20',name:"Crevettes sautées + riz + courgettes",emoji:"🦐",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:420,prot:42,gluc:40,lip:8},ings:[{e:"🦐",n:"Crevettes",q:"200g"},{e:"🍚",n:"Riz blanc",q:"70g cru"},{e:"🥒",n:"Courgette",q:"200g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Cuire le riz à l'eau salée","Faire sauter crevettes 3-4min","Faire revenir courgettes 5min","Mélanger tout + épices à volonté"]},
-  {id:'r21',name:"Bowl bœuf haché + lentilles",emoji:"🥩",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:500,prot:48,gluc:35,lip:16},ings:[{e:"🥩",n:"Bœuf haché 5%",q:"150g cru"},{e:"🫘",n:"Lentilles",q:"80g cru"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🧂",n:"Épices marocaines",q:"à volonté"}],steps:["Cuire lentilles 20min","Faire dorer le bœuf dans poêle","Ajouter tomates + épices","Mélanger lentilles + bœuf et mijoter 5min"]},
   {id:'r22',name:"Cabillaud en papillote + légumes",emoji:"🐡",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','lowcarb'],macros:{kcal:300,prot:42,gluc:12,lip:8},ings:[{e:"🐡",n:"Cabillaud",q:"200g"},{e:"🥒",n:"Courgette",q:"150g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Déposer poisson sur papier cuisson","Ajouter légumes + herbes + jus de citron","Fermer hermétiquement la papillote","Cuire 200°C pendant 18min"]},
-  {id:'r23',name:"Wraps dinde-houmous-légumes",emoji:"🌯",meals:['lunch'],tags:['lunch','highprot'],macros:{kcal:440,prot:42,gluc:38,lip:12},ings:[{e:"🦃",n:"Dinde grillée",q:"150g"},{e:"🫘",n:"Houmous",q:"60g"},{e:"🍞",n:"Galette pain complet",q:"80g"},{e:"🥬",n:"Épinards frais",q:"50g"}],steps:["Griller la dinde avec épices","Étaler houmous sur la galette","Ajouter dinde + épinards + tomate","Rouler serré et couper en deux"]},
-  // ── BULK (surplus calorique)
-  {id:'r24',name:"Riz sauté œufs + poulet (Bulk)",emoji:"🍚",meals:['lunch','dinner'],tags:['lunch','dinner','bulk'],macros:{kcal:700,prot:48,gluc:75,lip:18},ings:[{e:"🍚",n:"Riz blanc",q:"120g cru"},{e:"🍗",n:"Poulet (blanc)",q:"150g"},{e:"🥚",n:"Œuf entier",q:"2 œufs"},{e:"🫙",n:"Huile d'olive",q:"15ml"}],steps:["Cuire le riz","Griller poulet en dés","Faire sauter œufs brouillés","Mélanger riz + poulet + œufs + sauce soja légère"]},
   {id:'r26',name:"Bowl bulk : riz + thon + avocat + œuf",emoji:"🥗",meals:['lunch','dinner'],tags:['lunch','dinner','bulk'],macros:{kcal:720,prot:50,gluc:60,lip:22},ings:[{e:"🍚",n:"Riz blanc",q:"120g cru"},{e:"🐠",n:"Thon boîte naturel",q:"150g"},{e:"🥑",n:"Avocat",q:"100g"},{e:"🥚",n:"Œuf entier",q:"2 œufs durs"}],steps:["Cuire riz","Cuire les œufs durs 9min","Égoutter thon + couper avocat en cubes","Assembler + sauce soja + sésame"]},
-  {id:'r28',name:"Pois chiches + riz + poulet",emoji:"🍛",meals:['lunch','dinner'],tags:['lunch','dinner','bulk','moroccan'],macros:{kcal:680,prot:52,gluc:72,lip:14},ings:[{e:"🍗",n:"Poulet (blanc)",q:"180g cru"},{e:"🍚",n:"Riz basmati",q:"100g cru"},{e:"🫘",n:"Pois chiches cuits",q:"100g"},{e:"🧂",n:"Épices marocaines",q:"à volonté"}],steps:["Cuire riz + pois chiches séparément","Griller poulet avec ras-el-hanout","Préparer sauce tomate légère","Assembler riz + pois chiches + poulet + sauce"]},
   {id:'r30',name:"Maquereau + patate douce + épinards",emoji:"🐟",meals:['dinner'],tags:['dinner','bulk'],macros:{kcal:520,prot:36,gluc:40,lip:22},ings:[{e:"🐟",n:"Maquereau",q:"200g"},{e:"🍠",n:"Patate douce",q:"200g"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Rôtir patate douce 25min au four","Griller maquereau 5min de chaque côté","Faire sauter épinards à l'ail","Dresser + citron + poivre noir"]},
   // ── COLLATIONS RAPIDES
-  {id:'r31',name:"Skyr + fruits rouges + amandes",emoji:"🥛",meals:['snack'],tags:['snack','highprot'],macros:{kcal:220,prot:16,gluc:20,lip:7},ings:[{e:"🥛",n:"Skyr nature",q:"200g"},{e:"🍓",n:"Fraises",q:"100g"},{e:"🌰",n:"Amandes",q:"15g"}],steps:["Verser skyr dans un bol","Ajouter fraises coupées en deux","Parsemer d'amandes effilées"]},
-  {id:'r33',name:"Œufs durs + fromage blanc 0%",emoji:"🥚",meals:['snack'],tags:['snack','highprot','lowcarb'],macros:{kcal:230,prot:26,gluc:5,lip:10},ings:[{e:"🥚",n:"Œuf entier",q:"3 œufs durs"},{e:"🥛",n:"Fromage blanc 0%",q:"150g"}],steps:["Faire bouillir les œufs 9-10min","Refroidir à l'eau froide","Servir avec fromage blanc assaisonné aux herbes"]},
+  {id:'r31',name:"Skyr + fruits rouges + amandes",emoji:"🥛",meals:['snack'],tags:['snack','highprot','dairy'],macros:{kcal:220,prot:16,gluc:20,lip:7},ings:[{e:"🥛",n:"Skyr nature",q:"200g"},{e:"🍓",n:"Fraises",q:"100g"},{e:"🌰",n:"Amandes",q:"15g"}],steps:["Verser skyr dans un bol","Ajouter fraises coupées en deux","Parsemer d'amandes effilées"]},
+  {id:'r33',name:"Œufs durs + fromage blanc 0%",emoji:"🥚",meals:['snack'],tags:['snack','highprot','lowcarb','dairy'],macros:{kcal:230,prot:26,gluc:5,lip:10},ings:[{e:"🥚",n:"Œuf entier",q:"3 œufs durs"},{e:"🥛",n:"Fromage blanc 0%",q:"150g"}],steps:["Faire bouillir les œufs 9-10min","Refroidir à l'eau froide","Servir avec fromage blanc assaisonné aux herbes"]},
   {id:'r34',name:"Pomme + peanut butter",emoji:"🍎",meals:['snack'],tags:['snack'],macros:{kcal:240,prot:7,gluc:28,lip:12},ings:[{e:"🍎",n:"Pomme",q:"180g"},{e:"🥜",n:"Peanut butter",q:"25g"}],steps:["Laver et couper la pomme en tranches","Servir avec PB en dip","Optionnel : saupoudrer de cannelle"]},
-  {id:'r35',name:"Houmous + légumes crus",emoji:"🫘",meals:['snack'],tags:['snack','moroccan'],macros:{kcal:250,prot:10,gluc:30,lip:10},ings:[{e:"🫘",n:"Houmous",q:"100g"},{e:"🥒",n:"Concombre",q:"150g"},{e:"🫑",n:"Poivron rouge",q:"100g"}],steps:["Couper légumes en bâtonnets","Servir houmous dans un bol","Ajouter paprika + filet d'huile d'olive"]},
-  {id:'r36',name:"Fraises + skyr + graines chia",emoji:"🍓",meals:['snack','breakfast'],tags:['snack','highprot'],macros:{kcal:190,prot:14,gluc:24,lip:4},ings:[{e:"🍓",n:"Fraises",q:"200g"},{e:"🥛",n:"Skyr nature",q:"150g"},{e:"🌱",n:"Graines de chia",q:"8g"}],steps:["Laver et couper les fraises","Verser skyr dans un bol","Ajouter fraises + chia","Laisser 5min pour que le chia gonfle"]},
-  {id:'r38',name:"Bowl yaourt grec + granola maison",emoji:"🥛",meals:['snack','breakfast'],tags:['snack','breakfast'],macros:{kcal:300,prot:16,gluc:38,lip:8},ings:[{e:"🥛",n:"Yaourt grec 0%",q:"200g"},{e:"🌾",n:"Flocons d'avoine",q:"30g"},{e:"🍯",n:"Miel",q:"10g"},{e:"🌰",n:"Amandes",q:"10g"}],steps:["Verser yaourt dans un bol","Ajouter flocons + amandes concassées","Filet de miel","Optionnel : ajouter fruits rouges"]},
+  {id:'r36',name:"Fraises + skyr + graines chia",emoji:"🍓",meals:['snack','breakfast'],tags:['snack','highprot','dairy'],macros:{kcal:190,prot:14,gluc:24,lip:4},ings:[{e:"🍓",n:"Fraises",q:"200g"},{e:"🥛",n:"Skyr nature",q:"150g"},{e:"🌱",n:"Graines de chia",q:"8g"}],steps:["Laver et couper les fraises","Verser skyr dans un bol","Ajouter fraises + chia","Laisser 5min pour que le chia gonfle"]},
+  {id:'r38',name:"Bowl yaourt grec + granola maison",emoji:"🥛",meals:['snack','breakfast'],tags:['snack','breakfast','dairy'],macros:{kcal:300,prot:16,gluc:38,lip:8},ings:[{e:"🥛",n:"Yaourt grec 0%",q:"200g"},{e:"🌾",n:"Flocons d'avoine",q:"30g"},{e:"🍯",n:"Miel",q:"10g"},{e:"🌰",n:"Amandes",q:"10g"}],steps:["Verser yaourt dans un bol","Ajouter flocons + amandes concassées","Filet de miel","Optionnel : ajouter fruits rouges"]},
   {id:'r39',name:"Toast pain + oeuf entier + avocat",emoji:"🥑",meals:['snack','breakfast'],tags:['snack','breakfast'],macros:{kcal:401,prot:20,gluc:32,lip:21},ings:[{e:"🍞",n:"Pain complet",q:"60g"},{e:"🥚",n:"Oeuf entier",q:"2 oeufs"},{e:"🥑",n:"Avocat",q:"60g"},{e:"🧂",n:"Citron, herbes",q:"à volonté"}],steps:["Griller le pain","Cuire les oeufs entiers à la poêle","Écraser avocat + citron","Assembler : pain + oeufs + avocat"]},
   // ── LOW-CARB
   {id:'r40',name:"Poulet grillé + salade verte + avocat",emoji:"🥗",meals:['lunch','dinner'],tags:['lunch','dinner','lowcarb'],macros:{kcal:380,prot:40,gluc:8,lip:20},ings:[{e:"🍗",n:"Poulet (blanc)",q:"180g cru"},{e:"🥑",n:"Avocat",q:"80g"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🍅",n:"Tomate",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Griller poulet avec herbes de Provence","Préparer salade épinards + tomate","Couper avocat en cubes","Assaisonner avec vinaigrette légère citron-olive"]},
-  {id:'r41',name:"Omelette épinards-fromage blanc (low-carb)",emoji:"🍳",meals:['breakfast','lunch'],tags:['breakfast','lowcarb'],macros:{kcal:350,prot:30,gluc:5,lip:22},ings:[{e:"🥚",n:"Œuf entier",q:"4 œufs"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Faire revenir épinards à l'ail","Battre œufs + fromage blanc","Verser sur les épinards","Cuire à feu moyen-doux jusqu'à prise"]},
+  {id:'r41',name:"Omelette épinards-fromage blanc (low-carb)",emoji:"🍳",meals:['breakfast','lunch'],tags:['breakfast','lowcarb','dairy'],macros:{kcal:350,prot:30,gluc:5,lip:22},ings:[{e:"🥚",n:"Œuf entier",q:"4 œufs"},{e:"🥬",n:"Épinards",q:"100g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Faire revenir épinards à l'ail","Battre œufs + fromage blanc","Verser sur les épinards","Cuire à feu moyen-doux jusqu'à prise"]},
   {id:'r43',name:"Thon en salade niçoise légère",emoji:"🐠",meals:['lunch'],tags:['lunch','lowcarb','highprot'],macros:{kcal:330,prot:38,gluc:10,lip:14},ings:[{e:"🐠",n:"Thon boîte naturel",q:"150g"},{e:"🥚",n:"Œuf entier",q:"2 œufs durs"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Cuire les œufs 9min","Préparer légumes variés","Égoutter et émietter le thon","Assembler + vinaigrette moutarde-citron"]},
   {id:'r44',name:"Crevettes à l'ail + courgettes spirales",emoji:"🦐",meals:['lunch','dinner'],tags:['lunch','dinner','lowcarb','highprot'],macros:{kcal:280,prot:36,gluc:8,lip:10},ings:[{e:"🦐",n:"Crevettes",q:"200g"},{e:"🥒",n:"Courgette",q:"300g"},{e:"🧄",n:"Ail",q:"3 gousses"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Couper courgettes en spirales (ou tagliatelles)","Faire revenir ail dans l'huile 1min","Ajouter courgettes 5min","Ajouter crevettes 3-4min + citron + persil"]},
   // ── DÎNERS RAPIDES
@@ -747,49 +765,41 @@ const RECIPES=[
   {id:'r46',name:"Poêlée bœuf + légumes marocaine",emoji:"🥩",meals:['dinner'],tags:['dinner','moroccan'],macros:{kcal:420,prot:38,gluc:18,lip:20},ings:[{e:"🥩",n:"Bœuf haché 5%",q:"150g"},{e:"🫑",n:"Poivron rouge",q:"100g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Faire dorer le bœuf dans poêle chaude","Ajouter légumes coupés en dés","Assaisonner cumin + paprika","Cuire 10min à feu moyen + servir"]},
   {id:'r47',name:"Dinde + quinoa + épinards (meal prep)",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:430,prot:46,gluc:32,lip:8},ings:[{e:"🦃",n:"Dinde (blanc)",q:"180g cru"},{e:"🌾",n:"Quinoa",q:"60g cru"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Cuire quinoa 15min à l'eau","Griller dinde marinée 12min","Faire sauter épinards à l'ail","Assembler + herbes fraîches + citron"]},
   {id:'r48',name:"Poisson pané maison (four)",emoji:"🐡",meals:['dinner'],tags:['dinner','highprot'],macros:{kcal:433,prot:54,gluc:20,lip:13},ings:[{e:"🐡",n:"Cabillaud",q:"200g"},{e:"🌾",n:"Flocons d'avoine (panure)",q:"30g"},{e:"🥚",n:"Oeuf entier",q:"2 oeufs"},{e:"🧂",n:"Épices + citron",q:"à volonté"}],steps:["Tremper poisson dans oeuf entier battu","Paner avec flocons mixés + épices","Déposer sur plaque légèrement huilée","Cuire 200°C pendant 18-20min"]},
-  {id:'r49',name:"Lentilles + cabillaud + légumes",emoji:"🫘",meals:['dinner'],tags:['dinner','highprot'],macros:{kcal:450,prot:50,gluc:38,lip:8},ings:[{e:"🫘",n:"Lentilles",q:"80g cru"},{e:"🐡",n:"Cabillaud",q:"180g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Cuire lentilles 20min avec cumin","Griller cabillaud 6min","Préparer sauce tomate rapide","Servir poisson sur lit de lentilles"]},
-// ── PETITS-DÉJEUNERS UNIVERSELS
-  {id:'r51',name:"Bol avoine overnight myrtilles",emoji:"🥣",meals:['breakfast'],tags:['breakfast'],macros:{kcal:370,prot:18,gluc:52,lip:9},ings:[{e:"🌾",n:"Flocons d'avoine",q:"70g"},{e:"🥛",n:"Skyr nature",q:"150g"},{e:"🫐",n:"Myrtilles",q:"80g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Mélanger avoine + skyr + 100ml lait la veille","Réfrigérer toute la nuit","Ajouter myrtilles + miel au matin","Servir froid"]},
   {id:'r52',name:"Omelette champignons épinards",emoji:"🍳",meals:['breakfast'],tags:['breakfast','highprot','lowcarb'],macros:{kcal:320,prot:28,gluc:6,lip:20},ings:[{e:"🥚",n:"Œuf entier",q:"3 œufs"},{e:"🍄",n:"Champignons",q:"100g"},{e:"🥬",n:"Épinards",q:"80g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Faire revenir champignons + épinards 4min","Battre oeufs + épices","Verser sur les légumes","Cuire 3min couvert feu doux"]},
   {id:'r53',name:"Toast avocat oeufs entiers",emoji:"🥑",meals:['breakfast'],tags:['breakfast','highprot'],macros:{kcal:562,prot:30,gluc:43,lip:31},ings:[{e:"🍞",n:"Pain complet",q:"80g"},{e:"🥑",n:"Avocat",q:"80g"},{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🍋",n:"Citron + piment",q:"à volonté"}],steps:["Griller le pain","Écraser avocat + citron","Cuire les oeufs entiers brouillés","Assembler pain + avocat + blancs"]},
-  {id:'r55',name:"Bol skyr fraises noix",emoji:"🥛",meals:['breakfast','snack'],tags:['breakfast','highprot'],macros:{kcal:310,prot:20,gluc:30,lip:11},ings:[{e:"🥛",n:"Skyr nature",q:"200g"},{e:"🍓",n:"Fraises",q:"150g"},{e:"🥜",n:"Noix",q:"20g"},{e:"🍯",n:"Miel",q:"8g"}],steps:["Verser skyr dans bol","Couper fraises en deux","Ajouter noix concassées + miel","Servir immédiatement"]},
+  {id:'r55',name:"Bol skyr fraises noix",emoji:"🥛",meals:['breakfast','snack'],tags:['breakfast','highprot','dairy'],macros:{kcal:310,prot:20,gluc:30,lip:11},ings:[{e:"🥛",n:"Skyr nature",q:"200g"},{e:"🍓",n:"Fraises",q:"150g"},{e:"🥜",n:"Noix",q:"20g"},{e:"🍯",n:"Miel",q:"8g"}],steps:["Verser skyr dans bol","Couper fraises en deux","Ajouter noix concassées + miel","Servir immédiatement"]},
   {id:'r57',name:"Oeufs pochés épinards ail",emoji:"🥚",meals:['breakfast'],tags:['breakfast','highprot','lowcarb'],macros:{kcal:290,prot:26,gluc:5,lip:18},ings:[{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"8ml"},{e:"🧄",n:"Ail",q:"1 gousse"}],steps:["Faire sauter épinards à l'ail 3min","Porter eau à frémissement + vinaigre","Pocher oeufs 3min","Dresser épinards + oeufs + poivre"]},
   // ── DÉJEUNERS DIVERSIFIÉS
   {id:'r61',name:"Poulet citron-herbes + quinoa",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:440,prot:44,gluc:34,lip:12},ings:[{e:"🍗",n:"Poulet blanc",q:"180g"},{e:"🌾",n:"Quinoa",q:"65g cru"},{e:"🥒",n:"Concombre",q:"100g"},{e:"🍋",n:"Citron + herbes",q:"à volonté"}],steps:["Mariner poulet citron + thym + ail 30min","Cuire quinoa 15min","Griller poulet 12min","Dresser quinoa + concombre + poulet"]},
   {id:'r62',name:"Filet de dinde paprika + patate douce",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:420,prot:42,gluc:36,lip:8},ings:[{e:"🦃",n:"Dinde blanc",q:"180g"},{e:"🍠",n:"Patate douce",q:"180g"},{e:"🫑",n:"Poivron rouge",q:"100g"},{e:"🧂",n:"Paprika + ail",q:"à volonté"}],steps:["Rôtir patate douce 25min au four","Mariner dinde paprika + ail","Griller dinde 12min","Servir avec poivron sauté"]},
   {id:'r63',name:"Bowl boeuf légumes rôtis",emoji:"🥩",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:480,prot:40,gluc:32,lip:18},ings:[{e:"🥩",n:"Boeuf bavette",q:"160g"},{e:"🥔",n:"Pomme de terre",q:"150g"},{e:"🫛",n:"Haricots verts",q:"150g"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Rôtir pommes de terre 25min","Griller bavette 4min/côté","Cuire brocoli vapeur 8min","Dresser + poivre + herbes"]},
-  {id:'r65',name:"Poulet tikka masala light",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:450,prot:45,gluc:30,lip:14},ings:[{e:"🍗",n:"Poulet blanc",q:"200g"},{e:"🍅",n:"Tomate concassée",q:"200g"},{e:"🥛",n:"Yaourt grec 0%",q:"100g"},{e:"🧂",n:"Curry + cumin + gingembre",q:"à volonté"}],steps:["Mariner poulet dans yaourt + épices 30min","Saisir poulet 5min","Ajouter tomates + épices + mijoter 15min","Servir avec riz ou pain complet"]},
+  {id:'r65',name:"Poulet tikka masala light",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','dairy'],macros:{kcal:450,prot:45,gluc:30,lip:14},ings:[{e:"🍗",n:"Poulet blanc",q:"200g"},{e:"🍅",n:"Tomate concassée",q:"200g"},{e:"🥛",n:"Yaourt grec 0%",q:"100g"},{e:"🧂",n:"Curry + cumin + gingembre",q:"à volonté"}],steps:["Mariner poulet dans yaourt + épices 30min","Saisir poulet 5min","Ajouter tomates + épices + mijoter 15min","Servir avec riz ou pain complet"]},
   {id:'r66',name:"Salade niçoise protéinée",emoji:"🥗",meals:['lunch'],tags:['lunch','highprot','lowcarb'],macros:{kcal:360,prot:40,gluc:12,lip:16},ings:[{e:"🐠",n:"Thon boîte naturel",q:"160g"},{e:"🥚",n:"Oeuf dur",q:"2 oeufs"},{e:"🥬",n:"Salade verte",q:"100g"},{e:"🫒",n:"Olives noires",q:"30g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Cuire oeufs durs 9min","Préparer salade verte","Émietter thon + olives + haricots verts","Vinaigrette moutarde + citron"]},
-  {id:'r67',name:"Wraps poulet hummus légumes",emoji:"🌯",meals:['lunch'],tags:['lunch','highprot'],macros:{kcal:430,prot:38,gluc:40,lip:12},ings:[{e:"🍗",n:"Poulet blanc",q:"150g"},{e:"🫘",n:"Houmous",q:"60g"},{e:"🍞",n:"Tortilla blé complet",q:"80g"},{e:"🥬",n:"Roquette",q:"40g"},{e:"🥒",n:"Concombre",q:"80g"}],steps:["Griller poulet avec herbes","Étaler houmous sur tortilla","Ajouter poulet + roquette + concombre","Rouler serré + couper en deux"]},
   {id:'r69',name:"Steak haché 5% légumes vapeur",emoji:"🥩",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:420,prot:42,gluc:20,lip:18},ings:[{e:"🥩",n:"Boeuf haché 5%",q:"180g"},{e:"🥦",n:"Brocoli",q:"200g"},{e:"🥕",n:"Carottes",q:"150g"},{e:"🧂",n:"Herbes + ail",q:"à volonté"}],steps:["Former steaks + assaisonner","Griller 4min/côté feu vif","Cuire légumes vapeur 10min","Servir avec moutarde"]},
-  {id:'r70',name:"Lentilles corail poulet épices",emoji:"🫘",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:460,prot:46,gluc:42,lip:10},ings:[{e:"🫘",n:"Lentilles corail",q:"80g cru"},{e:"🍗",n:"Poulet blanc",q:"160g"},{e:"🥕",n:"Carottes",q:"100g"},{e:"🧂",n:"Cumin + curcuma + gingembre",q:"à volonté"}],steps:["Cuire lentilles avec carottes + épices 20min","Griller poulet séparément","Mixer lentilles grossièrement","Servir poulet sur daal"]},
   {id:'r71',name:"Poulet pesto courgettes",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','lowcarb'],macros:{kcal:400,prot:44,gluc:8,lip:20},ings:[{e:"🍗",n:"Poulet blanc",q:"200g"},{e:"🥒",n:"Courgette",q:"250g"},{e:"🌿",n:"Pesto basilic",q:"20g"},{e:"🫙",n:"Huile d'olive",q:"5ml"}],steps:["Griller poulet 12min","Couper courgettes en tagliatelles","Faire sauter courgettes 5min","Mélanger pesto + dresser"]},
-  {id:'r73',name:"Poulet pois chiches épinards",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','moroccan'],macros:{kcal:470,prot:48,gluc:34,lip:12},ings:[{e:"🍗",n:"Poulet blanc",q:"180g"},{e:"🫘",n:"Pois chiches",q:"80g cuit"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🧂",n:"Cumin + paprika + ail",q:"à volonté"}],steps:["Griller poulet avec épices","Faire revenir pois chiches + épinards à l'ail","Mélanger + assaisonner","Servir chaud"]},
   {id:'r74',name:"Dinde poêlée poivrons colorés",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','lowcarb'],macros:{kcal:360,prot:46,gluc:14,lip:12},ings:[{e:"🦃",n:"Dinde blanc",q:"180g"},{e:"🫑",n:"Poivrons 3 couleurs",q:"200g"},{e:"🧄",n:"Ail",q:"2 gousses"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Couper poivrons en lanières","Faire revenir ail + poivrons 5min","Ajouter dinde en dés","Cuire 10min + herbes fraîches"]},
   {id:'r75',name:"Bowl riz complet thon avocat",emoji:"🥗",meals:['lunch'],tags:['lunch','highprot'],macros:{kcal:480,prot:38,gluc:42,lip:16},ings:[{e:"🍚",n:"Riz complet",q:"70g cru"},{e:"🐠",n:"Thon boîte naturel",q:"130g"},{e:"🥑",n:"Avocat",q:"80g"},{e:"🥒",n:"Concombre",q:"100g"}],steps:["Cuire riz complet 20min","Égoutter thon","Couper avocat + concombre","Assembler + sauce citron + sésame"]},
   {id:'r76',name:"Crevettes sautées ail citron quinoa",emoji:"🦐",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:400,prot:40,gluc:32,lip:10},ings:[{e:"🦐",n:"Crevettes",q:"200g"},{e:"🌾",n:"Quinoa",q:"60g cru"},{e:"🧄",n:"Ail",q:"3 gousses"},{e:"🍋",n:"Citron + persil",q:"à volonté"}],steps:["Cuire quinoa 15min","Faire sauter ail 1min","Ajouter crevettes 3-4min","Finir citron + persil frais"]},
-  {id:'r77',name:"Dinde champignons crème légère",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','highprot'],macros:{kcal:380,prot:44,gluc:10,lip:16},ings:[{e:"🦃",n:"Dinde blanc",q:"200g"},{e:"🍄",n:"Champignons",q:"150g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🧂",n:"Herbes + ail + échalote",q:"à volonté"}],steps:["Saisir dinde en dés feu vif","Ajouter champignons + échalote","Baisser feu + ajouter fromage blanc","Mijoter 5min + herbes fraîches"]},
+  {id:'r77',name:"Dinde champignons crème légère",emoji:"🦃",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','dairy'],macros:{kcal:380,prot:44,gluc:10,lip:16},ings:[{e:"🦃",n:"Dinde blanc",q:"200g"},{e:"🍄",n:"Champignons",q:"150g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🧂",n:"Herbes + ail + échalote",q:"à volonté"}],steps:["Saisir dinde en dés feu vif","Ajouter champignons + échalote","Baisser feu + ajouter fromage blanc","Mijoter 5min + herbes fraîches"]},
   {id:'r78',name:"Cabillaud vapeur patate douce",emoji:"🐡",meals:['dinner'],tags:['dinner','highprot'],macros:{kcal:390,prot:40,gluc:36,lip:8},ings:[{e:"🐡",n:"Cabillaud",q:"200g"},{e:"🍠",n:"Patate douce",q:"200g"},{e:"🍋",n:"Citron + câpres",q:"à volonté"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Rôtir patate douce 25min","Cuire cabillaud vapeur 8min","Préparer sauce citron + câpres","Dresser + sauce par-dessus"]},
   // ── DÎNERS LÉGERS
   {id:'r81',name:"Soupe poulet légumes maison",emoji:"🍲",meals:['dinner'],tags:['dinner','highprot','lowcarb'],macros:{kcal:280,prot:32,gluc:18,lip:8},ings:[{e:"🍗",n:"Poulet blanc",q:"150g"},{e:"🥕",n:"Carottes",q:"150g"},{e:"🥒",n:"Courgette",q:"150g"},{e:"🧂",n:"Herbes + sel",q:"à volonté"}],steps:["Porter bouillon à ébullition","Ajouter poulet en morceaux","Ajouter légumes en dés","Cuire 20min + herbes"]},
   {id:'r82',name:"Poisson beurre noisette épinards",emoji:"🐠",meals:['dinner'],tags:['dinner','highprot','lowcarb'],macros:{kcal:310,prot:38,gluc:2,lip:16},ings:[{e:"🐡",n:"Cabillaud",q:"220g"},{e:"🧈",n:"Beurre",q:"10g"},{e:"🍋",n:"Citron + persil",q:"à volonté"},{e:"🥬",n:"Épinards",q:"150g"}],steps:["Cuire épinards à l'ail 3min","Poêler poisson 4min/côté","Ajouter beurre en fin de cuisson","Dresser + citron + persil"]},
-  {id:'r83',name:"Gratin courgettes dinde",emoji:"🥒",meals:['dinner'],tags:['dinner','highprot','lowcarb'],macros:{kcal:340,prot:40,gluc:10,lip:14},ings:[{e:"🥒",n:"Courgette",q:"300g"},{e:"🦃",n:"Dinde blanc",q:"160g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🧀",n:"Parmesan",q:"15g"}],steps:["Cuire dinde en dés 8min","Couper courgettes fines","Mélanger dinde + fromage blanc + épices","Four 200° 20min + parmesan"]},
-  {id:'r84',name:"Oeufs cocottes légumes",emoji:"🥚",meals:['breakfast','dinner'],tags:['breakfast','highprot','lowcarb'],macros:{kcal:280,prot:22,gluc:8,lip:18},ings:[{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🍄",n:"Champignons",q:"80g"},{e:"🥬",n:"Épinards",q:"80g"},{e:"🧀",n:"Fromage blanc",q:"50g"}],steps:["Préchauffer four 180°","Sauté champignons + épinards","Répartir dans ramequins","Casser oeufs dessus + four 12min"]},
+  {id:'r83',name:"Gratin courgettes dinde",emoji:"🥒",meals:['dinner'],tags:['dinner','highprot','lowcarb','dairy'],macros:{kcal:340,prot:40,gluc:10,lip:14},ings:[{e:"🥒",n:"Courgette",q:"300g"},{e:"🦃",n:"Dinde blanc",q:"160g"},{e:"🥛",n:"Fromage blanc 0%",q:"100g"},{e:"🧀",n:"Parmesan",q:"15g"}],steps:["Cuire dinde en dés 8min","Couper courgettes fines","Mélanger dinde + fromage blanc + épices","Four 200° 20min + parmesan"]},
+  {id:'r84',name:"Oeufs cocottes légumes",emoji:"🥚",meals:['breakfast','dinner'],tags:['breakfast','highprot','lowcarb','dairy'],macros:{kcal:280,prot:22,gluc:8,lip:18},ings:[{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🍄",n:"Champignons",q:"80g"},{e:"🥬",n:"Épinards",q:"80g"},{e:"🧀",n:"Fromage blanc",q:"50g"}],steps:["Préchauffer four 180°","Sauté champignons + épinards","Répartir dans ramequins","Casser oeufs dessus + four 12min"]},
   {id:'r85',name:"Poêlée crevettes épinards cerises",emoji:"🦐",meals:['dinner'],tags:['dinner','highprot','lowcarb'],macros:{kcal:300,prot:36,gluc:10,lip:12},ings:[{e:"🦐",n:"Crevettes",q:"200g"},{e:"🥬",n:"Épinards",q:"150g"},{e:"🍅",n:"Tomates cerises",q:"100g"},{e:"🧄",n:"Ail + piment",q:"à volonté"}],steps:["Faire revenir ail 1min","Ajouter crevettes 3min","Ajouter épinards + tomates cerises","Cuire 2min + citron"]},
   // ── COLLATIONS VARIÉES
-  {id:'r86',name:"Yaourt grec granola amandes",emoji:"🥛",meals:['snack'],tags:['snack'],macros:{kcal:250,prot:14,gluc:28,lip:8},ings:[{e:"🥛",n:"Yaourt grec 0%",q:"150g"},{e:"🌾",n:"Flocons d'avoine",q:"25g"},{e:"🍯",n:"Miel",q:"8g"},{e:"🌰",n:"Amandes",q:"10g"}],steps:["Verser yaourt","Ajouter avoine + amandes","Finir avec miel","Optionnel : fruits de saison"]},
+  {id:'r86',name:"Yaourt grec granola amandes",emoji:"🥛",meals:['snack'],tags:['snack','dairy'],macros:{kcal:250,prot:14,gluc:28,lip:8},ings:[{e:"🥛",n:"Yaourt grec 0%",q:"150g"},{e:"🌾",n:"Flocons d'avoine",q:"25g"},{e:"🍯",n:"Miel",q:"8g"},{e:"🌰",n:"Amandes",q:"10g"}],steps:["Verser yaourt","Ajouter avoine + amandes","Finir avec miel","Optionnel : fruits de saison"]},
   {id:'r88',name:"Galettes riz purée amandes",emoji:"🍘",meals:['snack'],tags:['snack'],macros:{kcal:200,prot:8,gluc:24,lip:8},ings:[{e:"🍘",n:"Galettes de riz",q:"2 pièces (30g)"},{e:"🌰",n:"Purée d'amandes",q:"20g"}],steps:["Étaler purée d'amandes","Optionnel : banane tranchée","Servir immédiatement"]},
   // ── MAROCAIN HEALTHY
-  {id:'r93',name:"Harira poulet légère sans vermicelle",emoji:"🍲",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan'],macros:{kcal:320,prot:28,gluc:32,lip:8},ings:[{e:"🍗",n:"Poulet blanc",q:"120g"},{e:"🫘",n:"Pois chiches",q:"60g cuit"},{e:"🍅",n:"Tomate",q:"200g"},{e:"🌿",n:"Coriandre + cumin + gingembre",q:"à volonté"}],steps:["Faire revenir oignon + tomates + épices","Ajouter pois chiches + poulet en dés","Couvrir eau + cuire 25min","Finir coriandre + citron"]},
   {id:'r95',name:"Zaalouk aubergine poulet grillé",emoji:"🍆",meals:['lunch','dinner'],tags:['lunch','dinner','moroccan','lowcarb'],macros:{kcal:360,prot:38,gluc:16,lip:14},ings:[{e:"🍆",n:"Aubergine",q:"200g"},{e:"🍅",n:"Tomate",q:"200g"},{e:"🍗",n:"Poulet blanc",q:"170g"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Cuire aubergine + tomate avec cumin + ail 20min","Écraser grossièrement","Griller poulet avec paprika","Servir poulet avec zaalouk"]},
   {id:'r96',name:"Chakchouka poivrons oeufs",emoji:"🍳",meals:['breakfast','lunch'],tags:['breakfast','lunch','moroccan','highprot','lowcarb'],macros:{kcal:300,prot:22,gluc:16,lip:16},ings:[{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🫑",n:"Poivron rouge",q:"150g"},{e:"🍅",n:"Tomate",q:"200g"},{e:"🫙",n:"Huile d'olive",q:"8ml"}],steps:["Saisir poivrons + oignon 5min","Ajouter tomates + cumin + paprika","Mijoter 10min","Casser oeufs + cuire à l'étouffée 5min"]},
-  {id:'r98',name:"Bissara oeuf poché",emoji:"🟢",meals:['breakfast','lunch'],tags:['breakfast','lunch','moroccan','highprot'],macros:{kcal:380,prot:26,gluc:42,lip:10},ings:[{e:"🟢",n:"Bissara (pois cassé)",q:"100g cru"},{e:"🥚",n:"Oeuf poché",q:"1 oeuf"},{e:"🫙",n:"Huile d'olive",q:"8ml"},{e:"🧂",n:"Cumin + paprika",q:"à volonté"}],steps:["Cuire pois cassés 30min","Mixer + assaisonner","Pocher l'oeuf séparément","Servir bissara + oeuf + filet huile"]},
   {id:'r99',name:"Salade marocaine sardines olives",emoji:"🥗",meals:['lunch'],tags:['lunch','moroccan','highprot','lowcarb'],macros:{kcal:340,prot:28,gluc:14,lip:18},ings:[{e:"🐟",n:"Sardines naturel",q:"150g"},{e:"🍅",n:"Tomate",q:"150g"},{e:"🥒",n:"Concombre",q:"100g"},{e:"🫒",n:"Olives vertes",q:"30g"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Couper légumes en dés","Égoutter sardines + émietter","Assaisonner cumin + citron","Dresser + olives + persil"]},
   {id:'r100',name:"Tajine kefta légumes sans sauce grasse",emoji:"🫕",meals:['dinner'],tags:['dinner','moroccan','highprot'],macros:{kcal:430,prot:38,gluc:20,lip:20},ings:[{e:"🥩",n:"Boeuf haché 5%",q:"180g"},{e:"🥚",n:"Oeuf entier",q:"1 oeuf"},{e:"🍅",n:"Tomate",q:"200g"},{e:"🧂",n:"Cumin + paprika + coriandre",q:"à volonté"}],steps:["Former kefta avec épices","Faire revenir dans tajine","Ajouter tomates concassées","Casser oeuf dessus + cuire 8min"]},
   // ── VOYAGE FRANCE
-  {id:'r101',name:"Poulet rôti + haricots verts FR",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_fr'],macros:{kcal:390,prot:44,gluc:14,lip:14},ings:[{e:"🍗",n:"Poulet rôti (supermarché)",q:"200g"},{e:"🫛",n:"Haricots verts vapeur",q:"150g"},{e:"🧀",n:"Fromage blanc 0%",q:"100g"}],steps:["Acheter poulet rôti supermarché","Haricots verts micro-ondes 5min","Fromage blanc en dessert"]},
+  {id:'r101',name:"Poulet rôti + haricots verts FR",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_fr','dairy'],macros:{kcal:390,prot:44,gluc:14,lip:14},ings:[{e:"🍗",n:"Poulet rôti (supermarché)",q:"200g"},{e:"🫛",n:"Haricots verts vapeur",q:"150g"},{e:"🧀",n:"Fromage blanc 0%",q:"100g"}],steps:["Acheter poulet rôti supermarché","Haricots verts micro-ondes 5min","Fromage blanc en dessert"]},
   {id:'r102',name:"Salade poulet grillé + oeufs FR",emoji:"🥗",meals:['lunch'],tags:['lunch','highprot','travel_fr'],macros:{kcal:350,prot:38,gluc:12,lip:14},ings:[{e:"🍗",n:"Poulet grillé",q:"180g"},{e:"🥚",n:"Oeuf entier dur",q:"2 oeufs"},{e:"🥬",n:"Salade verte",q:"100g"},{e:"🍅",n:"Tomates cerises",q:"80g"}],steps:["Poulet grillé traiteur ou supermarché","Oeufs durs de la veille","Assembler la salade","Vinaigrette citron-moutarde"]},
-  {id:'r103',name:"Fromage blanc + fruits FR",emoji:"🥛",meals:['breakfast','snack'],tags:['breakfast','snack','highprot','travel_fr'],macros:{kcal:250,prot:18,gluc:28,lip:4},ings:[{e:"🥛",n:"Fromage blanc 0% (Danone...)",q:"200g"},{e:"🫐",n:"Fruits rouges surgelés",q:"100g"},{e:"🌰",n:"Amandes",q:"20g"}],steps:["Fromage blanc facile en supermarché FR","Fruits rouges décongelés dessus","Amandes effilées pour les lipides"]},
+  {id:'r103',name:"Fromage blanc + fruits FR",emoji:"🥛",meals:['breakfast','snack'],tags:['breakfast','snack','highprot','travel_fr','dairy'],macros:{kcal:250,prot:18,gluc:28,lip:4},ings:[{e:"🥛",n:"Fromage blanc 0% (Danone...)",q:"200g"},{e:"🫐",n:"Fruits rouges surgelés",q:"100g"},{e:"🌰",n:"Amandes",q:"20g"}],steps:["Fromage blanc facile en supermarché FR","Fruits rouges décongelés dessus","Amandes effilées pour les lipides"]},
   // ── VOYAGE TURQUIE
   {id:'r104',name:"Dürüm poulet sans sauce TR",emoji:"🥙",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_tr'],macros:{kcal:430,prot:42,gluc:36,lip:12},ings:[{e:"🍗",n:"Poulet rôti kebab",q:"200g"},{e:"🫓",n:"Pain lavash",q:"80g"},{e:"🥗",n:"Salade chou-tomate-persil",q:"100g"}],steps:["Commander kebab poulet (pas agneau)","Demander sans sauce yoğurtlu","Demander extra légumes","Eviter les frites"]},
   {id:'r105',name:"Menemen + pain pide TR",emoji:"🍳",meals:['breakfast'],tags:['breakfast','highprot','travel_tr'],macros:{kcal:340,prot:22,gluc:20,lip:18},ings:[{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🍅",n:"Tomates concassées",q:"150g"},{e:"🫑",n:"Poivrons verts",q:"80g"},{e:"🫓",n:"Pain pide",q:"60g"}],steps:["Plat traditionnel turc disponible partout","Oeufs brouillés dans sauce tomates-poivrons","Commande sans viande si possible","Pain pide en accompagnement"]},
@@ -799,7 +809,7 @@ const RECIPES=[
   {id:'r108',name:"Greek yogurt bowl + berries USA",emoji:"🥛",meals:['breakfast','snack'],tags:['breakfast','snack','highprot','travel_us'],macros:{kcal:280,prot:22,gluc:30,lip:6},ings:[{e:"🥛",n:"Chobani Greek yogurt",q:"200g"},{e:"🫐",n:"Blueberries",q:"100g"},{e:"🌰",n:"Almonds",q:"20g"}],steps:["Chobani Greek yogurt partout aux USA","0% fat = ultra highprot","Trouvable dans n'importe quelle épicerie"]},
   {id:'r109',name:"Chipotle bowl poulet sans riz USA",emoji:"🌯",meals:['lunch'],tags:['lunch','highprot','lowcarb','travel_us'],macros:{kcal:420,prot:42,gluc:20,lip:18},ings:[{e:"🍗",n:"Poulet Chipotle",q:"200g"},{e:"🫘",n:"Black beans",q:"100g"},{e:"🥗",n:"Fajita veggies + salsa",q:"150g"},{e:"🥑",n:"Guacamole",q:"50g"}],steps:["Commander bowl sans riz ni fromage","Double chicken si possible","Guacamole = lipides sains","Dressing: fresh salsa uniquement"]},
   // ── VOYAGE THAÏLANDE / BALI
-  {id:'r110',name:"Tom kha kai poulet TH",emoji:"🍲",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_th'],macros:{kcal:340,prot:30,gluc:12,lip:20},ings:[{e:"🍗",n:"Poulet",q:"180g"},{e:"🥥",n:"Lait de coco (soupe)",q:"150ml"},{e:"🍄",n:"Champignons",q:"100g"},{e:"🍋",n:"Citronnelle + galangal",q:"arômes"}],steps:["Demande 'mai wan' = pas sucré","Soupe typique haute protéine","Evite la version avec nouilles","Restaurant local 50-100 baht"]},
+  {id:'r110',name:"Tom kha kai poulet TH",emoji:"🍲",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_th','dairy'],macros:{kcal:340,prot:30,gluc:12,lip:20},ings:[{e:"🍗",n:"Poulet",q:"180g"},{e:"🥥",n:"Lait de coco (soupe)",q:"150ml"},{e:"🍄",n:"Champignons",q:"100g"},{e:"🍋",n:"Citronnelle + galangal",q:"arômes"}],steps:["Demande 'mai wan' = pas sucré","Soupe typique haute protéine","Evite la version avec nouilles","Restaurant local 50-100 baht"]},
   {id:'r111',name:"Nasi ayam riz poulet TH/Bali",emoji:"🍚",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_th'],macros:{kcal:420,prot:36,gluc:42,lip:10},ings:[{e:"🍗",n:"Poulet grillé local",q:"180g"},{e:"🍚",n:"Riz jasmin",q:"100g"},{e:"🥒",n:"Concombre + salade",q:"100g"}],steps:["Nasi ayam = riz poulet en indonésien","Plat le moins cher et meilleur ratio macro","Demande sans sauce sucrée (kecap manis)","Ajout légumes si possible"]},
   {id:'r112',name:"Grilled fish + vegetables TH",emoji:"🐟",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_th'],macros:{kcal:310,prot:40,gluc:10,lip:12},ings:[{e:"🐟",n:"Poisson grillé local",q:"250g"},{e:"🥦",n:"Légumes sautés",q:"150g"},{e:"🍋",n:"Citron + piment",q:"à volonté"}],steps:["Demande 'mai pet' si tu veux pas épicé","Poisson grillé partout en bord de mer","Légumes sautés à l'ail = extra protéines"]},
   // ── VOYAGE ESPAGNE / PORTUGAL
@@ -810,14 +820,13 @@ const RECIPES=[
   {id:'r116',name:"Dattes + lait + oeufs Omra",emoji:"🌙",meals:['breakfast','snack'],tags:['breakfast','snack','moroccan','travel_omra'],macros:{kcal:310,prot:16,gluc:38,lip:8},ings:[{e:"🌴",n:"Dattes Médine",q:"5 dattes (50g)"},{e:"🥛",n:"Lait",q:"250ml"},{e:"🥚",n:"Oeuf dur",q:"2 oeufs"}],steps:["Dattes disponibles partout à La Mecque","Lait à l'hôtel au petit-déjeuner","Oeufs durs buffet hôtel","Sunnah : commencer par dattes impairs"]},
   {id:'r117',name:"Mandi poulet riz Médine",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_omra'],macros:{kcal:500,prot:40,gluc:52,lip:14},ings:[{e:"🍗",n:"Poulet mandi grillé",q:"200g"},{e:"🍚",n:"Riz basmati",q:"120g"},{e:"🧅",n:"Oignon + épices mandi",q:"50g"}],steps:["Plat saoudien symbole à Médine","Commander sans ghee supplémentaire","Demande extra poulet si possible","Riz basmati = IG modéré"]},
   {id:'r118',name:"Harees poulet light Omra",emoji:"🍲",meals:['dinner'],tags:['dinner','highprot','travel_omra'],macros:{kcal:360,prot:30,gluc:40,lip:8},ings:[{e:"🍗",n:"Poulet effiloché",q:"150g"},{e:"🌾",n:"Blé concassé",q:"100g"}],steps:["Harees = bouillie blé et poulet","Plat traditionnel Ramadan/Omra","Très nourrissant post-tawaf","Disponible dans restaurants autour Haram"]},
-  {id:'r119',name:"Foul médamès oeufs petit-déj Omra",emoji:"🫘",meals:['breakfast'],tags:['breakfast','moroccan','travel_omra'],macros:{kcal:340,prot:18,gluc:44,lip:8},ings:[{e:"🫘",n:"Fèves (foul)",q:"200g"},{e:"🥚",n:"Oeuf entier dur",q:"2 oeufs"},{e:"🍋",n:"Citron + cumin",q:"à volonté"}],steps:["Buffet hôtel à La Mecque et Médine","Foul = fèves riches protéines et fibres","Oeufs durs du buffet en plus","Pas de pain pour rester lowcarb"]},
   {id:'r120',name:"Shawarma poulet sans frites Omra",emoji:"🥙",meals:['lunch'],tags:['lunch','highprot','travel_omra'],macros:{kcal:400,prot:34,gluc:32,lip:14},ings:[{e:"🍗",n:"Poulet shawarma",q:"180g"},{e:"🫓",n:"Pain arabe (1/2)",q:"50g"},{e:"🥗",n:"Salade taboulé",q:"100g"}],steps:["Partout autour Al-Haram","Commander sans mayo ni garlic sauce","Extra légumes frais","Évite le falafel (frit)"]},
   {id:'r130',name:"Oeufs brouilles baguette FR",emoji:"🥚",meals:['breakfast'],tags:['breakfast','highprot','travel_fr'],macros:{kcal:380,prot:28,gluc:28,lip:16},ings:[{e:"🥚",n:"Oeuf entier",q:"4 oeufs"},{e:"🥖",n:"Baguette complete",q:"60g"},{e:"🧀",n:"Fromage blanc 0%",q:"80g"}],steps:["Brouiller les oeufs a feu doux","Tartiner baguette avec fromage blanc","Servir ensemble"]},
   {id:'r131',name:"Poulet legumes vapeur FR",emoji:"🍗",meals:['dinner'],tags:['dinner','highprot','lowcarb','travel_fr'],macros:{kcal:340,prot:44,gluc:12,lip:10},ings:[{e:"🍗",n:"Poulet roti traiteur",q:"200g"},{e:"🥦",n:"Haricots verts",q:"200g"},{e:"🍋",n:"Citron + herbes",q:"a volonte"}],steps:["Rechauffer poulet traiteur","Cuire haricots verts vapeur 6min","Servir avec citron"]},
-  {id:'r132',name:"Skyr fruits rouges noix FR",emoji:"🥛",meals:['snack','breakfast'],tags:['snack','breakfast','highprot','travel_fr'],macros:{kcal:260,prot:20,gluc:26,lip:8},ings:[{e:"🥛",n:"Skyr nature",q:"200g"},{e:"🍓",n:"Fruits rouges",q:"100g"},{e:"🥜",n:"Noix",q:"15g"}],steps:["Melanger skyr + fruits","Ajouter les noix","Servir froid"]},
-  {id:'r133',name:"Oeufs menemen yaourt TR",emoji:"🍳",meals:['breakfast'],tags:['breakfast','highprot','travel_tr'],macros:{kcal:360,prot:28,gluc:16,lip:20},ings:[{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🍅",n:"Tomates",q:"150g"},{e:"🫑",n:"Poivron",q:"80g"},{e:"🥛",n:"Yaourt nature",q:"150g"}],steps:["Faire revenir tomates + poivron","Casser les oeufs dessus","Cuire a feu moyen","Servir avec yaourt nature"]},
+  {id:'r132',name:"Skyr fruits rouges noix FR",emoji:"🥛",meals:['snack','breakfast'],tags:['snack','breakfast','highprot','travel_fr','dairy'],macros:{kcal:260,prot:20,gluc:26,lip:8},ings:[{e:"🥛",n:"Skyr nature",q:"200g"},{e:"🍓",n:"Fruits rouges",q:"100g"},{e:"🥜",n:"Noix",q:"15g"}],steps:["Melanger skyr + fruits","Ajouter les noix","Servir froid"]},
+  {id:'r133',name:"Oeufs menemen yaourt TR",emoji:"🍳",meals:['breakfast'],tags:['breakfast','highprot','travel_tr','dairy'],macros:{kcal:360,prot:28,gluc:16,lip:20},ings:[{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🍅",n:"Tomates",q:"150g"},{e:"🫑",n:"Poivron",q:"80g"},{e:"🥛",n:"Yaourt nature",q:"150g"}],steps:["Faire revenir tomates + poivron","Casser les oeufs dessus","Cuire a feu moyen","Servir avec yaourt nature"]},
   {id:'r134',name:"Kofte poulet salade TR",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_tr'],macros:{kcal:400,prot:42,gluc:14,lip:18},ings:[{e:"🍗",n:"Kofte poulet grille",q:"200g"},{e:"🍅",n:"Salade tomates concombres",q:"200g"},{e:"🫙",n:"Huile d'olive",q:"10ml"}],steps:["Commander kofte poulet grille","Preparer salade fraiche","Eviter les sauces grasses"]},
-  {id:'r135',name:"Yaourt grec miel pistaches TR",emoji:"🥛",meals:['snack','breakfast'],tags:['snack','breakfast','highprot','travel_tr'],macros:{kcal:280,prot:18,gluc:28,lip:10},ings:[{e:"🥛",n:"Yaourt grec nature",q:"250g"},{e:"🍯",n:"Miel",q:"15g"},{e:"🌰",n:"Pistaches",q:"15g"}],steps:["Melanger yaourt + miel","Ajouter pistaches concassees","Servir froid"]},
+  {id:'r135',name:"Yaourt grec miel pistaches TR",emoji:"🥛",meals:['snack','breakfast'],tags:['snack','breakfast','highprot','travel_tr','dairy'],macros:{kcal:280,prot:18,gluc:28,lip:10},ings:[{e:"🥛",n:"Yaourt grec nature",q:"250g"},{e:"🍯",n:"Miel",q:"15g"},{e:"🌰",n:"Pistaches",q:"15g"}],steps:["Melanger yaourt + miel","Ajouter pistaches concassees","Servir froid"]},
   {id:'r136',name:"Egg white omelette USA",emoji:"🥚",meals:['breakfast'],tags:['breakfast','highprot','travel_us'],macros:{kcal:320,prot:36,gluc:10,lip:14},ings:[{e:"🥚",n:"Oeuf entier",q:"4 oeufs"},{e:"🥦",n:"Epinards",q:"80g"},{e:"🍄",n:"Champignons",q:"80g"}],steps:["Battre les oeufs","Faire sauter les legumes","Cuire l'omelette 3min de chaque cote"]},
   {id:'r137',name:"Salmon grille + brocoli USA",emoji:"🐟",meals:['dinner'],tags:['dinner','highprot','lowcarb','travel_us'],macros:{kcal:380,prot:44,gluc:8,lip:18},ings:[{e:"🐟",n:"Saumon grille",q:"200g"},{e:"🥦",n:"Brocoli vapeur",q:"200g"},{e:"🍋",n:"Citron + herbes",q:"a volonte"}],steps:["Griller saumon 4min cote","Cuire brocoli vapeur","Servir avec citron"]},
   {id:'r138',name:"Turkey sandwich complet USA",emoji:"🥪",meals:['snack','lunch'],tags:['snack','lunch','highprot','travel_us'],macros:{kcal:350,prot:32,gluc:30,lip:10},ings:[{e:"🥩",n:"Dinde tranchee",q:"120g"},{e:"🍞",n:"Pain complet",q:"60g"},{e:"🥗",n:"Salade + moutarde",q:"a volonte"}],steps:["Assembler sandwich dinde","Ajouter salade + moutarde","Eviter mayonnaise"]},
@@ -826,182 +835,96 @@ const RECIPES=[
   {id:'r141',name:"Pollo a la plancha ES",emoji:"🍗",meals:['lunch','dinner'],tags:['lunch','dinner','highprot','travel_es'],macros:{kcal:380,prot:46,gluc:12,lip:12},ings:[{e:"🍗",n:"Poulet grille",q:"220g"},{e:"🥗",n:"Salade mixte",q:"150g"},{e:"🍅",n:"Tomates + huile olive",q:"a volonte"}],steps:["Griller poulet a la plancha","Preparer salade fraiche","Assaisonner huile d'olive + citron"]},
   {id:'r142',name:"Oeufs benedictine tostada ES",emoji:"🥚",meals:['breakfast'],tags:['breakfast','highprot','travel_es'],macros:{kcal:340,prot:22,gluc:24,lip:16},ings:[{e:"🥚",n:"Oeuf entier",q:"3 oeufs"},{e:"🍞",n:"Pain grille",q:"60g"},{e:"🍅",n:"Tomate fraiche",q:"100g"}],steps:["Griller le pain","Frire les oeufs","Servir avec tomate fraiche en tranches"]},
   {id:'r143',name:"Frango grelhado salade PT",emoji:"🍗",meals:['snack','dinner'],tags:['snack','dinner','highprot','travel_es'],macros:{kcal:320,prot:40,gluc:8,lip:12},ings:[{e:"🍗",n:"Poulet grille",q:"200g"},{e:"🥗",n:"Salade verte",q:"150g"},{e:"🍋",n:"Citron + huile olive",q:"a volonte"}],steps:["Commander poulet grille","Preparer salade fraiche","Assaisonner simplement"]},
+  {id:'r150', name:"Brownie banane cacao",emoji:"🍫",meals:['snack'],tags:['snack','creative','sweet'],macros:{kcal:285,prot:9,gluc:42,lip:8},ings:[{e:"🍌",n:"Banane",q:"120g"},{e:"🌾",n:"Flocons d'avoine",q:"40g"},{e:"🥚",n:"Œuf entier",q:"1 œuf"},{e:"🍫",n:"Cacao amer en poudre",q:"10g"}],steps:["Écrase la banane en purée lisse","Ajoute les flocons, l'œuf et le cacao","Mélange bien jusqu'à obtenir une pâte homogène","Verse dans un moule et enfourne 15 min à 180°C","Laisse refroidir avant de couper"]},
+  {id:'r151', name:"Pancakes flocons avoine",emoji:"🥞",meals:['breakfast','snack'],tags:['snack','creative','breakfast','dairy'],macros:{kcal:310,prot:20,gluc:38,lip:7},ings:[{e:"🌾",n:"Flocons d'avoine",q:"60g"},{e:"🥚",n:"Œuf entier",q:"2 œufs"},{e:"🥛",n:"Fromage blanc 0%",q:"80g"},{e:"🍌",n:"Banane",q:"50g"}],steps:["Mixe les flocons en farine","Ajoute les œufs, fromage blanc et banane écrasée","Mélange jusqu'à pâte homogène","Cuis à feu moyen dans une poêle antiadhésive 2 min chaque face","Sers avec un filet de miel si objectif calorique le permet"]},
+  {id:'r152', name:"Mugcake cacao protéiné",emoji:"☕",meals:['snack'],tags:['snack','creative','sweet','dairy'],macros:{kcal:265,prot:19,gluc:28,lip:7},ings:[{e:"🌾",n:"Flocons d'avoine",q:"35g"},{e:"🥚",n:"Œuf entier",q:"1 œuf"},{e:"🥛",n:"Fromage blanc 0%",q:"80g"},{e:"🍫",n:"Cacao amer en poudre",q:"10g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Mixe les flocons en poudre fine","Mélange tous les ingrédients dans un mug","Micro-ondes 2 min à 800W","Vérifie la cuisson — si encore liquide au centre, 30 sec de plus","Déguste directement dans le mug"]},
+  {id:'r153', name:"Boules énergie dattes amandes",emoji:"🌰",meals:['snack'],tags:['snack','creative','nomad'],macros:{kcal:270,prot:7,gluc:35,lip:11},ings:[{e:"🌰",n:"Amandes",q:"30g"},{e:"🍯",n:"Dattes Medjool",q:"60g"},{e:"🍫",n:"Cacao amer en poudre",q:"8g"},{e:"🥜",n:"Peanut butter",q:"15g"}],steps:["Mixe les amandes en poudre grossière","Ajoute les dattes dénoyautées, cacao et peanut butter","Mixe jusqu'à obtenir une pâte qui se tient","Forme des boules de 20g environ","Réfrigère 30 min avant de consommer — se conserve 5 jours"]},
+  {id:'r154', name:"Crêpe banane beurre d'amande",emoji:"🫓",meals:['breakfast','snack'],tags:['snack','creative','breakfast','dairy'],macros:{kcal:295,prot:11,gluc:38,lip:10},ings:[{e:"🌾",n:"Flocons d'avoine",q:"50g"},{e:"🥚",n:"Œuf entier",q:"1 œuf"},{e:"🥛",n:"Lait écrémé",q:"80ml"},{e:"🍌",n:"Banane",q:"60g"},{e:"🌰",n:"Amandes",q:"15g"}],steps:["Mixe flocons + œuf + lait jusqu'à pâte lisse","Cuis une crêpe fine à feu moyen 2 min chaque face","Écrase la banane et étale sur la crêpe","Saupoudre d'amandes concassées","Roule et sers immédiatement"]},
+  {id:'r155', name:"Smoothie mangue yaourt grec",emoji:"🥤",meals:['snack','breakfast'],tags:['snack','creative','breakfast','dairy'],macros:{kcal:230,prot:14,gluc:35,lip:2},ings:[{e:"🥭",n:"Mangue congelée",q:"120g"},{e:"🥛",n:"Yaourt grec 0%",q:"150g"},{e:"🥛",n:"Lait écrémé",q:"80ml"},{e:"🍌",n:"Banane",q:"40g"}],steps:["Mets tous les ingrédients dans un blender","Mixe 45 secondes jusqu'à consistance lisse","Ajuste la texture avec un peu d'eau si trop épais","Consomme immédiatement pour garder les nutriments","Peut se préparer la veille et conserver au frigo 12h"]},
+  {id:'r156', name:"Riz au lait protéiné cannelle",emoji:"🍚",meals:['snack','breakfast'],tags:['snack','creative','sweet','dairy'],macros:{kcal:280,prot:16,gluc:42,lip:3},ings:[{e:"🍚",n:"Riz blanc",q:"50g cru"},{e:"🥛",n:"Lait écrémé",q:"200ml"},{e:"🥛",n:"Fromage blanc 0%",q:"80g"},{e:"🍯",n:"Miel",q:"10g"},{e:"🌿",n:"Cannelle",q:"1 pincée"}],steps:["Cuis le riz dans le lait à feu doux 20 min en remuant","Retire du feu et laisse tiédir","Incorpore le fromage blanc et le miel","Saupoudre de cannelle","Se mange chaud ou froid — se conserve 24h au frigo"]},
+  {id:'e3',  name:'Incline Dumbbell Fly',         muscle:'Poitrine',         alts:[{name:'Cable Crossover High to Low',equip:'câble'},{name:'Pec Deck Machine',equip:'machine'},{name:'Mid Cross Cables Fly',equip:'câble'}],                             warn:'⚠️ Épaules — descente trop large = risque labrum. Contrôler l\'amplitude.',warnLevel:'orange'},
+  {id:'e4',  name:'Chest Dips',                   muscle:'Poitrine',         alts:[{name:'Assisted Chest Dip',equip:'machine'},{name:'Decline Push-Up Weighted',equip:'poids_corps'}],                                                                   warn:'⚠️ Épaules — pression articulaire élevée en fond de mouvement. Ne pas descendre trop bas.',warnLevel:'orange'},
+  {id:'e5',  name:'Low Crossover',                muscle:'Poitrine',         alts:[{name:'Dumbbell Low Crossover',equip:'haltères'}]},
+  {id:'e6',  name:'Incline Dumbbell Press',        muscle:'Poitrine',         alts:[{name:'Incline Bench Press',equip:'barre'},{name:'Smith Incline Press',equip:'smith'}]},
+  {id:'e7',  name:'Push-Up',                      muscle:'Poitrine',         alts:[{name:'Push-Ups Easy Version',equip:'poids_corps'}]},
+  // DOS
+  {id:'e8',  name:'Lat Pulldown',                 muscle:'Dos',              alts:[{name:'Pull-Ups',equip:'poids_corps'},{name:'Assisted Pull-Up',equip:'machine'},{name:'Straight Arm Pulldown',equip:'câble'}]},
+  {id:'e9',  name:'Reverse Grip Pulldown',        muscle:'Dos',              alts:[{name:'Close Grip Pull Down',equip:'câble'},{name:'One Arm Lat Pull Down',equip:'câble'}]},
+  {id:'e10', name:'Seated Cable Row',             muscle:'Dos',              alts:[{name:'Machine Row',equip:'machine'},{name:'Dumbbell Row',equip:'haltères'},{name:'Meadows Row',equip:'barre'}],                                                      warn:'⚠️ Dos — ne pas arrondir les lombaires en fin de mouvement. Buste stable.',warnLevel:'orange'},
+  {id:'e11', name:'Barbell Row',                  muscle:'Dos',              alts:[{name:'T-Bar Row',equip:'barre'},{name:'Smith Barbell Row',equip:'smith'},{name:'Chest Supported Row',equip:'machine'},{name:'Seal Row',equip:'barre'}],              warn:'⚠️ Dos — pression lombaire élevée en position charnière. Éviter si lombalgie.',warnLevel:'orange'},
+  {id:'e12', name:'Dumbbell Row',                 muscle:'Dos',              alts:[{name:'Single Arm Cable Row',equip:'câble'},{name:'Single Arm Machine Row',equip:'machine'}]},
+  {id:'e13', name:'Dumbbell Pullover',            muscle:'Dos',              alts:[{name:'Cable Pullover',equip:'câble'},{name:'Machine Pullover',equip:'machine'}]},
+  {id:'e14', name:'Deadlift',                     muscle:'Dos',              alts:[{name:'Rack Pull',equip:'barre'},{name:'Trap Bar Deadlift',equip:'barre'},{name:'Hex Bar Deadlift',equip:'barre'},{name:'Cable Pull Through',equip:'câble'}],        warn:'⚠️ Dos — gainage strict, dos plat obligatoire. Déconseillé si hernie discale.',warnLevel:'red'},
+  {id:'e15', name:'Good Morning',                 muscle:'Dos',              alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'45° Back Extension',equip:'machine'}],                                                                                warn:'⚠️ Dos — risque élevé, levier très défavorable sur les lombaires. Déconseillé si douleur dorsale.',warnLevel:'red'},
+  {id:'e16', name:'Wide Grip Rowing',             muscle:'Dos',              alts:[{name:'Seated Machine Row Neutral Grip',equip:'machine'},{name:'T-Bar Row',equip:'barre'}]},
+  // ÉPAULES
+  {id:'e17', name:'Seated Dumbbell Shoulder Press',muscle:'Épaules',         alts:[{name:'Smith Shoulder Press',equip:'smith'},{name:'Machine Shoulder Press',equip:'machine'}]},
+  {id:'e18', name:'Standing Barbell Press',        muscle:'Épaules',         alts:[{name:'Dumbbell Shoulder Press',equip:'haltères'},{name:'Machine Shoulder Press',equip:'machine'}]},
+  {id:'e19', name:'Lateral Raise',                muscle:'Épaules',          alts:[{name:'Cable Lateral Raise',equip:'câble'},{name:'Machine Lateral Raise',equip:'machine'}],                                                                           warn:'⚠️ Épaules — risque si impingement. Effectuer légèrement incliné vers l\'avant.',warnLevel:'orange'},
+  {id:'e20', name:'Front Raise',                  muscle:'Épaules',          alts:[{name:'Cable Front Raise',equip:'câble'},{name:'Plate Front Raise',equip:'disque'}]},
+  {id:'e21', name:'Rear Delt Fly',                muscle:'Épaules',          alts:[{name:'Rear Delt Fly Machine',equip:'machine'},{name:'Rear Delts Cable Pull',equip:'câble'}]},
+  {id:'e22', name:'Face Pull',                    muscle:'Épaules',          alts:[{name:'Reverse Fly',equip:'haltères'},{name:'Cable Y Raise',equip:'câble'},{name:'Band Pull Apart',equip:'poids_corps'}]},
+  {id:'e23', name:'Upright Row',                  muscle:'Épaules',          alts:[{name:'Dumbbell Upright Row',equip:'haltères'},{name:'Cable Upright Row',equip:'câble'}],                                                                             warn:'⚠️ Épaules — risque de conflit sous-acromial. Coudes ne dépassent pas la hauteur des épaules.',warnLevel:'red'},
+  {id:'e24', name:'Overhead Press',               muscle:'Épaules',          alts:[{name:'Barbell Press',equip:'barre'},{name:'Smith Shoulder Press',equip:'smith'},{name:'Arnold Press',equip:'haltères'},{name:'Landmine Press',equip:'barre'}],      warn:'⚠️ Dos & Épaules — hyperlordose si core non gainé. Déconseillé si conflit sous-acromial.',warnLevel:'orange'},
+  // QUADRICEPS
+  {id:'e25', name:'Barbell Back Squat',           muscle:'Quadriceps',       alts:[{name:'Smith Squat',equip:'smith'},{name:'Hack Squat',equip:'machine'},{name:'Wall Sit',equip:'poids_corps'},{name:'Belt Squat',equip:'machine'}],                   warn:'⚠️ Dos & Genoux — charge sur vertèbres, genoux dans l\'axe. Remplacer par Hack Squat si douleur.',warnLevel:'orange'},
+  {id:'e26', name:'Front Squat',                  muscle:'Quadriceps',       alts:[{name:'Goblet Squat',equip:'haltères'},{name:'Safety Bar Squat',equip:'barre'}]},
+  {id:'e27', name:'Leg Press',                    muscle:'Quadriceps',       alts:[{name:'Seated Leg Press',equip:'machine'},{name:'Goblet Squat',equip:'haltères'},{name:'Pendulum Squat',equip:'machine'}],                                          warn:'⚠️ Genoux — ne pas verrouiller en extension. Déconseillé si chondropathie rotulienne.',warnLevel:'orange'},
+  {id:'e28', name:'Split Squat',                  muscle:'Quadriceps',       alts:[{name:'Dumbbell Lunge',equip:'haltères'},{name:'Bodyweight Reverse Lunge',equip:'poids_corps'}],                                                                     warn:'⚠️ Genoux — pression rotulienne élevée. Réduire l\'amplitude si douleur.',warnLevel:'orange'},
+  {id:'e29', name:'Walking Lunge',                muscle:'Quadriceps',       alts:[{name:'Bodyweight Reverse Lunge',equip:'poids_corps'},{name:'Step-Up',equip:'poids_corps'}],                                                                         warn:'⚠️ Genoux — impact fort sur le genou avant. Remplacer par Reverse Lunge si douleur.',warnLevel:'orange'},
+  {id:'e30', name:'Leg Extension',                muscle:'Quadriceps',       alts:[{name:'Sissy Squat Bodyweight',equip:'poids_corps'},{name:'Single-Leg Extension',equip:'machine'}],                                                                  warn:'⚠️ Genoux — cisaillement en extension complète. Déconseillé si ligaments fragiles ou opéré.',warnLevel:'red'},
+  {id:'e31', name:'Hack Squat',                   muscle:'Quadriceps',       alts:[{name:'Leg Press',equip:'machine'},{name:'Smith Squat',equip:'smith'}],                                                                                              warn:'⚠️ Genoux — pression rotulienne importante. Éviter descente trop profonde.',warnLevel:'orange'},
+  // ISCHIO-JAMBIERS
+  {id:'e32', name:'Romanian Deadlift',            muscle:'Ischio-jambiers',  alts:[{name:'Smith Romanian Deadlift',equip:'smith'},{name:'Dumbbell RDL',equip:'haltères'},{name:'Glute Ham Raise',equip:'machine'}],                                    warn:'⚠️ Dos — étirement ischio sous charge lourde. Dos strictement plat à tout moment.',warnLevel:'orange'},
+  {id:'e33', name:'Seated Leg Curl',              muscle:'Ischio-jambiers',  alts:[{name:'Lying Leg Curl',equip:'machine'},{name:'Standing Leg Curl',equip:'machine'}]},
+  {id:'e34', name:'Good Morning',                 muscle:'Ischio-jambiers',  alts:[{name:'Back Extension',equip:'machine'},{name:'Cable Pull Through',equip:'câble'}],                                                                                  warn:'⚠️ Dos — risque élevé. Déconseillé si lombalgie.',warnLevel:'red'},
+  // MOLLETS
+  {id:'e35', name:'Calf Raise Standing',          muscle:'Mollets',          alts:[{name:'Seated Calf Raise',equip:'machine'},{name:'Donkey Calf Raise',equip:'machine'}]},
+  {id:'e36', name:'Single-Leg Calf Raise',        muscle:'Mollets',          alts:[{name:'Smith Calf Raise',equip:'smith'},{name:'Machine Calf Raise',equip:'machine'}]},
+  // FESSIERS
+  {id:'e37', name:'Barbell Hip Thrust',           muscle:'Fessiers',         alts:[{name:'Hip Thrusts Bodyweight',equip:'poids_corps'},{name:'Dumbbell Hip Thrust',equip:'haltères'},{name:'Smith Hip Thrust',equip:'smith'},{name:'Cable Hip Extension',equip:'câble'}]},
+  {id:'e38', name:'Glute Bridge',                 muscle:'Fessiers',         alts:[{name:'Single-Leg Bridge',equip:'poids_corps'},{name:'Frog Pump',equip:'poids_corps'}]},
+  {id:'e39', name:'Cable Kickback',               muscle:'Fessiers',         alts:[{name:'Machine Kickback',equip:'machine'},{name:'Dumbbell Kickback',equip:'haltères'}]},
+  {id:'e40', name:'Cable Pull Through',           muscle:'Fessiers',         alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'Dumbbell RDL',equip:'haltères'}]},
+  {id:'e41', name:'Banded Glute Abduction',       muscle:'Fessiers',         alts:[{name:'Machine Abduction',equip:'machine'},{name:'Seated Abduction',equip:'machine'}]},
+  {id:'e42', name:'Single-Leg Hip Thrust',        muscle:'Fessiers',         alts:[{name:'Barbell Hip Thrust',equip:'barre'},{name:'Glute Bridge',equip:'poids_corps'}]},
+  {id:'e43', name:'Sumo Deadlift',                muscle:'Fessiers',         alts:[{name:'Romanian Deadlift',equip:'barre'},{name:'Trap Bar Deadlift',equip:'barre'}]},
+  // BICEPS
+  {id:'e44', name:'Barbell Curl',                 muscle:'Biceps',           alts:[{name:'Dumbbell Curl',equip:'haltères'},{name:'Cable Curl',equip:'câble'},{name:'Scott Curl',equip:'barre'},{name:'Cable Preacher Curl',equip:'câble'}],            warn:'⚠️ Coude — tendinite possible si charge trop lourde. Contrôler la descente.',warnLevel:'orange'},
+  {id:'e45', name:'Incline Dumbbell Curl',        muscle:'Biceps',           alts:[{name:'Incline Cable Biceps Curl',equip:'câble'}]},
+  {id:'e46', name:'Preacher Machine Curl',        muscle:'Biceps',           alts:[{name:'Preacher Dumbbell Curl',equip:'haltères'},{name:'Spider Curl',equip:'haltères'}]},
+  {id:'e47', name:'Hammer Curl',                  muscle:'Biceps',           alts:[{name:'Rope Hammer Curl',equip:'câble'},{name:'Cable Hammer Curl',equip:'câble'}]},
+  {id:'e48', name:'EZ Bar Curl',                  muscle:'Biceps',           alts:[{name:'Barbell Curl',equip:'barre'},{name:'Dumbbell Curl',equip:'haltères'}],                                                                                        warn:'⚠️ Poignet/Coude — préférer la barre EZ à la barre droite pour réduire la torsion.',warnLevel:'orange'},
+  {id:'e49', name:'Machine Curl',                 muscle:'Biceps',           alts:[{name:'Preacher Curl',equip:'machine'},{name:'Cable Curl',equip:'câble'}]},
+  // TRICEPS
+  {id:'e50', name:'Rope Pushdown',                muscle:'Triceps',          alts:[{name:'Straight Bar Pushdown',equip:'câble'},{name:'Dumbbell Kickback',equip:'haltères'}]},
+  {id:'e51', name:'Skull Crusher',                muscle:'Triceps',          alts:[{name:'Dumbbell Overhead Extension',equip:'haltères'},{name:'Cable Overhead Extension',equip:'câble'},{name:'JM Press',equip:'barre'}],                             warn:'⚠️ Coude — pression élevée sur l\'articulation. Éviter si épicondylite.',warnLevel:'orange'},
+  {id:'e52', name:'Close-Grip Bench Press',       muscle:'Triceps',          alts:[{name:'Dips',equip:'poids_corps'},{name:'Smith Close Grip',equip:'smith'}],                                                                                         warn:'⚠️ Poignet — prise neutre recommandée pour éviter l\'hyperextension.',warnLevel:'orange'},
+  {id:'e53', name:'French Press',                 muscle:'Triceps',          alts:[{name:'Overhead Barbell Extension',equip:'barre'},{name:'Rope Overhead Extension',equip:'câble'}],                                                                  warn:'⚠️ Coude — charge derrière la tête. Éviter si douleur au coude.',warnLevel:'orange'},
+  {id:'e54', name:'Overhead Rope Extension',      muscle:'Triceps',          alts:[{name:'Barbell Overhead Extension',equip:'barre'},{name:'Dumbbell Overhead',equip:'haltères'}]},
+  {id:'e55', name:'Triceps Extension',            muscle:'Triceps',          alts:[{name:'Rope Triceps Extension',equip:'câble'},{name:'Bar Triceps Extension',equip:'câble'}]},
+  // ABDOMINAUX
+  {id:'e56', name:'Hanging Leg Raise',            muscle:'Abdominaux',       alts:[{name:'Captain Chair',equip:'machine'},{name:'Lying Leg Raise',equip:'poids_corps'}]},
+  {id:'e57', name:'Cable Crunch',                 muscle:'Abdominaux',       alts:[{name:'Weighted Crunch',equip:'disque'},{name:'Decline Crunch',equip:'machine'}]},
+  {id:'e58', name:'Plank',                        muscle:'Abdominaux',       alts:[{name:'Side Plank',equip:'poids_corps'},{name:'Weighted Plank',equip:'disque'}]},
+  {id:'e59', name:'Russian Twist',                muscle:'Abdominaux',       alts:[{name:'Cable Twist',equip:'câble'},{name:'Medicine Ball Twist',equip:'médecine_ball'}]},
+  {id:'e60', name:'Reverse Crunch',               muscle:'Abdominaux',       alts:[{name:'V-Up',equip:'poids_corps'},{name:'Jackknife',equip:'poids_corps'}]},
+  {id:'e61', name:'Lying Floor Leg Raise',        muscle:'Abdominaux',       alts:[{name:'Alternate Leg Raises',equip:'poids_corps'}]},
+  // TRAPÈZES
+  {id:'e62', name:'Barbell Shrug',                muscle:'Trapèzes',         alts:[{name:'Dumbbell Shrug',equip:'haltères'},{name:'Smith Shrug',equip:'smith'},{name:'Traps Mid Back Shrugs',equip:'câble'}]},
+  {id:'e63', name:'Farmer Carry',                 muscle:'Trapèzes',         alts:[{name:'Barbell Shrug',equip:'barre'},{name:'Dumbbell Shrug',equip:'haltères'}]},
+  // DIVERS
+  {id:'e64', name:'Step-Up',                      muscle:'Quadriceps',       alts:[{name:'Bulgarian Split Squat',equip:'haltères'},{name:'Walking Lunge',equip:'poids_corps'}],                                                                         warn:'⚠️ Genoux — stabilité critique. Contrôler la descente lentement.',warnLevel:'orange'},
+  {id:'e65', name:'Barbell Upright Row',          muscle:'Épaules',          alts:[{name:'Dumbbell Upright Row',equip:'haltères'},{name:'Rope Upright Row',equip:'câble'}],                                                                             warn:'⚠️ Épaules — risque de conflit sous-acromial. Coudes ne dépassent pas les épaules.',warnLevel:'red'},
+  {id:'e66', name:'Lunges Bands',                 muscle:'Quadriceps',       alts:[{name:'Reverse Bodyweight Lunges',equip:'poids_corps'}]},
+  {id:'e67', name:'Abductor Machine',             muscle:'Fessiers',         alts:[{name:'Squat Abductors',equip:'poids_corps'},{name:'Dumbbell Abductors',equip:'haltères'}]},
+  {id:'r157', name:"Smoothie banane lait",emoji:"🥤",meals:['snack','breakfast'],tags:['snack','creative','breakfast','dairy'],macros:{kcal:220,prot:8,gluc:40,lip:2},ings:[{e:"🍌",n:"Banane",q:"150g"},{e:"🥛",n:"Lait écrémé",q:"250ml"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Mets tous les ingrédients dans le blender","Mixe 30 secondes","Consomme immédiatement"]},
+  {id:'r158', name:"Fromage blanc fruits rouges",emoji:"🍓",meals:['snack','breakfast'],tags:['snack','breakfast','dairy'],macros:{kcal:190,prot:14,gluc:28,lip:1},ings:[{e:"🥛",n:"Fromage blanc 0%",q:"200g"},{e:"🍓",n:"Fraises",q:"150g"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Verse le fromage blanc dans un bol","Ajoute les fraises coupées","Filet de miel par-dessus","Consomme frais"]},
+  {id:'r159', name:"Galettes riz cacao miel",emoji:"🍫",meals:['snack'],tags:['snack','sweet'],macros:{kcal:240,prot:5,gluc:42,lip:6},ings:[{e:"🌾",n:"Galettes de riz",q:"40g"},{e:"🍫",n:"Cacao amer en poudre",q:"10g"},{e:"🍯",n:"Miel",q:"15g"},{e:"🥛",n:"Fromage blanc 0%",q:"80g"}],steps:["Mélange fromage blanc + cacao + miel","Étale sur les galettes de riz","Sers immédiatement"]},
+  {id:'r160', name:"Skyr mangue fraîche",emoji:"🥭",meals:['snack','breakfast'],tags:['snack','breakfast','dairy'],macros:{kcal:200,prot:13,gluc:33,lip:1},ings:[{e:"🥛",n:"Skyr nature",q:"150g"},{e:"🥭",n:"Mangue congelée",q:"120g"},{e:"🍯",n:"Miel",q:"8g"}],steps:["Décongèle la mangue ou utilise fraîche","Coupe en morceaux et mélange avec le skyr","Ajoute le miel","Consomme frais"]},
+  {id:'r161', name:"Pain complet avocat",emoji:"🥑",meals:['snack','breakfast'],tags:['snack','breakfast'],macros:{kcal:260,prot:7,gluc:28,lip:13},ings:[{e:"🍞",n:"Pain complet",q:"60g"},{e:"🥑",n:"Avocat",q:"80g"},{e:"🍋",n:"Citron + épices",q:"à volonté"}],steps:["Grille le pain","Écrase l'avocat avec le citron et les épices","Étale sur le pain","Consomme immédiatement"]},
+  {id:'r162', name:"Compote pomme cannelle",emoji:"🍎",meals:['snack'],tags:['snack','sweet'],macros:{kcal:160,prot:1,gluc:38,lip:0},ings:[{e:"🍎",n:"Pomme",q:"200g"},{e:"🌿",n:"Cannelle",q:"1 pincée"},{e:"🍯",n:"Miel",q:"10g"}],steps:["Épluche et coupe la pomme","Cuis à la casserole 10 min avec un fond d'eau","Ajoute cannelle et miel","Mixe ou laisse en morceaux"]}
 ];
-
-// ══════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════
-let mode='cru';
-let activeLFilters=new Set(['ok','warn','bad']);
-let activeMealF='';
-let activeTypeFs=new Set();
-const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const MEALS=[
-  {id:'breakfast',label:'Petit-déjeuner',emoji:'🌅'},
-  {id:'lunch',    label:'Déjeuner',      emoji:'☀️'},
-  {id:'dinner',   label:'Dîner',         emoji:'🌙'},
-  {id:'snack',    label:'Collation',     emoji:'🍎'},
-];
-let curDay=0;
-let weekData=Array.from({length:7},()=>({breakfast:[],lunch:[],dinner:[],snack:[]}));
-
-
-// ══════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════
-function fmt(n){if(!n||n===0)return'0';return n>=10?Math.round(n):parseFloat(n.toFixed(1));}
-function getMPer100(food){
-  if(food.unitType!=='g'||food.cuitCoef===1.00)return{...food.cru};
-  if(mode==='cru')return{...food.cru};
-  const c=food.cuitCoef;return{kcal:food.cru.kcal/c,prot:food.cru.prot/c,gluc:food.cru.gluc/c,lip:food.cru.lip/c};
-}
-function compMacros(food,qty){
-  if(food.unitType==='unit')return{kcal:food.cru.kcal*qty,prot:food.cru.prot*qty,gluc:food.cru.gluc*qty,lip:food.cru.lip*qty};
-  const m=getMPer100(food);const r=qty/100;return{kcal:m.kcal*r,prot:m.prot*r,gluc:m.gluc*r,lip:m.lip*r};
-}
-function macroDist(a,b){
-  const kd=a.kcal>0?Math.abs(a.kcal-b.kcal)/a.kcal:0;const pd=a.prot>0?Math.abs(a.prot-b.prot)/a.prot:0;
-  const gd=a.gluc>0?Math.abs(a.gluc-b.gluc)/a.gluc:0;const ld=a.lip>0?Math.abs(a.lip-b.lip)/a.lip:0;
-  return kd*0.4+pd*0.3+gd*0.15+ld*0.15;
-}
-function mScore(d){return Math.max(0,Math.round((1-Math.min(d,1))*100));}
-
-// ══════════════════════════════════════════════════════
-// API — JSONP wrapper (contourne les limitations CORS
-//        de Google Apps Script)
-// ══════════════════════════════════════════════════════
-function apiCall(params){
-  return new Promise((resolve,reject)=>{
-    const cbName='_tgg_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-    const url=API_URL+'?'+qs+'&callback='+cbName;
-    const script=document.createElement('script');
-    const timer=setTimeout(()=>{cleanup();reject(new Error('Timeout — vérifie ton URL Apps Script'));},12000);
-    function cleanup(){try{delete window[cbName];}catch(e){}script.remove();clearTimeout(timer);}
-    window[cbName]=function(data){cleanup();resolve(data);};
-    script.onerror=()=>{cleanup();reject(new Error('Impossible de contacter le serveur'));};
-    document.head.appendChild(script);
-    script.src=url;
-  });
-}
-
-// ══════════════════════════════════════════════════════
-// AUTH
-// ══════════════════════════════════════════════════════
-function initApp(){
-  buildSourceSelect();buildMuscleChips();buildEquipChips();renderExercises();
-}
-function doLogout(){}
-
-function switchTab(t){
-  document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.remove('active');p.style.display='none';});
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  const panel=document.getElementById('tab-'+t);
-  if(panel){panel.classList.add('active');panel.style.display='block';}
-  ['eq','ex','reg'].forEach((x,i)=>{if(x===t)document.querySelectorAll('.tab-btn')[i].classList.add('active');});
-  if(t==='reg')buildRegimeChecks();
-}
-
-// ══════════════════════════════════════════════════════
-// TAB 1 — ÉQUIVALENTS
-// ══════════════════════════════════════════════════════
-function buildSourceSelect(){
-  const sel=document.getElementById('sourceSelect');
-  Object.entries(GROUPED).forEach(([cat,foods])=>{
-    const og=document.createElement('optgroup');og.label=cat;
-    foods.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.emoji+' '+f.name;og.appendChild(o);});
-    sel.appendChild(og);
-  });
-}
-function setMode(m){
-  mode=m;
-  document.getElementById('btnCru').classList.toggle('active',m==='cru');
-  document.getElementById('btnCuit').classList.toggle('active',m==='cuit');
-  document.getElementById('toggleNote').textContent=m==='cru'?'Aliments pesés CRU — standard coach':'Aliments pesés CUIT — pratique au quotidien';
-  renderEquiv();
-}
-function toggleLFilter(l){
-  if(activeLFilters.has(l)){if(activeLFilters.size===1)return;activeLFilters.delete(l);}else activeLFilters.add(l);
-  ['ok','warn','bad'].forEach(x=>document.getElementById('lc-'+x)?.classList.toggle('off',!activeLFilters.has(x)));
-  applyLVis();
-}
-function applyLVis(){
-  document.querySelectorAll('.food-card[data-level]').forEach(c=>{const l=c.dataset.level;c.classList.toggle('gone',l&&!activeLFilters.has(l));});
-  const v=document.querySelectorAll('.food-card:not(.gone)').length;
-  document.getElementById('resCount').textContent=v+' aliments compatibles';
-}
-function renderEquiv(){
-  const src=FOODS.find(f=>f.id===parseInt(document.getElementById('sourceSelect').value));
-  const qty=parseFloat(document.getElementById('qtyInput').value)||1;
-  const sc=document.getElementById('srcCard');
-  const ph=document.getElementById('eqPh');
-  const res=document.getElementById('eqResults');
-  const ci=document.getElementById('compatInfo');
-  const lr=document.getElementById('legendRow');
-  if(src){
-    if(src.unitType==='unit'){document.getElementById('qtyLabel').textContent='Nombre d\'œufs';document.getElementById('qtyUnit').textContent='1 œuf ≈ 55g';document.getElementById('qtyInput').step=1;document.getElementById('qtyInput').min=1;}
-    else if(src.unitType==='ml'){document.getElementById('qtyLabel').textContent='Quantité (ml)';document.getElementById('qtyUnit').textContent='millilitres';document.getElementById('qtyInput').step=10;document.getElementById('qtyInput').min=10;}
-    else{document.getElementById('qtyLabel').textContent='Quantité (g)';document.getElementById('qtyUnit').textContent=mode==='cru'?'g — pesé cru':'g — pesé cuit';document.getElementById('qtyInput').step=10;document.getElementById('qtyInput').min=10;}
-  }
-  if(!src){sc.classList.remove('show');ph.style.display='block';res.innerHTML='';ci.classList.remove('show');lr.classList.remove('show');document.getElementById('resCount').textContent='';return;}
-  ph.style.display='none';
-  let sKcal,sProt,sGluc,sLip,sLbl;
-  if(src.unitType==='unit'){sKcal=src.cru.kcal*qty;sProt=src.cru.prot*qty;sGluc=src.cru.gluc*qty;sLip=src.cru.lip*qty;sLbl=qty+' '+src.unitLabel+' ('+Math.round(qty*src.unitWeight)+'g)';}
-  else{const m=getMPer100(src);const r=qty/100;sKcal=m.kcal*r;sProt=m.prot*r;sGluc=m.gluc*r;sLip=m.lip*r;sLbl=qty+(src.unitType==='ml'?'ml':('g '+(src.cuitCoef!==1?mode:'')));}
-  sc.classList.add('show');
-  document.getElementById('srcName').textContent=src.emoji+' '+src.name;
-  document.getElementById('srcQtyLbl').textContent=sLbl;
-  const bi=src.unitType==='unit'?{cls:'unit',txt:'UNITÉ'}:src.unitType==='ml'?{cls:'ml',txt:'ML'}:{cls:mode,txt:mode.toUpperCase()};
-  const bdg=document.getElementById('srcBadge');bdg.textContent=bi.txt;bdg.className='badge '+bi.cls;
-  document.getElementById('srcKcal').textContent=fmt(sKcal);
-  document.getElementById('srcProt').textContent=fmt(sProt)+'g';
-  document.getElementById('srcGluc').textContent=fmt(sGluc)+'g';
-  document.getElementById('srcLip').textContent=fmt(sLip)+'g';
-  const g=GROUPS[src.group];
-  document.getElementById('srcGroupTag').innerHTML=`<span class="group-tag ${src.group}">${g.label}</span>`;
-  const srt=getRating(src);
-  if(srt){document.getElementById('srcRatioBadge').innerHTML=`<div class="ratio-badge ${srt.level}">${srt.label} <span style="font-size:10px;opacity:.7">(${(srt.ratio*100).toFixed(0)}g prot/100kcal)</span></div>`;}
-  else document.getElementById('srcRatioBadge').innerHTML='';
-  ci.classList.add('show');ci.innerHTML=`🔒 Équivalents filtrés : <strong>${g.label}</strong> — ${g.desc}`;
-  const isProt=src.group==='prot';
-  isProt?lr.classList.add('show'):lr.classList.remove('show');
-  const foods=FOODS.filter(f=>f.id!==src.id&&f.group===src.group);
-  if(!foods.length){res.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px">Aucun équivalent dans ce groupe</div>';document.getElementById('resCount').textContent='';return;}
-  let sorted=foods;
-  if(isProt){const ord={ok:0,warn:1,bad:2};sorted=[...foods].sort((a,b)=>{const ra=getRating(a);const rb=getRating(b);const la=ra?ord[ra.level]:3;const lb=rb?ord[rb.level]:3;if(la!==lb)return la-lb;return(b.cru.prot/b.cru.kcal)-(a.cru.prot/a.cru.kcal);});}
-  let html='';let lastS='';
-  sorted.forEach(f=>{
-    let eqD,eqS,eK,eP,eG,eL;
-    if(f.unitType==='unit'){const nb=sKcal/f.cru.kcal;eqD=fmt(nb)+' '+f.unitLabel;eqS='≈'+Math.round(nb*(f.unitWeight||55))+'g';eK=f.cru.kcal*nb;eP=f.cru.prot*nb;eG=f.cru.gluc*nb;eL=f.cru.lip*nb;}
-    else{const m=getMPer100(f);const eqG=(sKcal/m.kcal)*100;const r=eqG/100;eK=m.kcal*r;eP=m.prot*r;eG=m.gluc*r;eL=m.lip*r;eqD=Math.round(eqG)+(f.unitType==='ml'?'ml':'g');eqS=f.unitType==='ml'?'ml':f.cuitCoef!==1?'pesé '+mode:'tel quel';}
-    const rt=getRating(f);let pill='';let cc='food-card';let dl='';
-    if(rt){
-      const warn=rt.level==='bad'?`→ seulement ${fmt(eP)}g prot pour ${fmt(eK)} kcal`:`→ ${fmt(eP)}g prot pour ${fmt(eK)} kcal`;
-      pill=`<div class="rec-pill ${rt.level}">${rt.label} <span class="rec-detail">${warn}</span></div>`;
-      cc+=` fc-${rt.level}`;dl=rt.level;
-      if(isProt&&rt.level!==lastS){lastS=rt.level;const sl={ok:'✅ Recommandés — haute densité protéique',warn:'⚠️ Acceptables — plus de lipides',bad:'❌ Attention — faible densité protéique'};html+=`<div class="sec-div">${sl[rt.level]}</div>`;}
-    }
-    html+=`<div class="${cc}" data-level="${dl}">
-      <div class="food-top">
-        <div class="food-info"><div class="food-emoji">${f.emoji}</div><div><div class="food-name">${f.name}</div><div class="food-cat">${f.cat}</div>${pill}</div></div>
-        <div class="qty-right"><div class="qty-badge">${eqD}</div><div class="qty-sub">${eqS}</div></div>
-      </div>
-      <div class="food-macros">
-        <div class="fm kcal"><strong>${fmt(eK)}</strong><span>kcal</span></div>
-        <div class="fm prot"><strong>${fmt(eP)}g</strong><span>Prot.</span></div>
-        <div class="fm gluc"><strong>${fmt(eG)}g</strong><span>Gluc.</span></div>
-        <div class="fm lip"><strong>${fmt(eL)}g</strong><span>Lip.</span></div>
-      </div></div>`;
-  });
-  res.innerHTML=html;document.getElementById('resCount').textContent=sorted.length+' aliments compatibles';
-  if(isProt)applyLVis();
-}
-
-// ══════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════
-// TAB 2 — EXERCICES
-// ══════════════════════════════════════════════════════
 
 const EXERCISES = [
   // POITRINE
@@ -1209,6 +1132,20 @@ const RESTRICTIONS = {
   noRedMeat:   { bannedFoods:[9,4,10], bannedTags:[], warn:''},
   moroccan:    { preferTags:['moroccan'], warn:''},
   lowcarb:     { preferTags:['lowcarb'], warn:''},
+  helico:      { bannedFoods:[80], bannedTags:[], limitFoods:[66,70],
+                 warn:"Helicobacter pylori : évitez épicé, café, acides. Favorisez yaourt probiotique, légumes cuits, viandes maigres."},
+  goutte:      { bannedFoods:[8,11], bannedTags:[], limitFoods:[9,4,42,48],
+                 warn:"Goutte : évitez sardines, maquereau, viandes rouges en excès. Privilégiez poulet, dinde, œufs, produits laitiers allégés."},
+  anemie:      { bannedFoods:[], bannedTags:[], limitFoods:[], preferTags:['highprot'],
+                 warn:"Anémie : privilégiez viandes rouges, lentilles, épinards, œufs (fer héminique). Combinez avec vitamine C."},
+  foie:        { bannedFoods:[81,82], bannedTags:['bulk','sweet'], limitFoods:[46,49,63],
+                 warn:"Foie gras (stéatose) : évitez sucres rapides, graisses saturées. Privilégiez protéines maigres, légumes verts, huile olive modérée."},
+  osteo:       { bannedFoods:[], bannedTags:[], limitFoods:[], preferTags:['dairy'],
+                 warn:"Ostéoporose : privilégiez yaourt grec, fromage blanc, sardines, amandes, épinards. Priorité calcium + vitamine D."},
+  reflux:      { bannedFoods:[70,66], bannedTags:[], limitFoods:[80,81],
+                 warn:"Brûlures d'estomac : évitez tomate, poivron, épicé, café. Favorisez poulet vapeur, riz, yaourt nature, légumes doux."},
+  ballonnement:{ bannedFoods:[42,43,48,51], bannedTags:[], limitFoods:[60,63],
+                 warn:"Gaz & ballonnement : évitez légumineuses, choux, oignons crus. Favorisez riz, carotte, courgette, protéines maigres."},
 };
 
 const RECIPE_RESTRICTIONS = {
@@ -1242,7 +1179,7 @@ function buildRegimeChecks(){
   if(regimeChecksBuilt)return;
   regimeChecksBuilt=true;
   const grps={
-    rgPathologies:[{key:"diabetes",label:"Diabète type 2"},{key:"hypertension",label:"Hypertension"},{key:"cholesterol",label:"Cholestérol"},{key:"kidney",label:"Insuffisance rénale"},{key:"ibs",label:"Colon irritable"}],
+    rgPathologies:[{key:"diabetes",label:"Diabète type 2"},{key:"hypertension",label:"Hypertension"},{key:"cholesterol",label:"Cholestérol"},{key:"kidney",label:"Insuffisance rénale"},{key:"ibs",label:"Côlon irritable"},{key:"helico",label:"Helicobacter pylori 🦠"},{key:"goutte",label:"Goutte 🦶"},{key:"anemie",label:"Anémie 🩻"},{key:"foie",label:"Foie gras (stéatose) 🫁"},{key:"osteo",label:"Ostéoporose 🦴"},{key:"reflux",label:"Brûlures d'estomac 🔥"},{key:"ballonnement",label:"Gaz & ballonnement 💨"}],
     rgAllergies:[{key:"gluten",label:"Intolérance gluten"},{key:"lactose",label:"Intolérance lactose"},{key:"seafood",label:"Allergie fruits de mer"},{key:"eggs",label:"Allergie oeufs"},{key:"nuts",label:"Noix"}],
     rgPrefs:[{key:"moroccan",label:"Cuisine marocaine 🇲🇦"},{key:"lowcarb",label:"Low-carb"},{key:"highprot",label:"High-protein"},{key:"bulk",label:"Prise de masse"}],
     rgMealPrefs:[{key:"moroccan",label:"Recettes marocaines"},{key:"lowcarb",label:"Low-carb prioritaire"},{key:"highprot",label:"High-protein prioritaire"}]
@@ -1262,6 +1199,7 @@ function buildRegimeChecks(){
 }
 
 let rCurrentStep  = 0;
+let macrosVisible = true;
 
 function openRegime(){
   document.getElementById('app').style.display = 'none';
@@ -1276,10 +1214,16 @@ function toggleCheck(el, key){
   if(rActiveChecks.has(key)) rActiveChecks.delete(key);
   else rActiveChecks.add(key);
 }
-function rNextStep(step){
+function rNextStep(step,mode){
   if(step === 2){
     const kcal = parseFloat(document.getElementById('rKcal').value)||0;
     if(kcal < 1000){ alert('Entre tes calories journalières (min 1000) !'); return; }
+    if(mode==='ai'){
+      rCurrentStep=2;
+      ['rStep0','rStep1','rStep2'].forEach((id,i)=>{document.getElementById(id).style.display=i===2?'block':'none';});
+      ['sdot0','sdot1','sdot2'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',i<=2);});
+      generateAIPlan(); return;
+    }
     generateRegimePlan();
   }
   rCurrentStep = step;
@@ -1370,10 +1314,35 @@ function getMainProt(recipe) {
   return null;
 }
 
+function getMainStarch(recipe) {
+  // Returns starch family to avoid same-family repeat in same day
+  const starchMap = {
+    'Pomme de terre':'potato','Patate douce':'potato',
+    'Riz':'rice','Pâtes':'pasta','Quinoa':'quinoa',
+    'Lentilles':'legume','Haricots':'legume',
+  };
+  for (const ing of (recipe.ings||[])) {
+    for (const [k,v] of Object.entries(starchMap)) {
+      if (ing.n.includes(k)) return v;
+    }
+  }
+  return null;
+}
+
 // ══════════════════════════════════════════════════════
 // UPDATED GENERATE PLAN (with voyage + diversity)
 // ══════════════════════════════════════════════════════
 function generateRegimePlan() {
+  if (typeof aiModeActive !== 'undefined' && aiModeActive) {
+    const s1 = document.getElementById('rStep1');
+    const s2 = document.getElementById('rStep2');
+    if (s1) s1.style.display = 'none';
+    if (s2) s2.style.display = 'block';
+    ['sdot0','sdot1'].forEach(function(id){ const e=document.getElementById(id); if(e) e.classList.remove('active'); });
+    const d2 = document.getElementById('sdot2'); if(d2) d2.classList.add('active');
+    generateAIPlan();
+    return;
+  }
   const kcal = parseFloat(document.getElementById('rKcal').value) || 2000;
   const prot = parseFloat(document.getElementById('rProt').value) || 150;
   const gluc = parseFloat(document.getElementById('rGluc').value) || 200;
@@ -1386,15 +1355,56 @@ function generateRegimePlan() {
   const warnings      = [];
 
   // Apply pathology/allergy/pref restrictions
+  const bannedFoodIds  = new Set();
+  const bannedTagsList = [];
+  const preferTagsList = [];
+
   checks.forEach(key => {
-    const r = RECIPE_RESTRICTIONS[key];
-    if (!r) return;
-    (r.banned||[]).forEach(id => bannedRecipes.add(id));
-    (r.warn_ids||[]).forEach(id => warnRecipes.add(id));
-    (r.prefer||[]).forEach(id => preferRecipes.add(id));
     const rr = RESTRICTIONS[key];
-    if (rr && rr.warn) warnings.push(rr.warn);
+    if (!rr) return;
+    (rr.bannedFoods||[]).forEach(id => bannedFoodIds.add(id));
+    (rr.bannedTags ||[]).forEach(t  => bannedTagsList.push(t));
+    (rr.preferTags ||[]).forEach(t  => preferTagsList.push(t));
+    if (rr.warn) warnings.push(rr.warn);
   });
+
+  // Get banned food names (normalized) from food IDs
+  const bannedFoodNames = [...bannedFoodIds].map(id => {
+    const f = FOODS.find(f => f.id === id);
+    return f ? f.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0153/g,'oe').replace(/\u00e6/g,'ae') : null;
+  }).filter(Boolean);
+
+  // Normalize ingredient name: remove accents, ligatures, lowercase
+  function normIngName(s) {
+    return s.toLowerCase()
+      .replace(/\u0153/g,'oe').replace(/\u00e6/g,'ae')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+
+  // Helper: does a recipe contain a banned food?
+  function recipeHasBannedFood(recipe) {
+    return (recipe.ings||[]).some(ing => {
+      if (!ing.n) return false;
+      const ingNorm = normIngName(ing.n);
+      return bannedFoodNames.some(bn => {
+        const bnFirst = bn.split(' ')[0];
+        const ingFirst = ingNorm.split(' ')[0];
+        return ingNorm.includes(bnFirst) || bn.includes(ingFirst) || bnFirst.includes(ingFirst);
+      });
+    });
+  }
+
+  // Helper: does a recipe have a banned tag?
+  function recipeHasBannedTag(recipe) {
+    return (recipe.tags||[]).some(t => bannedTagsList.includes(t));
+  }
+
+  // Prefer recipes matching preferTags
+  if (preferTagsList.length > 0) {
+    RECIPES.forEach(r => {
+      if ((r.tags||[]).some(t => preferTagsList.includes(t))) preferRecipes.add(r.id);
+    });
+  }
 
   // Apply voyage filter if active
   let voyageTags = null;
@@ -1405,16 +1415,25 @@ function generateRegimePlan() {
 
   // Build pool
   let pool = RECIPES.filter(r => {
-    if (bannedRecipes.has(r.id)) return false;
+    if (!r || !r.meals || !r.tags) return false;
+    if (recipeHasBannedFood(r)) return false;
+    if (recipeHasBannedTag(r))  return false;
     if (voyageTags) {
-      // Voyage mode: ONLY travel recipes for this destination
       const isMyDest = r.tags.some(t => voyageTags.includes(t));
       return isMyDest;
     } else {
-      // Normal mode: exclude ALL travel recipes
       if (r.tags.some(t => t.startsWith('travel_'))) return false;
     }
     return true;
+  });
+
+  // Warn if any meal slot has critically small pool
+  ['breakfast','lunch','dinner','snack'].forEach(mealId => {
+    const slotPool = pool.filter(r => r.meals && r.meals.includes(mealId));
+    if (slotPool.length < 4) {
+      const label = {breakfast:'Petit-déjeuner',lunch:'Déjeuner',dinner:'Dîner',snack:'Collation'}[mealId]||mealId;
+      warnings.push('⚠️ ' + label + ' : seulement ' + slotPool.length + ' recette(s) compatible(s) — variation limitée.');
+    }
   });
 
   function recipeScore(recipe, tKcal, tProt, tGluc, tLip) {
@@ -1430,8 +1449,9 @@ function generateRegimePlan() {
 
   for (let day = 0; day < 7; day++) {
     const dayPlan = {};
-    const dayVegs = new Set();  // track vegs used today
-    const dayProts = {};        // track prot frequency today
+    const dayVegs = new Set();    // track vegs used today
+    const dayProts = {};          // track prot frequency today
+    const dayStarchs = new Set(); // track starch families used today
 
     MEALS_REGIME.forEach(meal => {
       const tKcal = kcal * meal.pct;
@@ -1451,6 +1471,9 @@ function generateRegimePlan() {
         const pa = getMainProt(a), pb = getMainProt(b);
         if (va && dayVegs.has(va)) sa += 30;
         if (vb && dayVegs.has(vb)) sb += 30;
+        const sta = getMainStarch(a), stb = getMainStarch(b);
+        if (sta && dayStarchs.has(sta)) sa += 40;
+        if (stb && dayStarchs.has(stb)) sb += 40;
         if (pa && (dayProts[pa]||0) >= 2) sa += 40;
         if (pb && (dayProts[pb]||0) >= 2) sb += 40;
         return sa - sb;
@@ -1464,8 +1487,10 @@ function generateRegimePlan() {
         usedPerMeal[meal.id].add(pick.id);
         const veg = getMainVeg(pick);
         const pr  = getMainProt(pick);
+        const st  = getMainStarch(pick);
         if (veg) dayVegs.add(veg);
         if (pr)  dayProts[pr] = (dayProts[pr]||0) + 1;
+        if (st)  dayStarchs.add(st);
       }
     });
     plan.push(dayPlan);
@@ -1504,7 +1529,12 @@ function renderPlan(plan, kcal, prot, gluc, lip, warnings, warnRecipes) {
       const isWarn = warnRecipes.has(r.id);
 
       const foodsHtml = r.ings.map(i => {
-        const scaledQ = i.q.replace(/(\d+(?:\.\d+)?)/g, m => Math.round(parseFloat(m) * f));
+        const scaledQ = i.q.replace(/(\d+(?:\.\d+)?)/g, m => {
+          const v = parseFloat(m) * f;
+          if (v <= 5)  return Math.round(v);
+          if (v <= 20) return Math.round(v / 5) * 5;
+          return Math.round(v / 10) * 10;
+        });
         return '<span class="rplan-food-tag ' + (isWarn?'warn-tag':'') + '">' + i.e + ' ' + i.n + ' <strong>' + scaledQ + '</strong></span>';
       }).join('');
 
@@ -1547,7 +1577,12 @@ function copyPlan() {
       const sKcal = Math.round(kcal * meal.pct);
       text += meal.emoji + ' ' + meal.label + ' : ' + r.emoji + ' ' + r.name + ' (' + sKcal + ' kcal)\n';
       r.ings.forEach(i => {
-        const scaledQ = i.q.replace(/(\d+(?:\.\d+)?)/g, m => Math.round(parseFloat(m) * f));
+        const scaledQ = i.q.replace(/(\d+(?:\.\d+)?)/g, m => {
+          const v = parseFloat(m) * f;
+          if (v <= 5)  return Math.round(v);
+          if (v <= 20) return Math.round(v / 5) * 5;
+          return Math.round(v / 10) * 10;
+        });
         text += '  • ' + i.n + ' : ' + scaledQ + '\n';
       });
     });
@@ -1582,6 +1617,14 @@ function copyPlan() {
 // ══════════════════════════════════════════════════════
 // PDF EXPORT
 // ══════════════════════════════════════════════════════
+function toggleMacros(){
+  macrosVisible = !macrosVisible;
+  const btn = document.getElementById('btnToggleMacros');
+  if(btn) btn.textContent = macrosVisible ? '🙈 Masquer macros' : '📊 Afficher macros';
+  document.querySelectorAll('.macro-block').forEach(el=>{
+    el.style.display = macrosVisible ? '' : 'none';
+  });
+}
 function exportPDF() {
   if (!window._lastPlan) return;
   const { plan, kcal, prot, gluc, lip, warnRecipes } = window._lastPlan;
@@ -1602,14 +1645,19 @@ function exportPDF() {
       dayKcal += sKcal; dayProt += sProt; dayGluc += sGluc; dayLip += sLip;
 
       const ingsList = r.ings.map(i => {
-        const scaledQ = i.q.replace(/(\d+(?:\.\d+)?)/g, m => Math.round(parseFloat(m) * f));
+        const scaledQ = i.q.replace(/(\d+(?:\.\d+)?)/g, m => {
+          const v = parseFloat(m) * f;
+          if (v <= 5)  return Math.round(v);
+          if (v <= 20) return Math.round(v / 5) * 5;
+          return Math.round(v / 10) * 10;
+        });
         return '<span class="pdf-ing">' + i.e + ' ' + i.n + ' <b>' + scaledQ + '</b></span>';
       }).join('');
 
-      mealsRows += '<tr><td class="meal-icon">' + meal.emoji + ' <b>' + meal.label + '</b></td><td>' + r.emoji + ' ' + r.name + '<br><small class="macros-small">' + sKcal + ' kcal · ' + sProt + 'g P · ' + sGluc + 'g G · ' + sLip + 'g L</small><br>' + ingsList + '</td></tr>';
+      mealsRows += '<tr><td class="meal-icon">' + meal.emoji + ' <b>' + meal.label + '</b></td><td>' + r.emoji + ' ' + r.name + '<br><small class="macros-small macro-block" style="' + (macrosVisible?'':'display:none') + '">' + sKcal + ' kcal · ' + sProt + 'g P · ' + sGluc + 'g G · ' + sLip + 'g L</small><br>' + ingsList + '</td></tr>';
     });
 
-    daysHtml += '<div class="pdf-day"><div class="pdf-day-hdr"><span>' + dayName + '</span><span class="pdf-day-tot">' + dayKcal + ' kcal · ' + dayProt + 'g P · ' + dayGluc + 'g G · ' + dayLip + 'g L</span></div><table class="meal-table">' + mealsRows + '</table></div>';
+    daysHtml += '<div class="pdf-day"><div class="pdf-day-hdr"><span>' + dayName + '</span><span class="pdf-day-tot macro-block" style="' + (macrosVisible?'':'display:none') + '">' + dayKcal + ' kcal · ' + dayProt + 'g P · ' + dayGluc + 'g G · ' + dayLip + 'g L</span></div><table class="meal-table">' + mealsRows + '</table></div>';
   });
 
   // Shopping list
@@ -1655,6 +1703,8 @@ function exportPDF() {
   .shop-item { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 4px 10px; font-size: 11px; }
   .pdf-footer { text-align: center; font-size: 10px; color: #9ca3af; padding: 14px; border-top: 1px solid #f0f0f0; margin-top: 10px; }
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+@keyframes aiSpin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body onload="initApp()">
@@ -1682,7 +1732,688 @@ function exportPDF() {
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
 
+// ══════════════════════════════════════════════════════
+// TAB 1 — ÉQUIVALENTS
+// ══════════════════════════════════════════════════════
+let mode = 'cru';
+let activeLFilters = new Set(['ok','warn','bad']);
 
+function fmt(v) {
+  return v < 10 ? v.toFixed(1) : Math.round(v);
+}
+
+function getMacrosPer100(food) {
+  if (mode === 'cuit' && food.cuitCoef && food.cuitCoef !== 1) {
+    const coef = food.cuitCoef;
+    return {
+      kcal: food.cru.kcal * coef,
+      prot: food.cru.prot * coef,
+      gluc: food.cru.gluc * coef,
+      lip:  food.cru.lip  * coef
+    };
+  }
+  return food.cru;
+}
+
+function buildSourceSelect() {
+  const sel = document.getElementById('sourceSelect');
+  if (!sel || sel.options.length > 1) return;
+  Object.entries(GROUPED).forEach(([cat, foods]) => {
+    const og = document.createElement('optgroup');
+    og.label = cat;
+    foods.forEach(f => {
+      const o = document.createElement('option');
+      o.value = f.id;
+      o.textContent = f.emoji + ' ' + f.name;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnCru').classList.toggle('active', m === 'cru');
+  document.getElementById('btnCuit').classList.toggle('active', m === 'cuit');
+  const note = document.getElementById('toggleNote');
+  if (note) note.textContent = m === 'cru' ? 'Aliments pesés CRU — standard coach' : 'Aliments pesés CUIT — pratique au quotidien';
+  renderEquiv();
+}
+
+function toggleLFilter(l) {
+  if (activeLFilters.has(l)) {
+    if (activeLFilters.size === 1) return;
+    activeLFilters.delete(l);
+  } else {
+    activeLFilters.add(l);
+  }
+  ['ok','warn','bad'].forEach(x => {
+    const el = document.getElementById('lc-' + x);
+    if (el) el.classList.toggle('off', !activeLFilters.has(x));
+  });
+  applyLVis();
+}
+
+function applyLVis() {
+  document.querySelectorAll('.food-card[data-level]').forEach(card => {
+    const l = card.dataset.level;
+    card.classList.toggle('gone', l && !activeLFilters.has(l));
+  });
+  const v = document.querySelectorAll('#eqResults .food-card:not(.gone)').length;
+  const rc = document.getElementById('resCount');
+  if (rc) rc.textContent = v + ' aliment' + (v > 1 ? 's' : '') + ' compatible' + (v > 1 ? 's' : '');
+}
+
+function renderEquiv() {
+  const selEl  = document.getElementById('sourceSelect');
+  const src    = FOODS.find(f => f.id === parseInt(selEl ? selEl.value : 0));
+  const qtyEl  = document.getElementById('qtyInput');
+  const qty    = parseFloat(qtyEl ? qtyEl.value : 100) || 100;
+  const sc     = document.getElementById('srcCard');
+  const ph     = document.getElementById('eqPh');
+  const res    = document.getElementById('eqResults');
+
+  // Update qty label based on unitType
+  if (src) {
+    const lbl  = document.getElementById('qtyLabel');
+    const unit = document.getElementById('qtyUnit');
+    if (src.unitType === 'unit') {
+      if (lbl)  lbl.textContent  = "Nombre d'œufs";
+      if (unit) unit.textContent = '1 œuf ≈ ' + (src.unitWeight || 55) + 'g';
+      if (qtyEl) { qtyEl.step = 1; qtyEl.min = 1; }
+    } else if (src.unitType === 'ml') {
+      if (lbl)  lbl.textContent  = 'Quantité (ml)';
+      if (unit) unit.textContent = 'millilitres';
+      if (qtyEl) { qtyEl.step = 10; qtyEl.min = 10; }
+    } else {
+      if (lbl)  lbl.textContent  = 'Quantité (g)';
+      if (unit) unit.textContent = mode === 'cru' ? 'grammes — pesé cru' : 'grammes — pesé cuit';
+      if (qtyEl) { qtyEl.step = 10; qtyEl.min = 10; }
+    }
+  }
+
+  if (!src) {
+    if (sc)  sc.style.display  = 'none';
+    if (ph)  ph.style.display  = 'block';
+    if (res) res.innerHTML = '';
+    return;
+  }
+
+  if (ph)  ph.style.display  = 'none';
+  if (sc)  sc.style.display  = 'block';
+
+  // Compute source macros
+  let sKcal, sProt, sGluc, sLip, sQtyLbl;
+  if (src.unitType === 'unit') {
+    sKcal    = src.cru.kcal * qty;
+    sProt    = src.cru.prot * qty;
+    sGluc    = src.cru.gluc * qty;
+    sLip     = src.cru.lip  * qty;
+    sQtyLbl  = qty + ' ' + (src.unitLabel || "œuf") + ' (≈' + Math.round(qty * (src.unitWeight || 55)) + 'g)';
+  } else {
+    const m  = getMacrosPer100(src);
+    const r  = qty / 100;
+    sKcal    = m.kcal * r;
+    sProt    = m.prot * r;
+    sGluc    = m.gluc * r;
+    sLip     = m.lip  * r;
+    sQtyLbl  = qty + (src.unitType === 'ml' ? 'ml' : 'g');
+  }
+
+  // Fill source card
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setTxt('srcQtyLbl', sQtyLbl);
+  setTxt('srcName',   src.emoji + ' ' + src.name);
+  setTxt('srcKcal',   fmt(sKcal));
+  setTxt('srcProt',   fmt(sProt) + 'g');
+  setTxt('srcGluc',   fmt(sGluc) + 'g');
+  setTxt('srcLip',    fmt(sLip)  + 'g');
+
+  // Rating badge
+  const rt  = getRating(src);
+  const rb  = document.getElementById('srcRatioBadge');
+  const gt  = document.getElementById('srcGroupTag');
+  const sbg = document.getElementById('srcBadge');
+  if (rb)  rb.textContent  = rt ? rt.label : '';
+  if (gt)  gt.textContent  = src.cat || '';
+  if (sbg) { sbg.textContent = mode === 'cru' ? 'CRU' : 'CUIT'; sbg.className = 'badge ' + mode; }
+
+  // Filter to same group
+  const compatGroups = {
+    prot:  ['prot'],
+    gluc:  ['gluc'],
+    lip:   ['lip'],
+    fruit: ['fruit'],
+    veg:   ['veg']
+  };
+  const allowed = compatGroups[src.group] || [src.group];
+  let targets = FOODS.filter(f => f.id !== src.id && allowed.includes(f.group));
+
+  const ci = document.getElementById('compatInfo');
+  if (ci) {
+    const grpLabel = (GROUPS[src.group] || {}).label || src.group;
+    ci.textContent = 'Équivalents dans le groupe : ' + grpLabel;
+    ci.style.display = 'block';
+  }
+
+  // Render equivalents
+  if (!res) return;
+  if (!targets.length) {
+    res.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">Aucun équivalent disponible dans ce groupe.</div>';
+    return;
+  }
+
+  const lr = document.getElementById('legendRow');
+  const hasProtTargets = targets.some(f => f.group === 'prot');
+  if (lr) lr.style.display = hasProtTargets ? 'flex' : 'none';
+
+  const cards = targets.map(f => {
+    let eqDisplay, eqSub, eKcal, eProt, eGluc, eLip, level = '';
+    if (f.unitType === 'unit') {
+      const nb = sKcal / f.cru.kcal;
+      eqDisplay = fmt(nb) + ' ' + (f.unitLabel || "œuf");
+      eqSub     = '≈' + Math.round(nb * (f.unitWeight || 55)) + 'g';
+      eKcal = f.cru.kcal * nb; eProt = f.cru.prot * nb;
+      eGluc = f.cru.gluc * nb; eLip  = f.cru.lip  * nb;
+    } else {
+      const m   = getMacrosPer100(f);
+      const eqG = (sKcal / m.kcal) * 100;
+      const r   = eqG / 100;
+      eKcal = m.kcal * r; eProt = m.prot * r;
+      eGluc = m.gluc * r; eLip  = m.lip  * r;
+      eqDisplay = Math.round(eqG) + (f.unitType === 'ml' ? 'ml' : 'g');
+      eqSub     = f.unitType === 'ml' ? 'en ml' : (f.cuitCoef && f.cuitCoef !== 1 ? 'pesé ' + mode : 'tel quel');
+    }
+    const rt2 = getRating(f);
+    if (rt2) level = rt2.level;
+    return `<div class="food-card" data-level="${level}">
+      <div class="food-top">
+        <div class="food-info">
+          <div class="food-emoji">${f.emoji}</div>
+          <div>
+            <div class="food-name">${f.name}</div>
+            <div class="food-cat">${f.cat}</div>
+          </div>
+        </div>
+        <div class="qty-right">
+          <div class="qty-badge">${eqDisplay}</div>
+          <div class="qty-sub">${eqSub}</div>
+        </div>
+      </div>
+      <div class="food-macros">
+        <div class="fm kcal"><strong>${fmt(eKcal)}</strong><span>kcal</span></div>
+        <div class="fm prot"><strong>${fmt(eProt)}g</strong><span>Prot.</span></div>
+        <div class="fm gluc"><strong>${fmt(eGluc)}g</strong><span>Gluc.</span></div>
+        <div class="fm lip"><strong>${fmt(eLip)}g</strong><span>Lip.</span></div>
+      </div>
+    </div>`;
+  });
+
+  res.innerHTML = cards.join('');
+  applyLVis();
+  const rc = document.getElementById('resCount');
+  if (rc) rc.textContent = targets.length + ' aliment' + (targets.length > 1 ? 's' : '') + ' compatible' + (targets.length > 1 ? 's' : '');
+}
+
+
+// ══════════════════════════════════════════════════════
+// AI MODE — Plan genere par Claude API
+// ══════════════════════════════════════════════════════
+let aiModeActive = false;
+
+function toggleAIMode() {
+  aiModeActive = !aiModeActive;
+  const btn  = document.getElementById('aiModeToggleBtn');
+  const stat = document.getElementById('aiModeStatus');
+  if (btn)  btn.style.borderColor = aiModeActive ? 'rgba(99,102,241,.7)' : 'rgba(99,102,241,.35)';
+  if (btn)  btn.style.background  = aiModeActive ? 'rgba(99,102,241,.08)' : '';
+  if (stat) stat.textContent      = aiModeActive ? 'ON \u2728' : 'OFF';
+  if (stat) stat.style.background = aiModeActive ? 'rgba(99,102,241,.25)' : 'rgba(99,102,241,.1)';
+  if (stat) stat.style.color      = aiModeActive ? '#a5b4fc' : '#818cf8';
+}
+
+async function generateAIPlan() {
+  const kcal   = parseFloat(document.getElementById('rKcal').value) || 2000;
+  const prot   = parseFloat(document.getElementById('rProt').value) || 150;
+  const gluc   = parseFloat(document.getElementById('rGluc').value) || 200;
+  const lip    = parseFloat(document.getElementById('rLip').value)  || 70;
+  const checks = [...rActiveChecks];
+  const out    = document.getElementById('rPlanOutput');
+  if (!out) return;
+
+  out.innerHTML = '<div style="text-align:center;padding:40px 20px">'
+    + '<div style="font-size:32px;margin-bottom:12px;animation:aiSpin 1s linear infinite;display:inline-block">\u2728</div>'
+    + '<div style="font-weight:600;color:var(--text);margin-bottom:6px">Claude g\u00e9n\u00e8re ton plan alimentaire...</div>'
+    + '<div style="font-size:12px;color:var(--muted)">Recettes personnalis\u00e9es en cours de cr\u00e9ation</div>'
+    + '<div id="aiStreamLog" style="margin-top:16px;font-size:11px;color:var(--muted);font-style:italic;min-height:20px"></div>'
+    + '</div>';
+
+  const restrictionMap = {
+    diabetes:'Diab\u00e8te', hypertension:'Hypertension', cholesterol:'Cholest\u00e9rol \u00e9lev\u00e9',
+    kidney:'Maladie r\u00e9nale', ibs:'C\u00f4lon irritable', helico:'Helicobacter pylori',
+    goutte:'Goutte', foie:'St\u00e9atose h\u00e9patique', osteo:'Ost\u00e9oporose',
+    reflux:'Reflux gastrique', ballonnement:'Ballonnements',
+    gluten:'Intol\u00e9rance gluten', lactose:'Intol\u00e9rance lactose',
+    eggs:'Allergie \u0153ufs', nuts:'Allergie fruits \u00e0 coque', seafood:'Allergie fruits de mer',
+    noSeafood:'Sans fruits de mer', noRedMeat:'Sans viande rouge',
+    moroccan:'Cuisine marocaine', lowcarb:'Low-carb', anemie:'An\u00e9mie'
+  };
+  const restrictionsList = checks.map(k => restrictionMap[k] || k).join(', ');
+
+  const SYSTEM_PROMPT = 'Tu es un coach nutrition expert qui g\u00e9n\u00e8re des plans alimentaires en fran\u00e7ais pour des clients marocains. Tu dois g\u00e9n\u00e9rer un plan alimentaire sur 7 jours avec exactement 4 repas par jour. R\u00e9ponds UNIQUEMENT avec du JSON valide, sans texte avant ni apr\u00e8s, sans backticks markdown.';
+
+  const USER_PROMPT = 'G\u00e9n\u00e8re un plan alimentaire 7 jours pour ce profil :\n'
+    + '- Calories cibles : ' + kcal + ' kcal/jour\n'
+    + '- Prot\u00e9ines : ' + prot + 'g | Glucides : ' + gluc + 'g | Lipides : ' + lip + 'g\n'
+    + '- Restrictions : ' + (restrictionsList || 'Aucune') + '\n'
+    + '- Cuisine : marocaine et m\u00e9diterran\u00e9enne, ingr\u00e9dients accessibles au Maroc\n\n'
+    + 'Format JSON exact (UNIQUEMENT ce JSON) :\n'
+    + '{\n'
+    + '  "plan": [\n'
+    + '    {\n'
+    + '      "day": "Lundi",\n'
+    + '      "meals": {\n'
+    + '        "breakfast": {"name":"...","emoji":"\ud83c\udf73","kcal":500,"prot":30,"gluc":50,"lip":15,"ingredients":[{"name":"Poulet blanc","qty":"150g"}],"prep":"Instructions courtes"},\n'
+    + '        "lunch": {"name":"...","emoji":"\ud83e\udd57","kcal":700,"prot":50,"gluc":70,"lip":20,"ingredients":[{"name":"...","qty":"..."}],"prep":"..."},\n'
+    + '        "dinner": {"name":"...","emoji":"\ud83c\udf72","kcal":600,"prot":45,"gluc":60,"lip":18,"ingredients":[{"name":"...","qty":"..."}],"prep":"..."},\n'
+    + '        "snack": {"name":"...","emoji":"\ud83c\udf4e","kcal":200,"prot":15,"gluc":20,"lip":7,"ingredients":[{"name":"...","qty":"..."}],"prep":"..."}\n'
+    + '      }\n'
+    + '    }\n'
+    + '  ],\n'
+    + '  "tips": ["conseil 1", "conseil 2", "conseil 3"]\n'
+    + '}\n\n'
+    + 'Jours : Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, Dimanche\n'
+    + 'R\u00e8gles : varier les prot\u00e9ines, grammages pr\u00e9cis arrondis \u00e0 5 ou 10, respecter les restrictions, recettes simples du march\u00e9 marocain.';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        stream: true,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: USER_PROMPT }]
+      })
+    });
+
+    if (!resp.ok) throw new Error('API error ' + resp.status);
+
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let   fullText = '';
+    let   dayCount = 0;
+    const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = decoder.decode(value).split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6);
+        if (raw === '[DONE]') continue;
+        try {
+          const ev = JSON.parse(raw);
+          if (ev.type === 'content_block_delta' && ev.delta && ev.delta.text) {
+            fullText += ev.delta.text;
+            const days = (fullText.match(/"day":/g) || []).length;
+            if (days > dayCount) {
+              dayCount = days;
+              const logEl = document.getElementById('aiStreamLog');
+              if (logEl) logEl.textContent = '\u2705 ' + dayNames.slice(0, days).join(', ') + '...';
+            }
+          }
+        } catch(e) {}
+      }
+    }
+
+    const clean = fullText.replace(/```json|```/g, '').trim();
+    const data  = JSON.parse(clean);
+    renderAIPlan(data);
+
+  } catch(err) {
+    console.error('AI plan error:', err);
+    const out2 = document.getElementById('rPlanOutput');
+    if (out2) out2.innerHTML = '<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:#fbbf24">'
+      + '\u26a0\ufe0f Mode IA indisponible (' + err.message + ') \u2014 plan statique g\u00e9n\u00e9r\u00e9.</div>';
+    setTimeout(() => { aiModeActive = false; generateRegimePlan(); }, 400);
+  }
+}
+
+function renderAIPlan(data) {
+  const out = document.getElementById('rPlanOutput');
+  if (!out || !data || !data.plan) return;
+
+  const mealMeta = {
+    breakfast: { label: 'Petit-d\u00e9jeuner', emoji: '\ud83c\udf05' },
+    lunch:     { label: 'D\u00e9jeuner',       emoji: '\u2600\ufe0f' },
+    dinner:    { label: 'D\u00eener',          emoji: '\ud83c\udf19' },
+    snack:     { label: 'Collation',      emoji: '\ud83c\udf4e' }
+  };
+
+  const daysHtml = data.plan.map(function(day) {
+    const mealsHtml = ['breakfast','lunch','dinner','snack'].map(function(mId) {
+      const m    = day.meals[mId];
+      if (!m) return '';
+      const meta = mealMeta[mId];
+      const ings = (m.ingredients || []).map(function(i) {
+        return '<span class="rplan-food-tag">' + i.name + ' <strong>' + i.qty + '</strong></span>';
+      }).join('');
+      return '<div class="rplan-meal">'
+        + '<div class="rplan-meal-icon">' + meta.emoji + '</div>'
+        + '<div class="rplan-meal-body">'
+        + '<div class="rplan-meal-name">' + (m.emoji || '') + ' ' + m.name + '</div>'
+        + '<div class="rplan-meal-kcal">' + m.kcal + ' kcal</div>'
+        + '<div class="rplan-foods">' + ings + '</div>'
+        + (m.prep ? '<div style="font-size:11px;color:var(--muted);margin-top:6px;font-style:italic">\ud83d\udccb ' + m.prep + '</div>' : '')
+        + '<div class="macro-block" style="display:flex;gap:10px;margin-top:6px;font-size:11px">'
+        + '<span style="color:#60a5fa">P: ' + m.prot + 'g</span>'
+        + '<span style="color:#34d399">G: ' + m.gluc + 'g</span>'
+        + '<span style="color:#f59e0b">L: ' + m.lip + 'g</span>'
+        + '</div></div></div>';
+    }).join('');
+
+    const dayKcal = ['breakfast','lunch','dinner','snack'].reduce(function(s,k){ return s + ((day.meals[k] && day.meals[k].kcal) || 0); }, 0);
+    const dayProt = ['breakfast','lunch','dinner','snack'].reduce(function(s,k){ return s + ((day.meals[k] && day.meals[k].prot) || 0); }, 0);
+
+    return '<div class="rplan-day">'
+      + '<div class="rplan-day-hd"><span>\ud83d\udcc5 ' + day.day + '</span>'
+      + '<div class="macro-block" style="display:flex;gap:8px;font-size:11px">'
+      + '<span style="color:#facc15">\u26a1 ' + dayKcal + ' kcal</span>'
+      + '<span style="color:#60a5fa">P:' + dayProt + 'g</span>'
+      + '</div></div>' + mealsHtml + '</div>';
+  }).join('');
+
+  const tipsHtml = (data.tips && data.tips.length) ? '<div class="card" style="margin-top:12px">'
+    + '<div class="card-title">\ud83d\udca1 Conseils personnalis\u00e9s</div>'
+    + data.tips.map(function(t){ return '<div style="font-size:12px;color:var(--muted);padding:5px 0;border-bottom:1px solid var(--border)">' + t + '</div>'; }).join('')
+    + '</div>' : '';
+
+  const exportHtml = '<div class="export-row" style="margin-top:12px">'
+    + '<button class="btn-export" onclick="copyAIPlan()" title="Copier">\ud83d\udccb</button>'
+    + '<button id="btnToggleMacros" class="btn-toggle-macros" onclick="toggleMacros()" title="Macros">\ud83d\ude48</button>'
+    + '<span style="font-size:11px;color:var(--muted);flex:1">\u2728 G\u00e9n\u00e9r\u00e9 par Claude AI</span>'
+    + '</div>';
+
+  out.innerHTML = '<div id="aiPlanData" style="display:none">' + JSON.stringify(data) + '</div>'
+    + daysHtml + tipsHtml + exportHtml;
+}
+
+function copyAIPlan() {
+  const planEl = document.getElementById('aiPlanData');
+  if (!planEl) return;
+  try {
+    const data  = JSON.parse(planEl.textContent);
+    const lines = ['PLAN ALIMENTAIRE 7 JOURS \u2014 TGG (Mode IA)', '\u2550'.repeat(40)];
+    const mLabels = {breakfast:'\ud83c\udf05 Petit-d\u00e9jeuner',lunch:'\u2600\ufe0f D\u00e9jeuner',dinner:'\ud83c\udf19 D\u00eener',snack:'\ud83c\udf4e Collation'};
+    data.plan.forEach(function(day) {
+      lines.push('', '\ud83d\udcc5 ' + day.day.toUpperCase());
+      ['breakfast','lunch','dinner','snack'].forEach(function(mId) {
+        const m = day.meals[mId];
+        if (!m) return;
+        lines.push(mLabels[mId] + ' : ' + (m.emoji||'') + ' ' + m.name + ' (' + m.kcal + ' kcal)');
+        (m.ingredients||[]).forEach(function(i){ lines.push('  \u2022 ' + i.name + ' : ' + i.qty); });
+      });
+    });
+    navigator.clipboard.writeText(lines.join('\n'));
+  } catch(e) {}
+}
+
+
+// ══════════════════════════════════════════════════════
+// AI GENERATION MODE
+// ══════════════════════════════════════════════════════
+let genMode = 'static';
+
+function setGenMode(m) {
+  genMode = m;
+  document.getElementById('btnModeStatic').classList.toggle('active', m === 'static');
+  document.getElementById('btnModeAI').classList.toggle('active', m === 'ai');
+  const note = document.getElementById('aiModeNote');
+  if (note) note.style.display = m === 'ai' ? 'block' : 'none';
+}
+
+async function generateAIPlan() {
+  const kcal = parseInt(document.getElementById('rKcal').value) || 2000;
+  const prot = parseInt(document.getElementById('rProt').value) || 150;
+  const gluc = parseInt(document.getElementById('rGluc').value) || 200;
+  const lip  = parseInt(document.getElementById('rLip').value)  || 70;
+
+  const checkLabels = {
+    diabetes:'Diabète type 2', hypertension:'Hypertension', cholesterol:'Cholestérol',
+    kidney:'Insuffisance rénale', ibs:'Côlon irritable / SOPK', helico:'Helicobacter pylori',
+    goutte:'Goutte', anemie:'Anémie', foie:'Foie gras (stéatose)', osteo:'Ostéoporose',
+    reflux:"Brûlures d'estomac", ballonnement:'Gaz & ballonnement',
+    gluten:'Intolérance gluten', lactose:'Intolérance lactose',
+    seafood:'Allergie fruits de mer', eggs:'Allergie oeufs', nuts:'Allergie noix/oléagineux',
+    noSeafood:'Sans fruits de mer', noRedMeat:'Sans viande rouge',
+    moroccan:'Cuisine marocaine', lowcarb:'Low-carb', highprot:'High-protein', bulk:'Prise de masse'
+  };
+  const activeLabels = [...rActiveChecks].map(k => checkLabels[k] || k).filter(Boolean);
+
+  let voyageCtx = '';
+  if (rVoyageMode && rVoyageDest && VOYAGES[rVoyageDest]) {
+    const v = VOYAGES[rVoyageDest];
+    voyageCtx = '\nDestination voyage : ' + v.label + '\nConseils locaux : ' + v.tip;
+  }
+
+  const systemPrompt = `Tu es un expert en nutrition sportive et diététicien pour des athlètes marocains.
+Tu génères des plans alimentaires 7 jours STRICTS en JSON.
+Cuisine : marocaine + méditerranéenne + internationale.
+Aliments de base disponibles au Maroc.
+RÈGLE ABSOLUE : Réponds UNIQUEMENT en JSON valide, sans texte avant ou après.`;
+
+  const userPrompt = `Génère un plan alimentaire 7 jours complet.
+
+OBJECTIFS JOURNALIERS :
+- Calories : ${kcal} kcal
+- Protéines : ${prot}g
+- Glucides : ${gluc}g  
+- Lipides : ${lip}g
+
+RESTRICTIONS : ${activeLabels.length ? activeLabels.join(', ') : 'Aucune'}${voyageCtx}
+
+FORMAT JSON EXACTEMENT :
+{
+  "days": [
+    {
+      "day": "Lundi",
+      "meals": {
+        "breakfast": {"name":"Nom","emoji":"🍳","kcal":500,"prot":35,"gluc":50,"lip":15,
+          "ingredients":[{"name":"Poulet blanc","qty":"150g"}],
+          "steps":["Étape 1","Étape 2"]},
+        "lunch":    { /* même structure */ },
+        "dinner":   { /* même structure */ },
+        "snack":    { /* même structure */ }
+      }
+    }
+  ],
+  "shopping_list": ["Poulet blanc","Riz","..."],
+  "tips": ["Conseil 1","Conseil 2"]
+}
+
+RÈGLES :
+- Petit-déjeuner = 25% des kcal, Déjeuner = 35%, Dîner = 30%, Collation = 10%
+- Macros à ±5% par repas
+- 7 jours DIFFERENTS, aucun plat répété 2x
+- Quantités précises en grammes
+- Recettes simples < 30 min
+- Ingrédients disponibles au Maroc
+${activeLabels.length ? '- STRICTEMENT INTERDIT : ' + activeLabels.join(', ') : ''}`;
+
+  const output = document.getElementById('rPlanOutput');
+  output.innerHTML = '<div style="text-align:center;padding:40px 20px">' +
+    '<div style="font-size:36px;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block">⚙️</div>' +
+    '<div style="font-family:\'Syne\',sans-serif;font-size:16px;font-weight:700;color:var(--accent);margin-bottom:8px">Claude génère ton plan...</div>' +
+    '<div style="font-size:12px;color:var(--muted);line-height:1.6">Recettes originales adaptées à tes macros<br>et restrictions. Patiente 15-20 secondes.</div>' +
+    '</div>';
+
+  try {
+    // Appel via proxy GAS (contourne CORS)
+    const gasUrl = API_URL + '?action=ai_plan&payload=' + encodeURIComponent(JSON.stringify({
+      system: systemPrompt,
+      user: userPrompt
+    }));
+
+    const res = await fetch(gasUrl);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Erreur GAS');
+
+    const raw = (data.text || '').trim();
+    const jsonStr = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    const plan = JSON.parse(jsonStr);
+    renderAIPlan(plan, kcal, prot, gluc, lip);
+
+  } catch(err) {
+    output.innerHTML = '<div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:12px;padding:16px;text-align:center">' +
+      '<div style="font-size:24px;margin-bottom:8px">⚠️</div>' +
+      '<div style="font-weight:600;color:#f87171;margin-bottom:6px">Erreur de génération</div>' +
+      '<div style="font-size:12px;color:var(--muted)">' + err.message + '</div>' +
+      '<button class="btn btn-s" style="margin-top:12px;background:var(--surface2)" onclick="generateAIPlan()">Réessayer</button>' +
+      '</div>';
+  }
+}
+
+function renderAIPlan(plan, kcal, prot, gluc, lip) {
+  const output = document.getElementById('rPlanOutput');
+  const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+  const mealConf = [
+    {id:'breakfast', label:'Petit-déjeuner', emoji:'🌅'},
+    {id:'lunch',     label:'Déjeuner',       emoji:'☀️'},
+    {id:'dinner',    label:'Dîner',           emoji:'🌙'},
+    {id:'snack',     label:'Collation',       emoji:'🍎'}
+  ];
+
+  let html = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">' +
+    '<div>' +
+    '<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:14px;color:var(--accent)">✨ Plan IA — 7 jours</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + kcal + ' kcal · ' + prot + 'g P · ' + gluc + 'g G · ' + lip + 'g L</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:6px">' +
+    '<button class="btn btn-s" id="btnToggleMacros" onclick="toggleMacros()" style="padding:7px 10px;font-size:11px;background:var(--surface2)">🙈 Macros</button>' +
+    '<button class="btn btn-s" onclick="copyAIPlan()" style="padding:7px 10px;font-size:11px;background:var(--surface2)">📋 Copier</button>' +
+    '</div>' +
+    '</div>';
+
+  (plan.days || []).forEach(function(day, di) {
+    const dayLabel = day.day || dayNames[di] || ('Jour ' + (di+1));
+    let dayKcal=0, dayProt=0, dayGluc=0, dayLip=0;
+    let mealsHtml = '';
+
+    mealConf.forEach(function(mc) {
+      const m = day.meals && day.meals[mc.id];
+      if (!m) return;
+      dayKcal += m.kcal||0; dayProt += m.prot||0; dayGluc += m.gluc||0; dayLip += m.lip||0;
+
+      const ingrHtml = (m.ingredients||[]).map(function(i) {
+        return '<span class="rplan-food-tag">' + i.name + ' <strong>' + i.qty + '</strong></span>';
+      }).join('');
+
+      const stepsHtml = (m.steps && m.steps.length) ?
+        '<details style="margin-top:8px"><summary style="font-size:11px;color:var(--accent);cursor:pointer">📋 Préparation</summary>' +
+        '<ol style="margin:8px 0 0 16px;font-size:11px;color:var(--muted);line-height:1.8">' +
+        m.steps.map(function(s){ return '<li>' + s + '</li>'; }).join('') +
+        '</ol></details>' : '';
+
+      mealsHtml += '<div class="rplan-meal">' +
+        '<div class="rplan-meal-icon">' + mc.emoji + '</div>' +
+        '<div class="rplan-meal-body">' +
+        '<div class="rplan-meal-head">' +
+        '<div class="rplan-meal-label">' + mc.label + '</div>' +
+        '<div class="rplan-recipe-name">' + (m.emoji||'🍽️') + ' ' + m.name + '</div>' +
+        '</div>' +
+        '<div class="macro-block" style="display:flex;gap:10px;flex-wrap:wrap;margin:5px 0">' +
+        '<span style="font-size:11px;color:var(--muted)">' + (m.kcal||0) + ' kcal</span>' +
+        '<span style="font-size:11px;color:#60a5fa">' + (m.prot||0) + 'g P</span>' +
+        '<span style="font-size:11px;color:#34d399">' + (m.gluc||0) + 'g G</span>' +
+        '<span style="font-size:11px;color:#fb923c">' + (m.lip||0) + 'g L</span>' +
+        '</div>' +
+        '<div class="rplan-foods">' + ingrHtml + '</div>' +
+        stepsHtml +
+        '</div></div>';
+    });
+
+    html += '<div class="rplan-day">' +
+      '<div class="rplan-day-head">' +
+      '<div class="rplan-day-label">📅 ' + dayLabel + '</div>' +
+      '<div class="macro-block" style="font-size:11px;color:var(--muted)">' + Math.round(dayKcal) + ' kcal</div>' +
+      '</div>' + mealsHtml + '</div>';
+  });
+
+  if (plan.tips && plan.tips.length) {
+    html += '<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.15);border-radius:12px;padding:14px 16px;margin-top:12px">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">💡 Conseils nutritionnels</div>' +
+      plan.tips.map(function(t){ return '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;padding-left:10px;border-left:2px solid var(--accent)">• ' + t + '</div>'; }).join('') +
+      '</div>';
+  }
+
+  if (plan.shopping_list && plan.shopping_list.length) {
+    html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:12px">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">🛒 Liste de courses</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+      plan.shopping_list.map(function(item){ return '<span style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px">' + item + '</span>'; }).join('') +
+      '</div></div>';
+  }
+
+  window._lastAIPlan = plan;
+  output.innerHTML = html;
+  if (!macrosVisible) {
+    document.querySelectorAll('.macro-block').forEach(function(el){ el.style.display = 'none'; });
+  }
+}
+
+function copyAIPlan() {
+  const plan = window._lastAIPlan;
+  if (!plan) return;
+  const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+  const mealConf = [
+    {id:'breakfast', label:'🌅 Petit-déjeuner'},
+    {id:'lunch',     label:'☀️ Déjeuner'},
+    {id:'dinner',    label:'🌙 Dîner'},
+    {id:'snack',     label:'🍎 Collation'}
+  ];
+  let text = 'PLAN ALIMENTAIRE 7 JOURS — TGG (IA)\n' + '═'.repeat(38) + '\n\n';
+  (plan.days||[]).forEach(function(day, di) {
+    text += '📅 ' + (day.day || dayNames[di]) + '\n';
+    mealConf.forEach(function(mc) {
+      const m = day.meals && day.meals[mc.id];
+      if (!m) return;
+      text += '  ' + mc.label + ' : ' + (m.emoji||'') + ' ' + m.name + ' (' + m.kcal + ' kcal)\n';
+      (m.ingredients||[]).forEach(function(i){ text += '    • ' + i.name + ' : ' + i.qty + '\n'; });
+    });
+    text += '\n';
+  });
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      const btn = document.querySelector('[onclick="copyAIPlan()"]');
+      if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copié!'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
+    });
+  }
+}
+
+
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('tab-' + id);
+  if (panel) panel.classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+id+"'")) {
+      b.classList.add('active');
+    }
+  });
+}
+
+function initApp() {
+  buildSourceSelect();
+  buildMuscleChips();
+  buildEquipChips();
+  buildRegimeChecks();
+  renderExercises();
+  switchTab('eq');
+}
 </script>
 
 
