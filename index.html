@@ -34,6 +34,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .login-footer{font-size:11px;color:var(--muted);margin-top:18px;line-height:1.7}
 .spinner{width:17px;height:17px;border:2px solid rgba(13,15,20,.3);border-top-color:#0d0f14;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.ai-chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:7px 13px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit}
+.ai-chip.active{background:rgba(74,222,128,.12);border-color:var(--accent);color:var(--accent);font-weight:600}
+.ai-card-btn{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 8px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit;text-align:center}
+.ai-card-btn.active{background:rgba(74,222,128,.10);border-color:var(--accent);color:var(--text);font-weight:600}
 
 /* WELCOME BAR */
 #welcomeBar{background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(34,211,238,.04));border-bottom:1px solid rgba(74,222,128,.2);padding:9px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -534,6 +538,7 @@ textarea{resize:vertical;min-height:90px}
       <div class="step-dot active" id="sdot0"></div>
       <div class="step-dot" id="sdot1"></div>
       <div class="step-dot" id="sdot2"></div>
+      <div class="step-dot" id="sdot3"></div>
     </div>
     <div id="rStep0">
       <div class="card">
@@ -588,7 +593,7 @@ textarea{resize:vertical;min-height:90px}
       <div style="display:flex;gap:8px;padding:0 0 16px">
         <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="rNextStep(0)">Retour</button>
         <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="rNextStep(2)">🔄 Classique</button>
-        <button class="btn btn-s" style="flex:2;background:linear-gradient(135deg,#6c63ff,#a855f7)" onclick="rNextStep(2,'ai')">✨ IA</button>
+        <button class="btn btn-s" style="flex:2;background:linear-gradient(135deg,#6c63ff,#a855f7)" onclick="rNextStep('1b')">✨ Profil IA →</button>
       </div>
       <div style="padding:4px 0 12px">
         <button class="voyage-toggle" id="aiModeToggleBtn" onclick="toggleAIMode()" style="border:1px solid rgba(99,102,241,.35)">
@@ -601,6 +606,81 @@ textarea{resize:vertical;min-height:90px}
           </div>
           <div id="aiModeStatus" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(99,102,241,.1);color:#818cf8;font-weight:600">OFF</div>
         </button>
+      </div>
+    </div>
+    <div id="rStep1b" style="display:none">
+      <div class="card">
+        <div class="card-title">✨ Profil client</div>
+
+        <div class="section-title">Identité</div>
+        <div class="form-row">
+          <div class="fg">
+            <label>Prénom</label>
+            <input type="text" id="aiPrenom" placeholder="Ex: Hamza" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:14px;outline:none">
+          </div>
+          <div class="fg">
+            <label>Sexe</label>
+            <div style="display:flex;gap:6px;margin-top:4px">
+              <button class="ai-chip active" id="sexH" onclick="selectChip('sex','H',this)">👨 Homme</button>
+              <button class="ai-chip" id="sexF" onclick="selectChip('sex','F',this)">👩 Femme</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:14px">Objectif principal</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <button class="ai-card-btn active" onclick="selectChip('objectif','Perte de gras',this)">🔥 Perte de gras</button>
+          <button class="ai-card-btn" onclick="selectChip('objectif','Prise de masse',this)">💪 Prise de masse</button>
+          <button class="ai-card-btn" onclick="selectChip('objectif','Recomposition',this)">⚖️ Recomposition</button>
+          <button class="ai-card-btn" onclick="selectChip('objectif','Performance',this)">🏃 Performance</button>
+        </div>
+
+        <div class="section-title" style="margin-top:14px">Style culinaire</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <button class="ai-card-btn active" onclick="selectChip('cuisine','Marocain classique',this)">🇲🇦 Marocain</button>
+          <button class="ai-card-btn" onclick="selectChip('cuisine','Méditerranéen',this)">🌿 Méditerranéen</button>
+          <button class="ai-card-btn" onclick="selectChip('cuisine','Fitness pur',this)">💪 Fitness pur</button>
+          <button class="ai-card-btn" onclick="selectChip('cuisine','Mixte',this)">🌐 Mixte</button>
+        </div>
+
+        <div class="section-title" style="margin-top:14px">Contexte</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          <button class="ai-card-btn active" onclick="selectChip('contexte','Cuisine maison',this)">🏠 Maison</button>
+          <button class="ai-card-btn" onclick="selectChip('contexte','Repas bureau',this)">🏢 Bureau</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <button class="ai-chip active" onclick="selectChip('temps','15 min',this)">⚡ 15 min</button>
+          <button class="ai-chip" onclick="selectChip('temps','30 min',this)">🕐 30 min</button>
+          <button class="ai-chip" onclick="selectChip('temps','Sans limite',this)">♾️ Libre</button>
+        </div>
+
+        <div class="section-title" style="margin-top:14px">Budget</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <button class="ai-chip active" onclick="selectChip('budget','Économique',this)">💚 Éco</button>
+          <button class="ai-chip" onclick="selectChip('budget','Moyen',this)">🟡 Moyen</button>
+          <button class="ai-chip" onclick="selectChip('budget','Premium',this)">🔴 Premium</button>
+        </div>
+
+        <div class="section-title" style="margin-top:14px">Préférences avancées</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button class="ai-chip active" onclick="selectChip('dejtype','Sucré',this)">🍓 Ptit-déj sucré</button>
+          <button class="ai-chip" onclick="selectChip('dejtype','Salé',this)">🍳 Ptit-déj salé</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="ai-chip active" onclick="toggleChipMulti('viande','Poulet',this)">🍗 Poulet</button>
+          <button class="ai-chip active" onclick="toggleChipMulti('viande','Dinde',this)">🦃 Dinde</button>
+          <button class="ai-chip" onclick="toggleChipMulti('viande','Boeuf',this)">🥩 Bœuf</button>
+          <button class="ai-chip" onclick="toggleChipMulti('viande','Poisson',this)">🐟 Poisson</button>
+          <button class="ai-chip" onclick="toggleChipMulti('viande','Oeufs',this)">🥚 Œufs</button>
+        </div>
+        <div class="fg">
+          <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Aversions (facultatif)</label>
+          <input type="text" id="aiAversions" placeholder="Ex: je déteste les épinards, le céleri..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:13px;outline:none;margin-top:5px">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;padding:0 0 16px">
+        <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="rNextStep(1)">← Retour</button>
+        <button class="btn btn-s" style="flex:2;background:linear-gradient(135deg,#4ade80,#22d3ee);color:#0d0f14;font-weight:700" onclick="rNextStep(2,'ai')">✨ Générer mon plan</button>
       </div>
     </div>
     <div id="rStep2" style="display:none">
@@ -622,7 +702,7 @@ textarea{resize:vertical;min-height:90px}
 // ══════════════════════════════════════════════════════
 // ⚙️ CONFIG — À personnaliser
 // ══════════════════════════════════════════════════════
-const API_URL      = 'https://script.google.com/macros/s/AKfycbzLAFY4T5gY_H1ZS3ITa2QyxKAA5C8NehXt5z8v9xl0b_iiVvz_DD0JjbaXkdmdpIc/exec';
+const API_URL      = 'https://script.google.com/macros/s/AKfycbzpzjDgM9uTRJhBq9zBCPlBcADVNGcEAMBq3ykpg7MjiK0riaD2I3Vnz1Jpgdulowj_/exec';
 const ADMIN_EMAILS = ['abouda28@gmail.com'];
 const ADMIN_PASS   = 'TGG2026';
 
@@ -1214,27 +1294,54 @@ function toggleCheck(el, key){
   if(rActiveChecks.has(key)) rActiveChecks.delete(key);
   else rActiveChecks.add(key);
 }
-function rNextStep(step,mode){
-  if(step === 2){
-    const kcal = parseFloat(document.getElementById('rKcal').value)||0;
-    if(kcal < 1000){ alert('Entre tes calories journalières (min 1000) !'); return; }
-    if(mode==='ai'){
-      rCurrentStep=2;
-      ['rStep0','rStep1','rStep2'].forEach((id,i)=>{document.getElementById(id).style.display=i===2?'block':'none';});
-      ['sdot0','sdot1','sdot2'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',i<=2);});
-      generateAIPlan(); return;
+function rNextStep(step, mode) {
+  // Step 1b = AI profile page
+  if (step === '1b') {
+    ['rStep0','rStep1','rStep1b','rStep2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = id === 'rStep1b' ? 'block' : 'none';
+    });
+    ['sdot0','sdot1','sdot2','sdot3'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) el.className = 'step-dot' + (i === 1 ? ' active' : i < 1 ? ' done' : '');
+    });
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    return;
+  }
+
+  // Step 2 = Generate plan
+  if (step === 2) {
+    const kcal = parseFloat(document.getElementById('rKcal').value) || 0;
+    if (kcal < 1000) { alert('Entre tes calories journalières (min 1000) !'); return; }
+    if (mode === 'ai') {
+      aiProfile.prenom = (document.getElementById('aiPrenom') || {}).value || '';
+      aiProfile.aversions = (document.getElementById('aiAversions') || {}).value || '';
+      ['rStep0','rStep1','rStep1b','rStep2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = id === 'rStep2' ? 'block' : 'none';
+      });
+      ['sdot0','sdot1','sdot2','sdot3'].forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el) el.className = 'step-dot' + (i === 3 ? ' active' : ' done');
+      });
+      window.scrollTo({top: 0, behavior: 'smooth'});
+      generateAIPlan();
+      return;
     }
     generateRegimePlan();
   }
+
+  // Standard step navigation (0, 1)
   rCurrentStep = step;
-  ['rStep0','rStep1','rStep2'].forEach((id,i) => {
-    document.getElementById(id).style.display = i === step ? 'block' : 'none';
-  });
-  ['sdot0','sdot1','sdot2'].forEach((id,i) => {
+  ['rStep0','rStep1','rStep1b','rStep2'].forEach((id, i) => {
     const el = document.getElementById(id);
-    el.className = 'step-dot' + (i === step ? ' active' : i < step ? ' done' : '');
+    if (el) el.style.display = (i === step ? 'block' : 'none');
   });
-  window.scrollTo({top:0, behavior:'smooth'});
+  ['sdot0','sdot1','sdot2','sdot3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'step-dot' + (i === step ? ' active' : i < step ? ' done' : '');
+  });
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 
@@ -1972,6 +2079,49 @@ function toggleAIMode() {
   if (stat) stat.style.color      = aiModeActive ? '#a5b4fc' : '#818cf8';
 }
 
+// ══════════════════════════════════════════════════════
+// AI PROFILE STATE
+// ══════════════════════════════════════════════════════
+const aiProfile = {
+  prenom: '',
+  sex: 'H',
+  objectif: 'Perte de gras',
+  cuisine: 'Marocain classique',
+  contexte: 'Cuisine maison',
+  temps: '15 min',
+  budget: 'Economique',
+  dejtype: 'Sucre',
+  viande: ['Poulet','Dinde'],
+  aversions: ''
+};
+
+let genMode = 'static';
+
+function setGenMode(m) {
+  genMode = m;
+  document.getElementById('btnModeStatic').classList.toggle('active', m === 'static');
+  document.getElementById('btnModeAI').classList.toggle('active', m === 'ai');
+  const note = document.getElementById('aiModeNote');
+  if (note) note.style.display = m === 'ai' ? 'block' : 'none';
+}
+
+function selectChip(key, val, el) {
+  aiProfile[key] = val;
+  const parent = el.parentElement;
+  parent.querySelectorAll('.ai-chip,.ai-card-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleChipMulti(key, val, el) {
+  el.classList.toggle('active');
+  const arr = aiProfile[key] || [];
+  const idx = arr.indexOf(val);
+  if (idx === -1) arr.push(val);
+  else arr.splice(idx, 1);
+  aiProfile[key] = arr;
+}
+
+
 async function generateAIPlan() {
   const kcal = parseInt(document.getElementById('rKcal').value) || 2000;
   const prot = parseInt(document.getElementById('rProt').value) || 150;
@@ -1995,23 +2145,35 @@ async function generateAIPlan() {
     voyageCtx = ' Voyage:' + VOYAGES[rVoyageDest].label + '.';
   }
 
-  const systemPrompt = 'Tu es diététicien sportif expert cuisine marocaine. Réponds UNIQUEMENT en JSON valide, sans texte avant ou après, sans markdown.';
+  const systemPrompt = 'Tu es diététicien sportif expert en cuisine marocaine et méditerranéenne. Réponds UNIQUEMENT en JSON valide, sans texte avant ou après, sans markdown.';
 
   // Compact prompt = shorter output = no truncation
-  const userPrompt = `Plan 7 jours. Objectifs/jour: ${kcal}kcal ${prot}gP ${gluc}gG ${lip}gL.${voyageCtx}
-Restrictions: ${activeLabels.length ? activeLabels.join(', ') : 'aucune'}.
+  const clientName = aiProfile.prenom ? aiProfile.prenom + ', ' : '';
+  const viandes = (aiProfile.viande||['Poulet','Dinde']).join(', ') || 'Poulet, Dinde';
 
-JSON EXACT (pas d'autres champs) :
-{"days":[{"day":"Lundi","meals":{"breakfast":{"name":"Nom court","emoji":"🍳","kcal":500,"prot":35,"gluc":50,"lip":15,"ingredients":[{"name":"Aliment","qty":"150g"},{"name":"Aliment2","qty":"80g"},{"name":"Aliment3","qty":"30g"}],"steps":["Etape 1","Etape 2","Etape 3"]},"lunch":{...},"dinner":{...},"snack":{...}}},...7 jours...]}
+  const userPrompt = `Génère un plan alimentaire 7 jours complet.
 
-Règles strictes:
-- Exactement 3 ingrédients par repas
-- Exactement 3 étapes max (< 10 mots chacune)
+CLIENT : ${clientName}${aiProfile.sex === 'H' ? 'Homme' : 'Femme'}, objectif ${aiProfile.objectif}.
+STYLE CULINAIRE : ${aiProfile.cuisine} — reste dans ce style pour TOUS les repas.
+CONTEXTE : ${aiProfile.contexte}, préparation max ${aiProfile.temps}, budget ${aiProfile.budget}.
+PETIT-DÉJEUNER : style ${aiProfile.dejtype} uniquement.
+PROTÉINES PRÉFÉRÉES : ${viandes}.
+${aiProfile.aversions ? 'AVERSIONS : ' + aiProfile.aversions + '.' : ''}
+OBJECTIFS/JOUR : ${kcal}kcal — ${prot}gP — ${gluc}gG — ${lip}gL.${voyageCtx}
+RESTRICTIONS MÉDICALES : ${activeLabels.length ? activeLabels.join(', ') : 'aucune'}.
+
+JSON EXACT :
+{"days":[{"day":"Lundi","meals":{"breakfast":{"name":"Nom","emoji":"🍳","kcal":500,"prot":35,"gluc":50,"lip":15,"ingredients":[{"name":"Aliment","qty":"150g"},{"name":"Aliment2","qty":"80g"},{"name":"Aliment3","qty":"30g"}],"steps":["Etape 1","Etape 2","Etape 3"]},"lunch":{...},"dinner":{...},"snack":{...}}},...7 jours total...]}
+
+RÈGLES STRICTES :
+- Exactement 3 ingrédients par repas, quantités en grammes
+- Max 3 étapes courtes (< 10 mots chacune)
 - Noms de plats < 5 mots
-- Macros: ptitdej=25%, déj=35%, diner=30%, collation=10% des objectifs journaliers
-- 7 jours différents, 0 répétition
+- Ptit-déj = 25%, déj = 35%, dîner = 30%, collation = 10% des kcal
+- 7 jours différents, AUCUNE répétition de plat
 - Ingrédients disponibles au Maroc
-${activeLabels.length ? '- INTERDIT: ' + activeLabels.join(', ') : ''}`;
+- Style culinaire ${aiProfile.cuisine} UNIQUEMENT — pas d'autres styles
+${activeLabels.length ? '- STRICTEMENT INTERDIT : ' + activeLabels.join(', ') : ''}`;
 
   const output = document.getElementById('rPlanOutput');
   output.innerHTML = '<div style="text-align:center;padding:40px 20px">' +
