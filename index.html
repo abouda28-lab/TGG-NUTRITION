@@ -2527,399 +2527,477 @@ function renderIAPlan(plan, targets) {
 
 // ── PDF EXPORT ──────────────────────────────────────────────────
 function exportPlanPDF() {
-  const stored = window._lastIAPlan;
+  const stored = window._lastPlan;
   if (!stored) { alert("Génère un plan d'abord"); return; }
-  const {plan, targets} = stored;
-  const {kcal, prot, gluc, lip, prenom} = targets;
-  const mealOrder = rProfile.repas;
-  const mealEmoji2 = {'Petit-déjeuner':'Petit-déjeuner','Déjeuner':'Déjeuner','Dîner':'Dîner','Collation 1':'Collation 1','Collation 2':'Collation 2'};
+  if (!window.jspdf) { alert("jsPDF non chargé. Vérifie ta connexion."); return; }
 
+  const {plan, kcal, prot, gluc, lip, prenom} = stored;
+  const days = plan.days || [];
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-  const W = 210, margin = 14;
+  const W = 210, M = 12;
   let y = 0;
 
-  // ── Helpers ──────────────────────────────────────
-  function hexToRGB(hex) {
-    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-    return [r,g,b];
+  // ── HELPERS ──────────────────────────────────────────
+  function sf(size, style, rgb) {
+    doc.setFontSize(size); doc.setFont('helvetica', style || 'normal');
+    if (rgb) doc.setTextColor(rgb[0], rgb[1], rgb[2]);
   }
-  function setFont(size, style='normal', color=[30,30,50]) {
-    doc.setFontSize(size); doc.setFont('helvetica', style); doc.setTextColor(...color);
+  function fill(x, fy, w, h, hex) {
+    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+    doc.setFillColor(r,g,b); doc.rect(x,fy,w,h,'F');
   }
-  function fillRect(x, fy, w, h, hex) {
-    const [r,g,b] = hexToRGB(hex); doc.setFillColor(r,g,b); doc.rect(x,fy,w,h,'F');
+  function np(need) {
+    if (y + need > 282) { doc.addPage(); y = M; addPageHeader(); }
   }
-  function newPageIfNeeded(needed=20) {
-    if (y + needed > 280) { doc.addPage(); y = 14; }
+  function hline(fy, hex) {
+    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+    doc.setDrawColor(r,g,b); doc.setLineWidth(0.3);
+    doc.line(M, fy, W-M, fy);
+  }
+  function macroChip(x, fy, label, val, hex) {
+    const bw = 32;
+    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+    doc.setFillColor(r,g,b); doc.roundedRect(x, fy, bw, 10, 2, 2, 'F');
+    sf(6, 'normal', [255,255,255]); doc.text(label, x+bw/2, fy+4, {align:'center'});
+    sf(8, 'bold', [255,255,255]); doc.text(val, x+bw/2, fy+8.5, {align:'center'});
+  }
+  function addPageHeader() {
+    // thin green top bar
+    fill(0, 0, W, 1.5, '#22c55e');
+    sf(6, 'normal', [100,116,139]);
+    doc.text('TGG HELPER · Plan alimentaire · ' + (prenom||'Client'), M, 6);
+    doc.text('Page ' + doc.getCurrentPageInfo().pageNumber, W-M, 6, {align:'right'});
+    y = 10;
   }
 
-  // ── HEADER ───────────────────────────────────────
-  fillRect(0, 0, W, 38, '#0d1117');
-  // Green accent bar
-  fillRect(0, 0, 4, 38, '#4ade80');
-  // Logo text
-  setFont(8, 'bold', [74,222,128]);
-  doc.text('TEAMGREEKGODS', margin+4, 10);
-  setFont(20, 'bold', [255,255,255]);
-  doc.text('TGG ', margin+4, 22);
-  setFont(20, 'bold', [74,222,128]);
-  doc.text('HELPER', margin+4+14, 22);
-  setFont(8, 'normal', [156,163,175]);
-  doc.text('Plan alimentaire 7 jours', margin+4, 30);
+  // ── COVER HEADER ─────────────────────────────────────
+  fill(0, 0, W, 52, '#0f172a');
+  // accent stripe
+  fill(0, 0, 5, 52, '#22c55e');
+  // TGG logo
+  sf(9, 'bold', [34,197,94]); doc.text('TEAMGREEKGODS', M+7, 12);
+  sf(24, 'bold', [255,255,255]); doc.text('Plan', M+7, 28);
+  sf(24, 'bold', [34,197,94]); doc.text('Alimentaire', M+27, 28);
+  sf(9, 'normal', [156,163,175]); doc.text('by Abdeslam Laraki — Coach certifié', M+7, 36);
   // Client info right
-  setFont(9, 'bold', [255,255,255]);
-  doc.text(prenom || 'Client', W-margin, 14, {align:'right'});
-  setFont(8, 'normal', [156,163,175]);
-  doc.text(rProfile.objectif + '  ·  ' + rProfile.cuisine, W-margin, 21, {align:'right'});
-  doc.text(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}), W-margin, 28, {align:'right'});
-  y = 44;
+  sf(12, 'bold', [255,255,255]); doc.text(prenom||'Client', W-M, 18, {align:'right'});
+  sf(8, 'normal', [156,163,175]);
+  doc.text(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}), W-M, 26, {align:'right'});
+  sf(7, 'normal', [34,197,94]); doc.text('Peser les aliments CRU avant cuisson', W-M, 34, {align:'right'});
+  y = 54;
 
-  // ── MACRO SUMMARY BAR ────────────────────────────
-  fillRect(margin, y, W-margin*2, 22, '#f8fafc');
-  doc.setDrawColor(226,232,240); doc.setLineWidth(0.3);
-  doc.rect(margin, y, W-margin*2, 22);
-  const macroItems = [
-    {label:'Calories', val: kcal + ' kcal', color:'#4ade80'},
-    {label:'Protéines', val: prot + 'g', color:'#60a5fa'},
-    {label:'Glucides', val: gluc + 'g', color:'#fbbf24'},
-    {label:'Lipides', val: lip + 'g', color:'#f87171'},
-  ];
-  const colW = (W-margin*2)/4;
-  macroItems.forEach((m,i) => {
-    const cx = margin + colW*i + colW/2;
-    const [r,g,b] = hexToRGB(m.color);
-    setFont(12, 'bold', [r,g,b]);
-    doc.text(m.val, cx, y+10, {align:'center'});
-    setFont(7, 'normal', [100,116,139]);
-    doc.text(m.label, cx, y+17, {align:'center'});
+  // ── MACRO SUMMARY BAR ────────────────────────────────
+  fill(M, y, W-M*2, 16, '#f8fafc');
+  sf(7, 'bold', [100,116,139]); doc.text('OBJECTIF JOURNALIER', M+4, y+5);
+  macroChip(M+4,   y+6, 'KCAL',  String(kcal),       '#f97316');
+  macroChip(M+38,  y+6, 'PROT',  prot+'g',            '#3b82f6');
+  macroChip(M+72,  y+6, 'GLUC',  gluc+'g',            '#8b5cf6');
+  macroChip(M+106, y+6, 'LIP',   lip+'g',             '#ec4899');
+  hline(y+16, '#e2e8f0');
+  y += 22;
+
+  // ── DAYS ─────────────────────────────────────────────
+  const DAY_NAMES = ['LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE'];
+  const MEAL_LABELS = {breakfast:'Petit-déjeuner', lunch:'Déjeuner', dinner:'Dîner', snack1:'Collation 1', snack2:'Collation 2'};
+  const MEAL_ICONS  = {breakfast:'☀', lunch:'🍽', dinner:'🌙', snack1:'🍎', snack2:'🍎'};
+  const MEAL_COLOR  = {breakfast:'#f97316', lunch:'#3b82f6', dinner:'#8b5cf6', snack1:'#22c55e', snack2:'#22c55e'};
+
+  days.forEach((day, di) => {
+    const meals = ['breakfast','lunch','dinner','snack1','snack2'].filter(k => day[k] && day[k].ingredients && day[k].ingredients.length);
+
+    np(30);
+
+    // Day header
+    fill(M, y, W-M*2, 10, '#0f172a');
+    fill(M, y, 5, 10, '#22c55e');
+    sf(10, 'bold', [255,255,255]);
+    doc.text((DAY_NAMES[di]||('JOUR '+(di+1))), M+8, y+7);
+
+    // Day macro totals
+    const dm = calcDayMacros(day);
+    sf(7, 'normal', [156,163,175]);
+    doc.text(dm.kcal+'kcal  P:'+dm.prot+'g  G:'+dm.gluc+'g  L:'+dm.lip+'g', W-M, y+7, {align:'right'});
+    y += 13;
+
+    meals.forEach(mealKey => {
+      const meal = day[mealKey];
+      if (!meal || !meal.ingredients || !meal.ingredients.length) return;
+
+      np(18);
+
+      // Meal title bar
+      const mColor = MEAL_COLOR[mealKey] || '#64748b';
+      const mLabel = MEAL_LABELS[mealKey] || mealKey;
+      const r2=parseInt(mColor.slice(1,3),16), g2=parseInt(mColor.slice(3,5),16), b2=parseInt(mColor.slice(5,7),16);
+      doc.setFillColor(r2,g2,b2); doc.setFillColor(r2,g2,b2);
+      // left accent + label bg
+      doc.setFillColor(r2,g2,b2); doc.rect(M, y, 3, 7, 'F');
+      doc.setFillColor(r2,g2,b2); doc.setAlpha && doc.setAlpha(0.08);
+      fill(M+3, y, W-M*2-3, 7, '#f1f5f9');
+      sf(8, 'bold', [r2,g2,b2]);
+      doc.text(mLabel.toUpperCase(), M+7, y+5);
+
+      // Meal macros right
+      if (meal._macros) {
+        sf(7, 'normal', [100,116,139]);
+        doc.text(meal._macros.kcal+'kcal', W-M, y+5, {align:'right'});
+      }
+      y += 9;
+
+      // Ingredients
+      (meal.ingredients || []).forEach(ing => {
+        np(7);
+        // ingredient name
+        const name = ing.name || ing.id || '';
+        const qty  = ing.qty ? (ing.qty + (ing.unit && ing.unit !== 'g' ? ' '+ing.unit : 'g')) : '';
+
+        // dot
+        doc.setFillColor(100,116,139); doc.circle(M+5, y+2.5, 0.8, 'F');
+        sf(8, 'normal', [30,41,59]);
+        const nameTxt = doc.splitTextToSize(name, 110);
+        doc.text(nameTxt[0], M+9, y+4);
+
+        // qty right-aligned
+        sf(8, 'bold', [100,116,139]);
+        doc.text(qty, W-M, y+4, {align:'right'});
+        y += 6.5;
+      });
+
+      // prep if any
+      if (meal.prep) {
+        np(8);
+        sf(6.5, 'italic', [148,163,184]);
+        const prepLines = doc.splitTextToSize('⚡ ' + meal.prep, W-M*2-6);
+        doc.text(prepLines[0], M+6, y+4);
+        y += 7;
+      }
+
+      y += 3; // spacing between meals
+      hline(y, '#f1f5f9');
+      y += 4;
+    });
+
+    y += 6;
   });
-  y += 28;
 
-  // ── BUILD SHOPPING LIST ──────────────────────────
-  const shopMap = {};
-  (plan.days||[]).forEach(day => {
-    mealOrder.forEach(mealKey => {
-      const meal = day.meals && day.meals[mealKey];
-      if (!meal) return;
-      (meal.ings||[]).forEach(ing => {
-        const fname = ing.id ? (FOODS.find(f=>f.id===ing.id)||{}).name||'?' : (ing.id_ext||'?');
-        if (!shopMap[fname]) shopMap[fname] = {qty:0, unit: ing.unit||'g'};
-        shopMap[fname].qty += (ing.qty||0);
+  // ── SHOPPING LIST ─────────────────────────────────────
+  doc.addPage(); y = M;
+  fill(M, y, W-M*2, 12, '#0f172a');
+  fill(M, y, 5, 12, '#22c55e');
+  sf(11, 'bold', [255,255,255]); doc.text('LISTE DE COURSES', M+8, y+8.5);
+  sf(7, 'normal', [156,163,175]); doc.text('Pour la semaine complète', W-M, y+8.5, {align:'right'});
+  y += 16;
+
+  // Aggregate
+  const shop = {};
+  days.forEach(day => {
+    ['breakfast','lunch','dinner','snack1','snack2'].forEach(mk => {
+      const meal = day[mk]; if (!meal) return;
+      (meal.ingredients||[]).forEach(ing => {
+        const k = (ing.name||ing.id||'').toLowerCase();
+        if (!shop[k]) shop[k] = {name: ing.name||ing.id||'', qty: 0, unit: ing.unit||'g'};
+        shop[k].qty += (ing.qty||0);
       });
     });
   });
 
-  // ── DAYS ─────────────────────────────────────────
-  const mealColors = {
-    'Petit-déjeuner': '#f59e0b', 'Déjeuner': '#3b82f6',
-    'Dîner': '#8b5cf6', 'Collation 1': '#10b981', 'Collation 2': '#06b6d4'
-  };
+  const items = Object.values(shop).sort((a,b) => a.name.localeCompare(b.name));
+  const col1x = M, col2x = M + (W-M*2)/2 + 2;
+  let col = 0;
+  const colY = [y, y];
 
-  (plan.days||[]).forEach((day, di) => {
-    newPageIfNeeded(35);
-    // Day header
-    fillRect(margin, y, W-margin*2, 9, '#1e293b');
-    setFont(9, 'bold', [255,255,255]);
-    doc.text('  ' + day.day.toUpperCase(), margin, y+6.5);
-    // Day macros
-    let dk=0,dp=0,dg=0,dl=0;
-    mealOrder.forEach(mealKey => {
-      const meal = day.meals && day.meals[mealKey];
-      if (meal) { const m = calcMealMacros(meal); dk+=m.kcal; dp+=m.prot; dg+=m.gluc; dl+=m.lip; }
-    });
-    setFont(7, 'normal', [148,163,184]);
-    doc.text(Math.round(dk) + ' kcal  ·  P:' + Math.round(dp) + 'g  G:' + Math.round(dg) + 'g  L:' + Math.round(dl) + 'g', W-margin, y+6.5, {align:'right'});
-    y += 11;
-
-    mealOrder.forEach(mealKey => {
-      const meal = day.meals && day.meals[mealKey];
-      if (!meal) return;
-      newPageIfNeeded(20);
-
-      const mColor = mealColors[mealKey] || '#64748b';
-      const [mr,mg,mb] = hexToRGB(mColor);
-      // Meal label strip
-      doc.setFillColor(mr,mg,mb,0.12);
-      fillRect(margin, y, 3, 7, mColor);
-      fillRect(margin+3, y, W-margin*2-3, 7, '#f8fafc');
-      setFont(7, 'bold', [100,116,139]);
-      doc.text('  ' + mealKey.toUpperCase(), margin+5, y+5);
-      y += 8;
-
-      // Meal name
-      newPageIfNeeded(8);
-      setFont(10, 'bold', [30,41,59]);
-      const mealName = (meal.emoji||'') + ' ' + (meal.name||'');
-      const nameLines = doc.splitTextToSize(mealName, W-margin*2-4);
-      doc.text(nameLines, margin+2, y+5);
-      y += nameLines.length * 5 + 2;
-
-      // Ingredients inline
-      newPageIfNeeded(8);
-      const ingsStr = (meal.ings||[]).map(ing => {
-        const fname = ing.id ? (FOODS.find(f=>f.id===ing.id)||{}).name||'?' : (ing.id_ext||'?');
-        const qty = ing.unit==='g' ? ing.qty+'g' : ing.qty+' '+ing.unit;
-        return fname + ' ' + qty;
-      }).join('  ·  ');
-      setFont(8, 'normal', [71,85,105]);
-      const ingLines = doc.splitTextToSize(ingsStr, W-margin*2-4);
-      doc.text(ingLines, margin+2, y);
-      y += ingLines.length * 4.5 + 2;
-
-      // Steps (collapsed - just show count)
-      if (meal.steps && meal.steps.length) {
-        newPageIfNeeded(6);
-        setFont(7, 'italic', [100,116,139]);
-        doc.text('Préparation : ' + meal.steps.length + ' étapes', margin+2, y);
-        y += 5;
-      }
-
-      // Small separator
-      doc.setDrawColor(241,245,249); doc.setLineWidth(0.2);
-      doc.line(margin, y, W-margin, y);
-      y += 3;
-    });
-    y += 4;
-  });
-
-  // ── SHOPPING LIST ────────────────────────────────
-  doc.addPage(); y = 14;
-  fillRect(0, 0, W, 18, '#0d1117');
-  fillRect(0, 0, 4, 18, '#4ade80');
-  setFont(12, 'bold', [255,255,255]);
-  doc.text('Liste de courses  —  7 jours', margin+4, 12);
-  y = 24;
-
-  const shopEntries = Object.entries(shopMap).sort((a,b) => a[0].localeCompare(b[0]));
-  const colCount = 2;
-  const shopColW = (W - margin*2 - 8) / colCount;
-  let col = 0, colY = [y, y];
-
-  shopEntries.forEach(([name, v]) => {
-    const qty = v.unit==='g' && v.qty>=1000
-      ? (v.qty/1000).toFixed(1)+'kg'
-      : Math.round(v.qty)+' '+v.unit;
-    const cx = margin + col * (shopColW + 8);
-    if (colY[col] > 270) {
-      col = 0; colY = [Math.max(...colY)+4, Math.max(...colY)+4];
-      if (colY[0] > 270) { doc.addPage(); colY=[14,14]; }
-    }
-    setFont(8, 'normal', [30,41,59]);
-    doc.text('• ' + name, cx, colY[col]);
-    setFont(8, 'bold', [30,41,59]);
-    doc.text(qty, cx + shopColW, colY[col], {align:'right'});
+  items.forEach(item => {
+    const cx = col === 0 ? col1x : col2x;
+    if (colY[col] > 272) { doc.addPage(); y = M; colY[0] = y; colY[1] = y; col = 0; }
+    sf(7, 'normal', [30,41,59]);
+    doc.text('• ' + item.name, cx, colY[col]);
+    const qtyStr = item.qty > 0 ? (Math.round(item.qty) + item.unit) : '—';
+    sf(7, 'bold', [100,116,139]);
+    doc.text(qtyStr, cx + (W-M*2)/2 - 4, colY[col], {align:'right'});
+    // separator line
     doc.setDrawColor(241,245,249); doc.setLineWidth(0.15);
-    doc.line(cx, colY[col]+1.5, cx+shopColW, colY[col]+1.5);
-    colY[col] += 6;
-    col = (col+1) % colCount;
+    doc.line(cx, colY[col]+1.5, cx+(W-M*2)/2-4, colY[col]+1.5);
+    colY[col] += 6.5;
+    col = (col+1)%2;
   });
 
-  // ── FOOTER ───────────────────────────────────────
-  const pageCount = doc.getNumberOfPages();
-  for (let i=1; i<=pageCount; i++) {
+  // ── FOOTER all pages ──────────────────────────────────
+  const pc = doc.getNumberOfPages();
+  for(let i=1;i<=pc;i++){
     doc.setPage(i);
-    setFont(7, 'normal', [148,163,184]);
-    doc.text('TGG Helper · TeamGreekGods · ' + new Date().getFullYear(), margin, 292);
-    doc.text('Page ' + i + ' / ' + pageCount, W-margin, 292, {align:'right'});
+    fill(0, 289, W, 8, '#0f172a');
+    sf(6.5,'normal',[156,163,175]);
+    doc.text('TGG Helper · TeamGreekGods · Coach Abdeslam Laraki', M, 294);
+    doc.text('Page '+i+' / '+pc, W-M, 294, {align:'right'});
   }
 
-  doc.save('plan-alimentaire-' + (prenom||'client').toLowerCase().replace(/\s+/g,'-') + '.pdf');
+  doc.save('plan-alimentaire-'+(prenom||'client').toLowerCase().replace(/\s+/g,'-')+'.pdf');
 }
 
+// ── helper: sum macros for a day ──────────────────────
+function calcDayMacros(day) {
+  let kcal=0, prot=0, gluc=0, lip=0;
+  ['breakfast','lunch','dinner','snack1','snack2'].forEach(mk => {
+    const m = day[mk]; if(!m) return;
+    if (m._macros) { kcal+=m._macros.kcal||0; prot+=m._macros.prot||0; gluc+=m._macros.gluc||0; lip+=m._macros.lip||0; }
+    else (m.ingredients||[]).forEach(ing => {
+      const r = getFoodMacros(ing); if(!r) return;
+      kcal+=r.kcal; prot+=r.prot; gluc+=r.gluc; lip+=r.lip;
+    });
+  });
+  return {kcal:Math.round(kcal), prot:Math.round(prot), gluc:Math.round(gluc), lip:Math.round(lip)};
+}
 
 function exportProgrammePDF() {
   const stored = window._lastTrainPlan;
   if (!stored) { alert("Génère un programme d'abord"); return; }
+  if (!window.jspdf) { alert("jsPDF non chargé. Vérifie ta connexion."); return; }
+
   const {plan, prenom} = stored;
   const prog = plan.programme || plan;
   const jours = prog.jours || [];
-
-  if (!window.jspdf) { alert("jsPDF non chargé. Vérifie ta connexion."); return; }
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-  const W = 210, margin = 14;
+  const W = 210, M = 14;
   let y = 0;
+  let pageNum = 1;
 
-  function hexToRGB(hex) {
-    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-    return [r,g,b];
+  // ── HELPERS ──────────────────────────────────────────────────────
+  function sf(size, style, r, g, b) {
+    doc.setFontSize(size);
+    doc.setFont('helvetica', style || 'normal');
+    if (r !== undefined) doc.setTextColor(r, g, b);
   }
-  function setFont(size, style, color) {
-    doc.setFontSize(size||10); doc.setFont('helvetica', style||'normal');
-    if(color) doc.setTextColor(color[0],color[1],color[2]);
+  function bg(x, fy, w, h, r, g, b) {
+    doc.setFillColor(r, g, b);
+    doc.rect(x, fy, w, h, 'F');
   }
-  function fillRect(x, fy, w, h, hex) {
-    const [r,g,b] = hexToRGB(hex); doc.setFillColor(r,g,b); doc.rect(x,fy,w,h,'F');
+  function addFooter() {
+    sf(6.5, 'normal', 160, 160, 160);
+    doc.text('TGG Helper - TeamGreekGods - Coach Abdeslam Laraki', M, 291);
+    doc.text('Page ' + pageNum, W - M, 291, {align:'right'});
   }
-  function newPageIfNeeded(needed) {
-    if (y + (needed||20) > 280) { doc.addPage(); y = 14; }
+  function newPage() {
+    addFooter();
+    doc.addPage();
+    pageNum++;
+    y = M;
+  }
+  function np(need) {
+    if (y + need > 280) newPage();
   }
 
-  const typeColor = {'Push':'#4ade80','Pull':'#60a5fa','Legs':'#fbbf24','Full Body':'#a78bfa','Upper':'#4ade80','Lower':'#fbbf24','Cardio':'#fb7185','Repos':'#64748b'};
+  // ── PAGE 1: COVER ────────────────────────────────────────────────
+  // White background (default)
+  // Top accent bar
+  bg(0, 0, W, 3, 30, 30, 30);
 
-  // HEADER
-  fillRect(0, 0, W, 38, '#0d1117');
-  fillRect(0, 0, 4, 38, '#818cf8');
-  setFont(8, 'bold', [129,140,248]); doc.text('TEAMGREEKGODS', margin+4, 10);
-  setFont(20, 'bold', [255,255,255]); doc.text('TGG ', margin+4, 22);
-  setFont(20, 'bold', [129,140,248]); doc.text('HELPER', margin+18, 22);
-  setFont(8, 'normal', [156,163,175]); doc.text("Programme d'entrainement", margin+4, 30);
-  setFont(9, 'bold', [255,255,255]); doc.text(prenom||'Client', W-margin, 14, {align:'right'});
-  setFont(8, 'normal', [156,163,175]);
-  doc.text(tProfile.niveau + ' · ' + tProfile.objectif, W-margin, 21, {align:'right'});
-  doc.text(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}), W-margin, 28, {align:'right'});
-  y = 44;
+  // Header block
+  y = 14;
+  sf(22, 'bold', 20, 20, 20);
+  doc.text('TGG HELPER', M, y);
+  y += 10;
+  sf(13, 'normal', 100, 100, 100);
+  doc.text("Programme d'entrainement", M, y);
+  y += 8;
+  // Separator line
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.4);
+  doc.line(M, y, W - M, y);
+  y += 8;
 
-  // INFO TAGS
-  const tags = [tProfile.jours+'j/sem', tProfile.split, ...tProfile.blessure.map(b=>'! '+b), ...tProfile.anomalie.map(a=>'! '+a)];
-  let tx = margin;
-  tags.forEach(tag => {
-    const tw = doc.getTextWidth(tag)+8;
-    const isWarn = tag.startsWith('!');
-    fillRect(tx, y, tw, 7, isWarn ? '#7f1d1d' : '#1e293b');
-    setFont(7, 'bold', isWarn ? [252,165,165] : [226,232,240]);
-    doc.text(isWarn ? tag.slice(2) : tag, tx+4, y+5);
-    tx += tw+4;
-    if (tx > W-margin-30) { tx=margin; y+=9; }
-  });
-  y += 13;
+  // Client info
+  sf(14, 'bold', 20, 20, 20);
+  doc.text(prenom || 'Client', M, y);
+  y += 7;
+  sf(9, 'normal', 100, 100, 100);
+  doc.text(tProfile.niveau + '   |   ' + tProfile.objectif + '   |   ' + tProfile.jours + ' jours/semaine', M, y);
+  y += 5;
+  doc.text('Split : ' + tProfile.split, M, y);
+  y += 5;
+  doc.text(new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'long', year:'numeric'}), M, y);
+  y += 6;
 
-  setFont(11, 'bold', [30,41,59]);
-  doc.text(prog.nom || (tProfile.split+' — '+tProfile.objectif), margin, y);
-  y += 9;
+  // Blessures / anomalies
+  if (tProfile.blessure.length || tProfile.anomalie.length) {
+    y += 2;
+    bg(M, y, W - M*2, 8, 255, 243, 243);
+    doc.setDrawColor(239, 68, 68);
+    doc.setLineWidth(0.3);
+    doc.rect(M, y, W - M*2, 8);
+    sf(7, 'bold', 180, 30, 30);
+    const warns = [
+      ...tProfile.blessure.map(b => 'Blessure : ' + b),
+      ...tProfile.anomalie.map(a => 'Anomalie : ' + a)
+    ].join('   ');
+    doc.text(warns.substring(0, 100), M + 3, y + 5.5);
+    y += 12;
+  }
 
-  // JOURS
-  jours.forEach(day => {
-    const isRest = !day.seances || !day.seances.length || day.type==='Repos';
-    const col = typeColor[day.type]||'#4ade80';
-    newPageIfNeeded(isRest ? 14 : 20);
+  y += 4;
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.4);
+  doc.line(M, y, W - M, y);
+  y += 10;
 
-    fillRect(margin, y, W-margin*2, 9, '#1e293b');
-    fillRect(margin, y, 4, 9, col);
-    setFont(9, 'bold', [255,255,255]);
-    doc.text('  '+day.jour.toUpperCase(), margin+4, y+6.5);
-    if (!isRest) {
-      const [cr,cg,cb] = hexToRGB(col);
-      setFont(8, 'bold', [cr,cg,cb]);
-      doc.text(day.type, W-margin, y+6.5, {align:'right'});
-    } else {
-      setFont(8, 'normal', [148,163,184]);
-      doc.text('Repos / Recuperation', W-margin, y+6.5, {align:'right'});
+  // Programme name
+  sf(11, 'bold', 20, 20, 20);
+  doc.text(prog.nom || (tProfile.split + ' - ' + tProfile.objectif), M, y);
+  y += 14;
+
+  // ── DAYS ─────────────────────────────────────────────────────────
+  const TYPE_COLOR = {
+    'Push':    [34, 197, 94],
+    'Pull':    [59, 130, 246],
+    'Legs':    [234, 179, 8],
+    'Full Body':[139, 92, 246],
+    'Upper':   [34, 197, 94],
+    'Lower':   [234, 179, 8],
+    'Cardio':  [236, 72, 153],
+    'Repos':   [150, 150, 150]
+  };
+
+  jours.forEach(function(day) {
+    const isRest = !day.seances || !day.seances.length || day.type === 'Repos';
+    const tc = TYPE_COLOR[day.type] || [100, 100, 100];
+
+    // ── REST DAY ──
+    if (isRest) {
+      np(14);
+      bg(M, y, W - M*2, 10, 245, 245, 245);
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.3);
+      doc.rect(M, y, W - M*2, 10);
+      // left color stripe
+      bg(M, y, 3, 10, tc[0], tc[1], tc[2]);
+      sf(9, 'bold', 80, 80, 80);
+      doc.text(day.jour, M + 6, y + 7);
+      sf(8, 'normal', 140, 140, 140);
+      doc.text('Repos & Recuperation', W - M, y + 7, {align:'right'});
+      y += 16;
+      return;
     }
-    y += 11;
 
-    if (!isRest) {
-      // Table header
-      fillRect(margin, y, W-margin*2, 6, '#f1f5f9');
-      setFont(6.5, 'bold', [100,116,139]);
-      doc.text('#', margin+2, y+4.5);
-      doc.text('Exercice', margin+10, y+4.5);
-      doc.text('Series', W-margin-52, y+4.5, {align:'center'});
-      doc.text('Reps', W-margin-38, y+4.5, {align:'center'});
-      doc.text('Repos', W-margin-22, y+4.5, {align:'center'});
-      y += 7;
+    // ── TRAINING DAY HEADER ──
+    np(16);
+    bg(M, y, W - M*2, 11, 30, 30, 30);
+    bg(M, y, 3, 11, tc[0], tc[1], tc[2]);
+    sf(10, 'bold', 255, 255, 255);
+    doc.text(day.jour.toUpperCase(), M + 6, y + 8);
+    sf(9, 'bold', tc[0], tc[1], tc[2]);
+    doc.text(day.type, W - M, y + 8, {align:'right'});
+    y += 14;
 
-      (day.seances||[]).forEach((ex, i) => {
-        newPageIfNeeded(10);
-        if(i%2===0) fillRect(margin, y, W-margin*2, 8, '#fafafa');
-        doc.setDrawColor(241,245,249); doc.setLineWidth(0.15);
-        doc.rect(margin, y, W-margin*2, 8);
+    // ── EXERCISES ──
+    (day.seances || []).forEach(function(ex, i) {
+      const dbEx = EXERCISES.find(function(e){ return e.id === ex.exId; });
+      const hasWarn = dbEx && dbEx.safe && dbEx.warnLevel !== 'green';
+      const ytMedia = (typeof EXERCISE_MEDIA !== 'undefined') ? EXERCISE_MEDIA[ex.exId] : null;
 
-        setFont(7, 'bold', [148,163,184]); doc.text(String(i+1), margin+3, y+5.5);
-        setFont(8, 'bold', [30,41,59]);
-        const nm = doc.splitTextToSize(ex.nom||ex.name||'', 78);
-        doc.text(nm[0], margin+10, y+5.5);
-        if(ex.muscle){setFont(6.5,'normal',[148,163,184]); doc.text(ex.muscle, margin+10, y+8.5);}
+      // Calculate row height needed
+      // Line 1: number + name (always)
+      // Line 2: muscle (always)  
+      // Line 3: series x reps | repos (always)
+      // Line 4: conseil (if exists)
+      // Line 5: warning (if exists)
+      // Line 6: youtube (if exists)
+      const baseH = 32;
+      const warnH = hasWarn ? 8 : 0;
+      const ytH   = ytMedia ? 8 : 0;
+      const totalH = baseH + warnH + ytH + 4;
 
-        setFont(8,'bold',[30,41,59]);
-        doc.text(String(ex.series), W-margin-52, y+5.5, {align:'center'});
-        doc.text(String(ex.reps), W-margin-38, y+5.5, {align:'center'});
-        setFont(7,'normal',[100,116,139]);
-        doc.text(String(ex.repos), W-margin-22, y+5.5, {align:'center'});
+      np(totalH);
 
-        if(ex.conseil){
-          setFont(6.5,'italic',[100,116,139]);
-          const cl = doc.splitTextToSize(ex.conseil, 36);
-          doc.text(cl[0], W-margin, y+5.5, {align:'right'});
-        }
+      // Exercise box - light border
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.25);
+      doc.rect(M, y, W - M*2, totalH - 4);
 
-        const dbEx = EXERCISES.find(e => e.id===ex.exId);
-        if(dbEx && dbEx.safe && dbEx.warnLevel!=='green'){
-          newPageIfNeeded(7); y+=8;
-          fillRect(margin, y, W-margin*2, 6, dbEx.warnLevel==='red'?'#450a0a':'#451a03');
-          setFont(6.5,'normal',dbEx.warnLevel==='red'?[252,165,165]:[253,230,138]);
-          const sn = dbEx.safe.replace(/^[\u{1F534}\u{1F7E0}\u2705]\s*/u,'');
-          doc.text('! '+sn.substring(0,110), margin+3, y+4.5);
-        }
-        // YouTube link
-        const ytMedia = (typeof EXERCISE_MEDIA !== 'undefined') ? EXERCISE_MEDIA[ex.exId] : null;
-        if (ytMedia && ytMedia.yt) {
-          newPageIfNeeded(6); y += 8;
-          setFont(6.5, 'normal', [99,102,241]);
-          doc.textWithLink('▶ Voir la vidéo d\'exécution', margin+10, y+3.5, {url: ytMedia.yt});
-          doc.setDrawColor(99,102,241); doc.setLineWidth(0.15);
-          doc.line(margin+10, y+4.5, margin+10 + doc.getTextWidth('▶ Voir la vidéo d\'exécution'), y+4.5);
-        } else {
-          y += 8;
-        }
-      });
-    }
-    y += 4;
+      // Left color stripe
+      bg(M, y, 3, totalH - 4, tc[0], tc[1], tc[2]);
+
+      // Exercise number
+      sf(8, 'bold', tc[0], tc[1], tc[2]);
+      doc.text(String(i + 1), M + 8, y + 7, {align:'center'});
+
+      // Exercise name — line 1
+      sf(10, 'bold', 20, 20, 20);
+      const nameLines = doc.splitTextToSize(ex.nom || ex.name || '', 100);
+      doc.text(nameLines[0], M + 13, y + 7);
+
+      // Muscle — line 2
+      sf(7, 'normal', 130, 130, 130);
+      doc.text((ex.muscle || '').toUpperCase(), M + 13, y + 13);
+
+      // Stats block — right side, lines 1-2
+      const sx = W - M - 58;
+      // Series
+      sf(7, 'normal', 100, 100, 100);
+      doc.text('Series', sx, y + 6);
+      sf(10, 'bold', 20, 20, 20);
+      doc.text(String(ex.series), sx, y + 12);
+      // Reps
+      sf(7, 'normal', 100, 100, 100);
+      doc.text('Reps', sx + 22, y + 6);
+      sf(10, 'bold', 20, 20, 20);
+      doc.text(String(ex.reps), sx + 22, y + 12);
+      // Repos
+      sf(7, 'normal', 100, 100, 100);
+      doc.text('Repos', sx + 42, y + 6);
+      sf(9, 'bold', 20, 20, 20);
+      doc.text(String(ex.repos), sx + 42, y + 12);
+
+      // Separator line
+      doc.setDrawColor(235, 235, 235);
+      doc.setLineWidth(0.2);
+      doc.line(M + 3, y + 15, W - M, y + 15);
+
+      // Conseil — line 3
+      let innerY = y + 21;
+      if (ex.conseil) {
+        sf(7.5, 'italic', 80, 80, 80);
+        const cLines = doc.splitTextToSize(ex.conseil, W - M*2 - 10);
+        doc.text(cLines[0], M + 6, innerY);
+        innerY += 7;
+      } else {
+        innerY += 2;
+      }
+
+      // Warning — line 4 (if exists)
+      if (hasWarn) {
+        const warnBg = dbEx.warnLevel === 'red' ? [255,235,235] : [255,248,220];
+        const warnFg = dbEx.warnLevel === 'red' ? [180,30,30] : [140,90,0];
+        bg(M + 3, innerY - 3, W - M*2 - 3, 7, warnBg[0], warnBg[1], warnBg[2]);
+        sf(6.5, 'normal', warnFg[0], warnFg[1], warnFg[2]);
+        const sn = dbEx.safe.replace(/[\u{1F534}\u{1F7E0}\u2705\u26A0\uFE0F]\s*/gu, '');
+        const wLines = doc.splitTextToSize('Attention : ' + sn, W - M*2 - 12);
+        doc.text(wLines[0], M + 6, innerY + 1.5);
+        innerY += 8;
+      }
+
+      // YouTube link — line 5 (if exists)
+      if (ytMedia) {
+        sf(7.5, 'normal', 59, 130, 246);
+        doc.textWithLink('Youtube : Voir la video d\'execution', M + 6, innerY + 1.5, {url: ytMedia.yt});
+        doc.setDrawColor(59, 130, 246);
+        doc.setLineWidth(0.15);
+        doc.line(M + 6, innerY + 2.2, M + 6 + doc.getTextWidth('Youtube : Voir la video d\'execution'), innerY + 2.2);
+      }
+
+      y += totalH + 2;
+    });
+
+    y += 6;
   });
 
-  // FOOTER on all pages
-  const pageCount = doc.getNumberOfPages();
-  for(let i=1;i<=pageCount;i++){
-    doc.setPage(i);
-    setFont(7,'normal',[148,163,184]);
-    doc.text('TGG Helper · TeamGreekGods · '+new Date().getFullYear(), margin, 292);
-    doc.text('Page '+i+' / '+pageCount, W-margin, 292, {align:'right'});
-  }
+  // ── FOOTER last page ──────────────────────────────────────────────
+  addFooter();
 
-  doc.save('programme-'+(prenom||'client').toLowerCase().replace(/\s+/g,'-')+'.pdf');
+  doc.save('programme-' + (prenom || 'client').toLowerCase().replace(/\s+/g, '-') + '.pdf');
 }
 
 
-function switchTab(id) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const panel = document.getElementById('tab-' + id);
-  if (panel) panel.classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+id+"'")) {
-      b.classList.add('active');
-    }
-  });
-}
-
-// ══════════════════════════════════════════════════════
-// TAB 4 — PROGRAMME IA
-// ══════════════════════════════════════════════════════
-const tProfile = {
-  sex: 'H',
-  objectif: 'Prise de masse',
-  niveau: 'Débutant (0-1 an)',
-  jours: '4',
-  split: 'Push Pull Legs',
-  equip: ['Salle complète'],
-  blessure: [],
-  anomalie: []
-};
-
-function tChip(key, val, el) {
-  tProfile[key] = val;
-  const parent = el.parentElement;
-  parent.querySelectorAll('.rchip,.rchip-big').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
-
-function tToggle(key, val, el) {
-  el.classList.toggle('active');
-  const arr = tProfile[key];
-  const idx = arr.indexOf(val);
-  if (idx === -1) arr.push(val); else arr.splice(idx, 1);
-}
 
 function retourTrainForm() {
   document.getElementById('trainFormArea').style.display = 'block';
@@ -3093,6 +3171,50 @@ function renderProgramme(plan, prenom) {
   output.innerHTML = html;
 }
 
+
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const btn = document.querySelector('.tab-btn[onclick*="' + id + '"]');
+  if (btn) btn.classList.add('active');
+  const pane = document.getElementById('tab-' + id);
+  if (pane) pane.classList.add('active');
+}
+
+function toggleEx(id) {
+  const el = document.getElementById('ex-body-' + id);
+  const icon = document.getElementById('ex-icon-' + id);
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  if (icon) icon.textContent = open ? '▶' : '▼';
+}
+
+function tChip(el, group) {
+  const chips = document.querySelectorAll('.tchip[data-group="' + group + '"]');
+  const multi = el.dataset.multi === 'true';
+  if (!multi) {
+    chips.forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  } else {
+    el.classList.toggle('active');
+  }
+  updateTProfile();
+}
+
+function tToggle(el) {
+  el.classList.toggle('active');
+  updateTProfile();
+}
+
+function updateTProfile() {
+  tProfile.niveau    = document.querySelector('.tchip[data-group="niveau"].active')?.dataset.val || tProfile.niveau;
+  tProfile.objectif  = document.querySelector('.tchip[data-group="objectif"].active')?.dataset.val || tProfile.objectif;
+  tProfile.split     = document.querySelector('.tchip[data-group="split"].active')?.dataset.val || tProfile.split;
+  tProfile.jours     = document.querySelector('.tchip[data-group="jours"].active')?.dataset.val || tProfile.jours;
+  tProfile.blessure  = [...document.querySelectorAll('.tchip[data-group="blessure"].active')].map(c => c.dataset.val);
+  tProfile.anomalie  = [...document.querySelectorAll('.tchip[data-group="anomalie"].active')].map(c => c.dataset.val);
+}
 
 function initApp() {
   buildSourceSelect();
