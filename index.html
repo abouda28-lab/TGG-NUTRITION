@@ -1437,7 +1437,7 @@ function renderExercises(){
         : '';
       const media = (typeof EXERCISE_MEDIA !== 'undefined') ? (EXERCISE_MEDIA[ex.id] || null) : null;
       const mediaHtml = media ? `<div class="ex-media">
-        <img src="${media.img}" alt="${ex.name}" class="ex-photo" loading="lazy" onerror="this.parentElement.style.display='none'">
+        <img src="${media.img}" alt="${ex.name}" class="ex-photo" loading="lazy" onerror="this.style.display='none'">
         <a href="${media.yt}" target="_blank" rel="noopener" class="ex-yt-btn">▶ Voir la vidéo</a>
       </div>` : '';
       html += `<div class="ex-card">
@@ -2372,8 +2372,7 @@ Note: Pour aliments HORS BASE, utilise id_ext (nom) + kcal_u/prot_u/gluc_u/lip_u
   try {
     const res = await fetch(API_URL + '?action=ai_plan', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({system: systemPrompt, user: userPrompt})
+      body: new URLSearchParams({payload: JSON.stringify({system: systemPrompt, user: userPrompt})})
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Erreur GAS');
@@ -3024,7 +3023,21 @@ async function lancerProgrammeIA() {
   if (tProfile.anomalie.length) contraintes.push('Anomalies posturales: ' + tProfile.anomalie.join(', '));
   if (notes) contraintes.push('Notes: ' + notes);
 
-  const exCompressed = EXERCISES.map(e =>
+  // Filter exercises relevant to this split to reduce prompt size and GAS timeout
+  const SPLIT_MUSCLES = {
+    'Push':       ['Poitrine','Épaules','Triceps'],
+    'Pull':       ['Dos','Biceps','Trapèzes','Avant-bras'],
+    'Legs':       ['Quadriceps','Ischio-jambiers','Fessiers','Mollets'],
+    'Full Body':  ['Poitrine','Dos','Épaules','Quadriceps','Ischio-jambiers','Fessiers','Biceps','Triceps','Abdominaux'],
+    'Upper':      ['Poitrine','Dos','Épaules','Biceps','Triceps','Trapèzes'],
+    'Lower':      ['Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux'],
+    'Cardio et Endurance': ['Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux'],
+  };
+  const splitMuscles = SPLIT_MUSCLES[tProfile.split] || null;
+  const filteredEx = splitMuscles
+    ? EXERCISES.filter(e => splitMuscles.includes(e.muscle))
+    : EXERCISES;
+  const exCompressed = filteredEx.map(e =>
     e.id + '|' + e.name + '|' + e.muscle + '|' + (e.warnLevel || 'green')
   ).join('\n');
 
@@ -3060,14 +3073,13 @@ async function lancerProgrammeIA() {
     + (dosNote ? '8. ' + dosNote + '\n' : '')
     + '9. Programme sur ' + tProfile.jours + ' jours avec repos bien placés.\n'
     + '10. Séries x Reps basés sur objectif: ' + repsPrescription + '.\n'
-    + '\nFORMAT JSON STRICT:\n'
-    + '{"programme":{"nom":"PPL 4j Masse","jours":[{"jour":"Lundi","type":"Push","seances":[{"exId":"e1","nom":"Flat Barbell Bench Press","muscle":"Poitrine","series":4,"reps":"6-10","repos":"3 min","conseil":"Omoplates serrées"}]},{"jour":"Mardi","type":"Repos","seances":[]}]}}';
+    + '\nFORMAT JSON STRICT (réponds UNIQUEMENT ce JSON):\n'
+    + '{"programme":{"nom":"string","jours":[{"jour":"Lundi","type":"Push","seances":[{"exId":"e1","nom":"string","muscle":"string","series":4,"reps":"8-12","repos":"2 min","conseil":"string"}]}]}}';
 
   try {
     const res = await fetch(API_URL + '?action=ai_plan', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({system: systemPrompt, user: userPrompt})
+      body: new URLSearchParams({payload: JSON.stringify({system: systemPrompt, user: userPrompt})})
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Erreur GAS');
