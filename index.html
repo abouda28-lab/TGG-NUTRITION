@@ -437,6 +437,15 @@ textarea{resize:vertical;min-height:90px}
 .ex-warn.orange{background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);color:#fb923c}
 .btn-toggle-macros{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#ccc;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
 .btn-toggle-macros:hover{background:rgba(255,255,255,.14);color:#fff}
+.ex-media{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0 8px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.ex-photo{width:100%;max-width:320px;border-radius:10px;background:#111;object-fit:contain;max-height:200px}
+.ex-yt-btn{display:inline-flex;align-items:center;gap:6px;background:#ff0000;color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;transition:.2s}
+.ex-yt-btn:hover{background:#cc0000;transform:scale(1.03)}
+
+.ex-media{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0 10px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.ex-photo{width:100%;max-width:340px;border-radius:10px;background:#0f172a;object-fit:contain;max-height:200px;display:block}
+.ex-yt-btn{display:inline-flex;align-items:center;gap:6px;background:#ff0000;color:#fff!important;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;transition:.15s}
+.ex-yt-btn:hover{background:#cc0000;transform:scale(1.04)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -1256,6 +1265,96 @@ const EXERCISES = [
   {id:'e87', name:'Curl concentration',           muscle:'Biceps',      equip:'haltères',    alts:[{name:'Machine Curl',equip:'machine'},{name:'Cable Curl',equip:'câble'}],                       safe:'✅ Coude appuyé sur la cuisse, mouvement strict. Idéal pour finisher ou réhabilitation biceps. Éviter de balancer le torse.', warnLevel:'green'},
 ];
 
+
+const EXERCISE_MEDIA = {
+  'e1': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-bench-press-resized.png', yt:'https://www.youtube.com/watch?v=gRVjAtPip0Y'},
+  'e2': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/incline-barbell-bench-press-resized.png', yt:'https://www.youtube.com/watch?v=IP4oeKh1Sd4'},
+  'e3': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/incline-dumbbell-fly-resized.png', yt:'https://www.youtube.com/watch?v=eozdVDA78K0'},
+  'e4': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/chest-dip-resized.png', yt:'https://www.youtube.com/watch?v=2z8JmcrW-As'},
+  'e5': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/low-pulley-crossover-resized.png', yt:'https://www.youtube.com/watch?v=taI4XduLpTk'},
+  'e6': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/incline-dumbbell-press-resized.png', yt:'https://www.youtube.com/watch?v=8iPEnn-ltC8'},
+  'e7': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/push-up-resized.png', yt:'https://www.youtube.com/watch?v=IODxDxX7oi4'},
+  'e8': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/lat-pulldown-resized.png', yt:'https://www.youtube.com/watch?v=CAwf7n6Luuc'},
+  'e9': {img:'https://weighttraining.guide/wp-content/uploads/2016/11/reverse-grip-lat-pulldown-resized.png', yt:'https://www.youtube.com/watch?v=Y7HRyuCOrgY'},
+  'e10': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/seated-cable-row-resized.png', yt:'https://www.youtube.com/watch?v=GZbfZ033f74'},
+  'e11': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-bent-over-row-resized.png', yt:'https://www.youtube.com/watch?v=FWJR5Ve8bnQ'},
+  'e12': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-bent-over-row-resized.png', yt:'https://www.youtube.com/watch?v=pYcpY20QaE8'},
+  'e13': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-pullover-resized.png', yt:'https://www.youtube.com/watch?v=FK4rHfWRSCo'},
+  'e14': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/deadlift-resized.png', yt:'https://www.youtube.com/watch?v=op9kVnSso6Q'},
+  'e15': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/good-morning-resized.png', yt:'https://www.youtube.com/watch?v=YA-h3n9L4YU'},
+  'e16': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/wide-grip-seated-cable-row-resized.png', yt:'https://www.youtube.com/watch?v=UCXxvVItLoM'},
+  'e17': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/seated-dumbbell-shoulder-press-resized.png', yt:'https://www.youtube.com/watch?v=qEwKCR5JCog'},
+  'e18': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-standing-military-press-resized.png', yt:'https://www.youtube.com/watch?v=2yjwXTZQDDI'},
+  'e19': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-lateral-raise-resized.png', yt:'https://www.youtube.com/watch?v=3VcKaXpzqRo'},
+  'e20': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-front-raise-resized.png', yt:'https://www.youtube.com/watch?v=gkfSuCTYDpw'},
+  'e21': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-rear-delt-fly-resized.png', yt:'https://www.youtube.com/watch?v=EA7u4Q_8HQ0'},
+  'e22': {img:'https://weighttraining.guide/wp-content/uploads/2016/11/cable-face-pull-resized.png', yt:'https://www.youtube.com/watch?v=rep-qVOkqgk'},
+  'e23': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/upright-row-resized.png', yt:'https://www.youtube.com/watch?v=VEn4-hBSNQg'},
+  'e24': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-standing-military-press-resized.png', yt:'https://www.youtube.com/watch?v=2yjwXTZQDDI'},
+  'e25': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-squat-resized.png', yt:'https://www.youtube.com/watch?v=bEv6CCg2BC8'},
+  'e26': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-front-squat-resized.png', yt:'https://www.youtube.com/watch?v=m4ytaCJZpl0'},
+  'e27': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/leg-press-resized.png', yt:'https://www.youtube.com/watch?v=IZxyjW7MPJQ'},
+  'e28': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-split-squat-resized.png', yt:'https://www.youtube.com/watch?v=2C-uNgKwPLE'},
+  'e29': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-walking-lunge-resized.png', yt:'https://www.youtube.com/watch?v=L8fvypPrKBI'},
+  'e30': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/leg-extension-resized.png', yt:'https://www.youtube.com/watch?v=YyvSfVjQeL0'},
+  'e31': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/hack-squat-resized.png', yt:'https://www.youtube.com/watch?v=0tn5K9NlCfo'},
+  'e32': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/romanian-deadlift-resized.png', yt:'https://www.youtube.com/watch?v=JCXUYuzwNrM'},
+  'e33': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/seated-leg-curl-resized.png', yt:'https://www.youtube.com/watch?v=ELOCsoDSmrg'},
+  'e34': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/good-morning-resized.png', yt:'https://www.youtube.com/watch?v=YA-h3n9L4YU'},
+  'e35': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-standing-calf-raise-resized.png', yt:'https://www.youtube.com/watch?v=-M4-G8p1fCI'},
+  'e36': {img:'https://weighttraining.guide/wp-content/uploads/2016/11/single-leg-calf-raise-resized.png', yt:'https://www.youtube.com/watch?v=gwLzBJYoWlI'},
+  'e37': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-hip-thrust-resized.png', yt:'https://www.youtube.com/watch?v=Zp26q4BY5HE'},
+  'e38': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/glute-bridge-resized.png', yt:'https://www.youtube.com/watch?v=wPM8icPu6H8'},
+  'e39': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/cable-hip-kickback-resized.png', yt:'https://www.youtube.com/watch?v=gkPj8USrGQA'},
+  'e40': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/cable-pull-through-resized.png', yt:'https://www.youtube.com/watch?v=pBjBMkZMPKo'},
+  'e41': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/hip-abduction-machine-resized.png', yt:'https://www.youtube.com/watch?v=A-yBGSQtLuc'},
+  'e42': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-hip-thrust-resized.png', yt:'https://www.youtube.com/watch?v=Zp26q4BY5HE'},
+  'e43': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/sumo-deadlift-resized.png', yt:'https://www.youtube.com/watch?v=WaRlQvknuqw'},
+  'e44': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-curl-resized.png', yt:'https://www.youtube.com/watch?v=kwG2ipFRgfo'},
+  'e45': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/incline-dumbbell-curl-resized.png', yt:'https://www.youtube.com/watch?v=soxrZlIl35U'},
+  'e46': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/preacher-curl-resized.png', yt:'https://www.youtube.com/watch?v=fIWP-FRFNU0'},
+  'e47': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/hammer-curl-resized.png', yt:'https://www.youtube.com/watch?v=zC3nLlEvin4'},
+  'e48': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/ez-bar-curl-resized.png', yt:'https://www.youtube.com/watch?v=zG2i9lSXRoQ'},
+  'e49': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/preacher-curl-resized.png', yt:'https://www.youtube.com/watch?v=fIWP-FRFNU0'},
+  'e50': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/triceps-rope-pushdown-resized.png', yt:'https://www.youtube.com/watch?v=vB5OHsJ3EME'},
+  'e51': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/skull-crusher-resized.png', yt:'https://www.youtube.com/watch?v=l3rHYPtMUo8'},
+  'e52': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/close-grip-barbell-bench-press-resized.png', yt:'https://www.youtube.com/watch?v=nEF0bv2FW94'},
+  'e53': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-french-press-resized.png', yt:'https://www.youtube.com/watch?v=l3rHYPtMUo8'},
+  'e54': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/overhead-rope-tricep-extension-resized.png', yt:'https://www.youtube.com/watch?v=d_KZxkY_0cM'},
+  'e55': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/triceps-rope-pushdown-resized.png', yt:'https://www.youtube.com/watch?v=vB5OHsJ3EME'},
+  'e56': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/hanging-leg-raise-resized.png', yt:'https://www.youtube.com/watch?v=hdng3Nm1x_E'},
+  'e57': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/cable-crunch-resized.png', yt:'https://www.youtube.com/watch?v=2fbujeH3F0E'},
+  'e58': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/plank-resized.png', yt:'https://www.youtube.com/watch?v=pSHjTRCQxIw'},
+  'e59': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/russian-twist-resized.png', yt:'https://www.youtube.com/watch?v=wkD8rjkodUI'},
+  'e60': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/reverse-crunch-resized.png', yt:'https://www.youtube.com/watch?v=hyv14_1QMGY'},
+  'e61': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/lying-leg-raise-resized.png', yt:'https://www.youtube.com/watch?v=JB2oyawG9KI'},
+  'e62': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-shrug-resized.png', yt:'https://www.youtube.com/watch?v=cJRVVxmytaM'},
+  'e63': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/farmers-walk-resized.png', yt:'https://www.youtube.com/watch?v=Fkzk_RqlYig'},
+  'e64': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-step-up-resized.png', yt:'https://www.youtube.com/watch?v=dQqApCGd5Ss'},
+  'e65': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/upright-row-resized.png', yt:'https://www.youtube.com/watch?v=VEn4-hBSNQg'},
+  'e66': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-walking-lunge-resized.png', yt:'https://www.youtube.com/watch?v=L8fvypPrKBI'},
+  'e67': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/hip-abduction-machine-resized.png', yt:'https://www.youtube.com/watch?v=A-yBGSQtLuc'},
+  'e68': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/push-up-resized.png', yt:'https://www.youtube.com/watch?v=IODxDxX7oi4'},
+  'e69': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/decline-push-up-resized.png', yt:'https://www.youtube.com/watch?v=SKPab2YC8BE'},
+  'e70': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-bench-press-resized.png', yt:'https://www.youtube.com/watch?v=VmB1G1K7v94'},
+  'e71': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/pec-deck-fly-resized.png', yt:'https://www.youtube.com/watch?v=Z57CtFmRMxA'},
+  'e72': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-bent-over-row-resized.png', yt:'https://www.youtube.com/watch?v=FWJR5Ve8bnQ'},
+  'e73': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/romanian-deadlift-resized.png', yt:'https://www.youtube.com/watch?v=JCXUYuzwNrM'},
+  'e74': {img:'https://weighttraining.guide/wp-content/uploads/2016/11/arnold-press-resized.png', yt:'https://www.youtube.com/watch?v=6Z15_WdXmVw'},
+  'e75': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-rear-delt-fly-resized.png', yt:'https://www.youtube.com/watch?v=EA7u4Q_8HQ0'},
+  'e76': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/barbell-walking-lunge-resized.png', yt:'https://www.youtube.com/watch?v=L8fvypPrKBI'},
+  'e77': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-lateral-lunge-resized.png', yt:'https://www.youtube.com/watch?v=FzqxT3OaXB4'},
+  'e78': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/sumo-squat-resized.png', yt:'https://www.youtube.com/watch?v=qFTqeGKZRzk'},
+  'e79': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/glute-bridge-resized.png', yt:'https://www.youtube.com/watch?v=wPM8icPu6H8'},
+  'e80': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-step-up-resized.png', yt:'https://www.youtube.com/watch?v=dQqApCGd5Ss'},
+  'e81': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/crunch-resized.png', yt:'https://www.youtube.com/watch?v=Xyd_fa5zoEU'},
+  'e82': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/lying-leg-raise-resized.png', yt:'https://www.youtube.com/watch?v=JB2oyawG9KI'},
+  'e83': {img:'https://weighttraining.guide/wp-content/uploads/2016/11/ab-wheel-rollout-resized.png', yt:'https://www.youtube.com/watch?v=yFxQpFaKkZk'},
+  'e84': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/bicycle-crunch-resized.png', yt:'https://www.youtube.com/watch?v=9FGilxCbdz8'},
+  'e85': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/chest-dip-resized.png', yt:'https://www.youtube.com/watch?v=2z8JmcrW-As'},
+  'e86': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/triceps-rope-pushdown-resized.png', yt:'https://www.youtube.com/watch?v=vB5OHsJ3EME'},
+  'e87': {img:'https://weighttraining.guide/wp-content/uploads/2016/10/dumbbell-concentration-curl-resized.png', yt:'https://www.youtube.com/watch?v=0AUGkch3tzc'},
+};
 const MUSCLES  = [...new Set(EXERCISES.map(e=>e.muscle))];
 const EQUIPMENTS = [
   {id:'barre',       label:'🏋️ Barre'},
@@ -1336,8 +1435,14 @@ function renderExercises(){
       const warnHtml = ex.warn
         ? `<div class="ex-warn ${ex.warnLevel||'orange'}">${ex.warn}</div>`
         : '';
+      const media = (typeof EXERCISE_MEDIA !== 'undefined') ? (EXERCISE_MEDIA[ex.id] || null) : null;
+      const mediaHtml = media ? `<div class="ex-media">
+        <img src="${media.img}" alt="${ex.name}" class="ex-photo" loading="lazy" onerror="this.parentElement.style.display='none'">
+        <a href="${media.yt}" target="_blank" rel="noopener" class="ex-yt-btn">▶ Voir la vidéo</a>
+      </div>` : '';
       html += `<div class="ex-card">
         <div class="ex-name">${ex.name}</div>
+        ${mediaHtml}
         ${warnHtml}
         <div class="ex-alts">${altsHtml}</div>
       </div>`;
