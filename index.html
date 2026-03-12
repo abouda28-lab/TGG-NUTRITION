@@ -438,6 +438,8 @@ textarea{resize:vertical;min-height:90px}
 .btn-toggle-macros{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#ccc;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
 .btn-toggle-macros:hover{background:rgba(255,255,255,.14);color:#fff}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body onload="initApp()">
 
@@ -840,7 +842,7 @@ textarea{resize:vertical;min-height:90px}
 // ══════════════════════════════════════════════════════
 // ⚙️ CONFIG — À personnaliser
 // ══════════════════════════════════════════════════════
-const API_URL      = 'https://script.google.com/macros/s/AKfycbzLAFY4T5gY_H1ZS3ITa2QyxKAA5C8NehXt5z8v9xl0b_iiVvz_DD0JjbaXkdmdpIc/exec';
+const API_URL      = 'https://script.google.com/macros/s/AKfycbzpzjDgM9uTRJhBq9zBCPlBcADVNGcEAMBq3ykpg7MjiK0riaD2I3Vnz1Jpgdulowj_/exec';
 const ADMIN_EMAILS = ['abouda28@gmail.com'];
 const ADMIN_PASS   = 'TGG2026';
 
@@ -1898,112 +1900,7 @@ function toggleMacros(){
     el.style.display = macrosVisible ? '' : 'none';
   });
 }
-function exportPDF() {
-  if (!window._lastPlan) return;
-  const { plan, kcal, prot, gluc, lip, warnRecipes } = window._lastPlan;
 
-  let daysHtml = '';
-  DAYS_REGIME.forEach((dayName, dayIdx) => {
-    let dayKcal=0, dayProt=0, dayGluc=0, dayLip=0;
-    let mealsRows = '';
-
-    MEALS_REGIME.forEach(meal => {
-      const r = RECIPES.find(x => x.id === plan[dayIdx][meal.id]);
-      if (!r) return;
-      const f = (kcal * meal.pct) / r.macros.kcal;
-      const sKcal = Math.round(kcal * meal.pct);
-      const sProt = Math.round(r.macros.prot * f);
-      const sGluc = Math.round(r.macros.gluc * f);
-      const sLip  = Math.round(r.macros.lip  * f);
-      dayKcal += sKcal; dayProt += sProt; dayGluc += sGluc; dayLip += sLip;
-
-      const ingsList = r.ings.map(i => {
-        const scaledQ = i.q.replace(/(\d+(?:\.\d+)?)/g, m => {
-          const v = parseFloat(m) * f;
-          if (v <= 5)  return Math.round(v);
-          if (v <= 20) return Math.round(v / 5) * 5;
-          return Math.round(v / 10) * 10;
-        });
-        return '<span class="pdf-ing">' + i.e + ' ' + i.n + ' <b>' + scaledQ + '</b></span>';
-      }).join('');
-
-      mealsRows += '<tr><td class="meal-icon">' + meal.emoji + ' <b>' + meal.label + '</b></td><td>' + r.emoji + ' ' + r.name + '<br><small class="macros-small macro-block" style="' + (macrosVisible?'':'display:none') + '">' + sKcal + ' kcal · ' + sProt + 'g P · ' + sGluc + 'g G · ' + sLip + 'g L</small><br>' + ingsList + '</td></tr>';
-    });
-
-    daysHtml += '<div class="pdf-day"><div class="pdf-day-hdr"><span>' + dayName + '</span><span class="pdf-day-tot macro-block" style="' + (macrosVisible?'':'display:none') + '">' + dayKcal + ' kcal · ' + dayProt + 'g P · ' + dayGluc + 'g G · ' + dayLip + 'g L</span></div><table class="meal-table">' + mealsRows + '</table></div>';
-  });
-
-  // Shopping list
-  const shopping = {};
-  DAYS_REGIME.forEach((_, dayIdx) => {
-    MEALS_REGIME.forEach(meal => {
-      const r = RECIPES.find(x => x.id === plan[dayIdx][meal.id]);
-      if (!r) return;
-      r.ings.forEach(i => { shopping[i.n] = i.e; });
-    });
-  });
-  const shopItems = Object.entries(shopping).map(([n,e]) => '<span class="shop-item">' + e + ' ' + n + '</span>').join('');
-
-  const html = `<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>Plan Alimentaire TGG</title>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1a1a2e; background: white; }
-  .pdf-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; }
-  .pdf-logo { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
-  .pdf-logo span { color: #4ade80; }
-  .pdf-meta { text-align: right; font-size: 11px; opacity: 0.85; }
-  .pdf-macros-bar { background: #f8fffe; border: 1px solid #4ade80; border-radius: 8px; padding: 12px 20px; margin: 18px 20px; display: flex; gap: 24px; }
-  .pdf-macro { text-align: center; }
-  .pdf-macro-val { font-size: 20px; font-weight: 800; color: #4ade80; }
-  .pdf-macro-lbl { font-size: 10px; color: #666; text-transform: uppercase; }
-  .pdf-day { margin: 0 20px 16px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; page-break-inside: avoid; }
-  .pdf-day-hdr { background: #1a1a2e; color: white; padding: 8px 14px; display: flex; justify-content: space-between; font-weight: 700; font-size: 13px; }
-  .pdf-day-tot { color: #4ade80; font-size: 11px; font-weight: 600; }
-  .meal-table { width: 100%; border-collapse: collapse; }
-  .meal-table tr { border-bottom: 1px solid #f0f0f0; }
-  .meal-table tr:last-child { border-bottom: none; }
-  .meal-icon { width: 120px; padding: 9px 12px; font-size: 11px; vertical-align: top; background: #f9fafb; }
-  .meal-table td:last-child { padding: 9px 12px; }
-  .macros-small { color: #6b7280; font-size: 10px; }
-  .pdf-ing { display: inline-block; background: #f3f4f6; border-radius: 4px; padding: 2px 6px; margin: 2px 2px 0 0; font-size: 10px; }
-  .shop-section { margin: 0 20px 20px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
-  .shop-hdr { background: #16213e; color: white; padding: 8px 14px; font-weight: 700; font-size: 13px; }
-  .shop-body { padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
-  .shop-item { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 4px 10px; font-size: 11px; }
-  .pdf-footer { text-align: center; font-size: 10px; color: #9ca3af; padding: 14px; border-top: 1px solid #f0f0f0; margin-top: 10px; }
-  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-
-@keyframes aiSpin { to { transform: rotate(360deg); } }
-</style>
-</head>
-<body onload="initApp()">
-<div class="pdf-header">
-  <div><div class="pdf-logo">TGG <span>HELPER</span></div><div style="font-size:10px;opacity:.7;margin-top:4px">par Laraki Abdeslam</div></div>
-  <div class="pdf-meta"><div style="font-size:14px;font-weight:700">Plan Alimentaire 7 Jours</div><div>Généré le ` + new Date().toLocaleDateString('fr-FR') + `</div></div>
-</div>
-<div class="pdf-macros-bar">
-  <div class="pdf-macro"><div class="pdf-macro-val">` + kcal + `</div><div class="pdf-macro-lbl">kcal/jour</div></div>
-  <div class="pdf-macro"><div class="pdf-macro-val">` + prot + `g</div><div class="pdf-macro-lbl">Protéines</div></div>
-  <div class="pdf-macro"><div class="pdf-macro-val">` + gluc + `g</div><div class="pdf-macro-lbl">Glucides</div></div>
-  <div class="pdf-macro"><div class="pdf-macro-val">` + lip + `g</div><div class="pdf-macro-lbl">Lipides</div></div>
-</div>
-` + daysHtml + `
-<div class="shop-section"><div class="shop-hdr">🛒 Liste de Courses</div><div class="shop-body">` + shopItems + `</div></div>
-<div class="pdf-footer">⚠️ Ce plan est indicatif. Pour toute pathologie, consultez un médecin ou diététicien. | TeamGreekGods © 2025</div>
-</body></html>`;
-
-  const blob = new Blob([html], {type: 'text/html'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'plan-alimentaire-tgg.html';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
-}
 
 // ══════════════════════════════════════════════════════
 // TAB 1 — ÉQUIVALENTS
@@ -2325,7 +2222,9 @@ async function lancerGenerationIA() {
   }).join(', ');
 
   // Compressed FOODS for prompt
-  const FOODS_COMPRESSED = FOODS.map(f => {
+  // Exclude legumes (IDs 42,43,48,50,51) from AI food list
+  const LEGUME_IDS = new Set([42,43,48,50,51]);
+  const FOODS_COMPRESSED = FOODS.filter(f => !LEGUME_IDS.has(f.id)).map(f => {
     const kcal100 = f.cru.kcal, p = f.cru.prot, g = f.cru.gluc, l = f.cru.lip;
     const uLab = f.unitType === 'unit' ? (f.unitLab || 'unité') : 'g';
     return f.id + '|' + f.name + '|' + kcal100 + '|' + p + '|' + g + '|' + l + '|' + uLab;
@@ -2347,14 +2246,18 @@ ${FOODS_COMPRESSED}
 
 RÈGLES ABSOLUES:
 1. Utilise les aliments de la base EN PRIORITÉ (leur id). Si absent, fournis macros_per_unit dans l'ingrédient.
-2. Œufs = unités (ex: qty:2, unit:"œufs"). Yaourt = pots. Autres = grammes.
+2. Œufs = unités (ex: qty:2, unit:"œufs"). Yaourt = pot (une portion = 125g). Autres = grammes.
 3. Claude NE CALCULE PAS les macros — il indique juste id+qty. L'app calcule.
 4. Style ${rProfile.cuisine} UNIQUEMENT — aucun autre style.
 5. 7 jours différents, aucun plat répété.
 6. Ingrédients disponibles au Maroc / budget ${rProfile.budget}.
-${rProfile.maladie.length ? '7. Adapte STRICTEMENT aux maladies: ' + rProfile.maladie.join(', ') : ''}
-${rProfile.allergie.length ? '8. INTERDIT: ' + rProfile.allergie.join(', ') : ''}
-${rProfile.objectif === 'Ramadan' ? '9. Format Ramadan: Suhoor + Iftar + Collation nuit UNIQUEMENT.' : ''}
+7. INTERDIT ABSOLU — LÉGUMINEUSES: pois cassés, lentilles, haricots rouges, pois chiches, haricots blancs, fèves — NE JAMAIS utiliser ces aliments.
+8. CALORIES STRICTES: chaque jour DOIT atteindre entre ${Math.round(kcal*0.97)} et ${Math.round(kcal*1.03)} kcal (tolérance ±3%). Ajuste les quantités en conséquence. C'est non négociable.
+9. REPAS INTERCHANGEABLES: les petits-déjeuners de tous les jours doivent être entre ${Math.round(kcal*0.22)} et ${Math.round(kcal*0.28)} kcal. Les déjeuners entre ${Math.round(kcal*0.32)} et ${Math.round(kcal*0.38)} kcal. Les dîners entre ${Math.round(kcal*0.27)} et ${Math.round(kcal*0.33)} kcal. Cela permet au client d'interchanger les repas du même type entre les jours.
+10. Ingrédients détaillés avec quantités précises — pas d'ingrédients vagues comme "épices" sans quantité.
+${rProfile.maladie.length ? '11. Adapte STRICTEMENT aux maladies: ' + rProfile.maladie.join(', ') : ''}
+${rProfile.allergie.length ? '12. INTERDIT ALLERGIES: ' + rProfile.allergie.join(', ') : ''}
+${rProfile.objectif === 'Ramadan' ? '13. Format Ramadan: Suhoor + Iftar + Collation nuit UNIQUEMENT.' : ''}
 
 FORMAT JSON:
 {"days":[{"day":"Lundi","meals":{"Petit-déjeuner":{"name":"Nom court","emoji":"🍳","ings":[{"id":1,"qty":150,"unit":"g"},{"id":20,"qty":2,"unit":"oeufs"},{"id_ext":"Tomate cerise","qty":100,"unit":"g","kcal_u":18,"prot_u":0.9,"gluc_u":3.9,"lip_u":0.2}],"steps":["Etape 1","Etape 2","Etape 3"]},"Déjeuner":{...}}},...]}
@@ -2483,7 +2386,7 @@ function renderIAPlan(plan, targets) {
         const qtyStr = ing.unit === 'g' ? ing.qty + 'g' : ing.qty + ' ' + ing.unit;
         const isEst = !ing.id;
         return '<span class="ring-tag' + (isEst?' ring-est':'') + '">' +
-          fname + ' <strong>' + qtyStr + '</strong>' + (isEst?' ⚠️':'') + '</span>';
+          fname + ' <strong>' + qtyStr + '</strong></span>';
       }).join('');
 
       const stepsHtml = (meal.steps&&meal.steps.length) ?
@@ -2501,10 +2404,11 @@ function renderIAPlan(plan, targets) {
 
     // Day macro validation
     const kcalDiff = Math.abs(dayKcal - kcal);
-    const kcalOk = kcalDiff <= kcal * 0.10;
+    const kcalPct = Math.round(kcalDiff / kcal * 100);
+    const kcalOk = kcalDiff <= kcal * 0.05;
     const macrosBadge = kcalOk
       ? '<span style="font-size:10px;color:var(--accent)">✅ ' + dayKcal + 'kcal</span>'
-      : '<span style="font-size:10px;color:#f87171">⚠️ ' + dayKcal + 'kcal (cible:' + kcal + ')</span>';
+      : '<span style="font-size:10px;color:#f87171">⚠️ ' + dayKcal + 'kcal (' + (dayKcal>kcal?'+':'') + (dayKcal-kcal) + ' / ' + (dayKcal>kcal?'+':'') + kcalPct + '%)</span>';
 
     html += '<div class="rday-card">' +
       '<div class="rday-head">' +
@@ -2519,47 +2423,75 @@ function renderIAPlan(plan, targets) {
 // ── PDF EXPORT ──────────────────────────────────────────────────
 function exportPlanPDF() {
   const stored = window._lastIAPlan;
-  if (!stored) { alert('Génère un plan d\'abord'); return; }
+  if (!stored) { alert("Génère un plan d'abord"); return; }
   const {plan, targets} = stored;
   const {kcal, prot, gluc, lip, prenom} = targets;
   const mealOrder = rProfile.repas;
+  const mealEmoji2 = {'Petit-déjeuner':'Petit-déjeuner','Déjeuner':'Déjeuner','Dîner':'Dîner','Collation 1':'Collation 1','Collation 2':'Collation 2'};
 
-  let lines = [];
-  lines.push('PLAN ALIMENTAIRE 7 JOURS');
-  lines.push('Client : ' + (prenom||'Client') + ' | ' + rProfile.objectif + ' | ' + rProfile.cuisine);
-  lines.push('Objectif journalier : ' + kcal + ' kcal — ' + prot + 'g P — ' + gluc + 'g G — ' + lip + 'g L');
-  lines.push('');
-  lines.push('═'.repeat(50));
-  lines.push('');
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W = 210, margin = 14;
+  let y = 0;
 
-  (plan.days||[]).forEach(day => {
-    lines.push('📅 ' + day.day.toUpperCase());
-    lines.push('─'.repeat(40));
+  // ── Helpers ──────────────────────────────────────
+  function hexToRGB(hex) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return [r,g,b];
+  }
+  function setFont(size, style='normal', color=[30,30,50]) {
+    doc.setFontSize(size); doc.setFont('helvetica', style); doc.setTextColor(...color);
+  }
+  function fillRect(x, fy, w, h, hex) {
+    const [r,g,b] = hexToRGB(hex); doc.setFillColor(r,g,b); doc.rect(x,fy,w,h,'F');
+  }
+  function newPageIfNeeded(needed=20) {
+    if (y + needed > 280) { doc.addPage(); y = 14; }
+  }
 
-    mealOrder.forEach(mealKey => {
-      const meal = day.meals && day.meals[mealKey];
-      if (!meal) return;
-      lines.push('');
-      const mealEmoji = {'Petit-déjeuner':'🌅','Déjeuner':'☀️','Dîner':'🌙','Collation 1':'🍎','Collation 2':'🍪'};
-      lines.push((mealEmoji[mealKey]||'🍽️') + ' ' + mealKey + ' : ' + (meal.emoji||'') + ' ' + meal.name);
-      (meal.ings||[]).forEach(ing => {
-        const fname = ing.id ? (FOODS.find(f=>f.id===ing.id)||{}).name||'?' : (ing.id_ext||'?');
-        const qtyStr = ing.unit === 'g' ? ing.qty + 'g' : ing.qty + ' ' + ing.unit;
-        lines.push('   • ' + fname + ' — ' + qtyStr);
-      });
-      if (meal.steps && meal.steps.length) {
-        lines.push('   Préparation :');
-        meal.steps.forEach((s,i) => lines.push('   ' + (i+1) + '. ' + s));
-      }
-    });
-    lines.push('');
+  // ── HEADER ───────────────────────────────────────
+  fillRect(0, 0, W, 38, '#0d1117');
+  // Green accent bar
+  fillRect(0, 0, 4, 38, '#4ade80');
+  // Logo text
+  setFont(8, 'bold', [74,222,128]);
+  doc.text('TEAMGREEKGODS', margin+4, 10);
+  setFont(20, 'bold', [255,255,255]);
+  doc.text('TGG ', margin+4, 22);
+  setFont(20, 'bold', [74,222,128]);
+  doc.text('HELPER', margin+4+14, 22);
+  setFont(8, 'normal', [156,163,175]);
+  doc.text('Plan alimentaire 7 jours', margin+4, 30);
+  // Client info right
+  setFont(9, 'bold', [255,255,255]);
+  doc.text(prenom || 'Client', W-margin, 14, {align:'right'});
+  setFont(8, 'normal', [156,163,175]);
+  doc.text(rProfile.objectif + '  ·  ' + rProfile.cuisine, W-margin, 21, {align:'right'});
+  doc.text(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}), W-margin, 28, {align:'right'});
+  y = 44;
+
+  // ── MACRO SUMMARY BAR ────────────────────────────
+  fillRect(margin, y, W-margin*2, 22, '#f8fafc');
+  doc.setDrawColor(226,232,240); doc.setLineWidth(0.3);
+  doc.rect(margin, y, W-margin*2, 22);
+  const macroItems = [
+    {label:'Calories', val: kcal + ' kcal', color:'#4ade80'},
+    {label:'Protéines', val: prot + 'g', color:'#60a5fa'},
+    {label:'Glucides', val: gluc + 'g', color:'#fbbf24'},
+    {label:'Lipides', val: lip + 'g', color:'#f87171'},
+  ];
+  const colW = (W-margin*2)/4;
+  macroItems.forEach((m,i) => {
+    const cx = margin + colW*i + colW/2;
+    const [r,g,b] = hexToRGB(m.color);
+    setFont(12, 'bold', [r,g,b]);
+    doc.text(m.val, cx, y+10, {align:'center'});
+    setFont(7, 'normal', [100,116,139]);
+    doc.text(m.label, cx, y+17, {align:'center'});
   });
+  y += 28;
 
-  lines.push('═'.repeat(50));
-  lines.push('📊 TOTAL JOURNALIER');
-  lines.push(kcal + ' kcal | ' + prot + 'g protéines | ' + gluc + 'g glucides | ' + lip + 'g lipides');
-
-  // Build shopping list
+  // ── BUILD SHOPPING LIST ──────────────────────────
   const shopMap = {};
   (plan.days||[]).forEach(day => {
     mealOrder.forEach(mealKey => {
@@ -2567,40 +2499,287 @@ function exportPlanPDF() {
       if (!meal) return;
       (meal.ings||[]).forEach(ing => {
         const fname = ing.id ? (FOODS.find(f=>f.id===ing.id)||{}).name||'?' : (ing.id_ext||'?');
-        const key = fname;
-        const unit = ing.unit || 'g';
-        if (!shopMap[key]) shopMap[key] = {qty:0, unit};
-        shopMap[key].qty += (ing.qty||0);
+        if (!shopMap[fname]) shopMap[fname] = {qty:0, unit: ing.unit||'g'};
+        shopMap[fname].qty += (ing.qty||0);
       });
     });
   });
 
-  lines.push('');
-  lines.push('═'.repeat(50));
-  lines.push('🛒 LISTE DE COURSES (7 jours)');
-  lines.push('─'.repeat(40));
-  Object.entries(shopMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([name,v]) => {
-    const qty = v.unit === 'g' && v.qty >= 1000
-      ? (v.qty/1000).toFixed(1) + 'kg'
-      : Math.round(v.qty) + ' ' + v.unit;
-    lines.push('• ' + name + ' — ' + qty);
+  // ── DAYS ─────────────────────────────────────────
+  const mealColors = {
+    'Petit-déjeuner': '#f59e0b', 'Déjeuner': '#3b82f6',
+    'Dîner': '#8b5cf6', 'Collation 1': '#10b981', 'Collation 2': '#06b6d4'
+  };
+
+  (plan.days||[]).forEach((day, di) => {
+    newPageIfNeeded(35);
+    // Day header
+    fillRect(margin, y, W-margin*2, 9, '#1e293b');
+    setFont(9, 'bold', [255,255,255]);
+    doc.text('  ' + day.day.toUpperCase(), margin, y+6.5);
+    // Day macros
+    let dk=0,dp=0,dg=0,dl=0;
+    mealOrder.forEach(mealKey => {
+      const meal = day.meals && day.meals[mealKey];
+      if (meal) { const m = calcMealMacros(meal); dk+=m.kcal; dp+=m.prot; dg+=m.gluc; dl+=m.lip; }
+    });
+    setFont(7, 'normal', [148,163,184]);
+    doc.text(Math.round(dk) + ' kcal  ·  P:' + Math.round(dp) + 'g  G:' + Math.round(dg) + 'g  L:' + Math.round(dl) + 'g', W-margin, y+6.5, {align:'right'});
+    y += 11;
+
+    mealOrder.forEach(mealKey => {
+      const meal = day.meals && day.meals[mealKey];
+      if (!meal) return;
+      newPageIfNeeded(20);
+
+      const mColor = mealColors[mealKey] || '#64748b';
+      const [mr,mg,mb] = hexToRGB(mColor);
+      // Meal label strip
+      doc.setFillColor(mr,mg,mb,0.12);
+      fillRect(margin, y, 3, 7, mColor);
+      fillRect(margin+3, y, W-margin*2-3, 7, '#f8fafc');
+      setFont(7, 'bold', [100,116,139]);
+      doc.text('  ' + mealKey.toUpperCase(), margin+5, y+5);
+      y += 8;
+
+      // Meal name
+      newPageIfNeeded(8);
+      setFont(10, 'bold', [30,41,59]);
+      const mealName = (meal.emoji||'') + ' ' + (meal.name||'');
+      const nameLines = doc.splitTextToSize(mealName, W-margin*2-4);
+      doc.text(nameLines, margin+2, y+5);
+      y += nameLines.length * 5 + 2;
+
+      // Ingredients inline
+      newPageIfNeeded(8);
+      const ingsStr = (meal.ings||[]).map(ing => {
+        const fname = ing.id ? (FOODS.find(f=>f.id===ing.id)||{}).name||'?' : (ing.id_ext||'?');
+        const qty = ing.unit==='g' ? ing.qty+'g' : ing.qty+' '+ing.unit;
+        return fname + ' ' + qty;
+      }).join('  ·  ');
+      setFont(8, 'normal', [71,85,105]);
+      const ingLines = doc.splitTextToSize(ingsStr, W-margin*2-4);
+      doc.text(ingLines, margin+2, y);
+      y += ingLines.length * 4.5 + 2;
+
+      // Steps (collapsed - just show count)
+      if (meal.steps && meal.steps.length) {
+        newPageIfNeeded(6);
+        setFont(7, 'italic', [100,116,139]);
+        doc.text('Préparation : ' + meal.steps.length + ' étapes', margin+2, y);
+        y += 5;
+      }
+
+      // Small separator
+      doc.setDrawColor(241,245,249); doc.setLineWidth(0.2);
+      doc.line(margin, y, W-margin, y);
+      y += 3;
+    });
+    y += 4;
   });
 
-  const text = lines.join('\n');
+  // ── SHOPPING LIST ────────────────────────────────
+  doc.addPage(); y = 14;
+  fillRect(0, 0, W, 18, '#0d1117');
+  fillRect(0, 0, 4, 18, '#4ade80');
+  setFont(12, 'bold', [255,255,255]);
+  doc.text('Liste de courses  —  7 jours', margin+4, 12);
+  y = 24;
 
-  // Download as .txt (clean, printable)
-  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'plan-' + (prenom||'client').toLowerCase().replace(/\s+/g,'-') + '.txt';
-  a.click();
-  URL.revokeObjectURL(url);
+  const shopEntries = Object.entries(shopMap).sort((a,b) => a[0].localeCompare(b[0]));
+  const colCount = 2;
+  const shopColW = (W - margin*2 - 8) / colCount;
+  let col = 0, colY = [y, y];
+
+  shopEntries.forEach(([name, v]) => {
+    const qty = v.unit==='g' && v.qty>=1000
+      ? (v.qty/1000).toFixed(1)+'kg'
+      : Math.round(v.qty)+' '+v.unit;
+    const cx = margin + col * (shopColW + 8);
+    if (colY[col] > 270) {
+      col = 0; colY = [Math.max(...colY)+4, Math.max(...colY)+4];
+      if (colY[0] > 270) { doc.addPage(); colY=[14,14]; }
+    }
+    setFont(8, 'normal', [30,41,59]);
+    doc.text('• ' + name, cx, colY[col]);
+    setFont(8, 'bold', [30,41,59]);
+    doc.text(qty, cx + shopColW, colY[col], {align:'right'});
+    doc.setDrawColor(241,245,249); doc.setLineWidth(0.15);
+    doc.line(cx, colY[col]+1.5, cx+shopColW, colY[col]+1.5);
+    colY[col] += 6;
+    col = (col+1) % colCount;
+  });
+
+  // ── FOOTER ───────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for (let i=1; i<=pageCount; i++) {
+    doc.setPage(i);
+    setFont(7, 'normal', [148,163,184]);
+    doc.text('TGG Helper · TeamGreekGods · ' + new Date().getFullYear(), margin, 292);
+    doc.text('Page ' + i + ' / ' + pageCount, W-margin, 292, {align:'right'});
+  }
+
+  doc.save('plan-alimentaire-' + (prenom||'client').toLowerCase().replace(/\s+/g,'-') + '.pdf');
 }
 
 
+function exportProgrammePDF() {
+  const stored = window._lastTrainPlan;
+  if (!stored) { alert("Génère un programme d'abord"); return; }
+  const {plan, prenom} = stored;
+  const prog = plan.programme || plan;
+  const jours = prog.jours || [];
+
+  if (!window.jspdf) { alert("jsPDF non chargé. Vérifie ta connexion."); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W = 210, margin = 14;
+  let y = 0;
+
+  function hexToRGB(hex) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return [r,g,b];
+  }
+  function setFont(size, style, color) {
+    doc.setFontSize(size||10); doc.setFont('helvetica', style||'normal');
+    if(color) doc.setTextColor(color[0],color[1],color[2]);
+  }
+  function fillRect(x, fy, w, h, hex) {
+    const [r,g,b] = hexToRGB(hex); doc.setFillColor(r,g,b); doc.rect(x,fy,w,h,'F');
+  }
+  function newPageIfNeeded(needed) {
+    if (y + (needed||20) > 280) { doc.addPage(); y = 14; }
+  }
+
+  const typeColor = {'Push':'#4ade80','Pull':'#60a5fa','Legs':'#fbbf24','Full Body':'#a78bfa','Upper':'#4ade80','Lower':'#fbbf24','Cardio':'#fb7185','Repos':'#64748b'};
+
+  // HEADER
+  fillRect(0, 0, W, 38, '#0d1117');
+  fillRect(0, 0, 4, 38, '#818cf8');
+  setFont(8, 'bold', [129,140,248]); doc.text('TEAMGREEKGODS', margin+4, 10);
+  setFont(20, 'bold', [255,255,255]); doc.text('TGG ', margin+4, 22);
+  setFont(20, 'bold', [129,140,248]); doc.text('HELPER', margin+18, 22);
+  setFont(8, 'normal', [156,163,175]); doc.text("Programme d'entrainement", margin+4, 30);
+  setFont(9, 'bold', [255,255,255]); doc.text(prenom||'Client', W-margin, 14, {align:'right'});
+  setFont(8, 'normal', [156,163,175]);
+  doc.text(tProfile.niveau + ' · ' + tProfile.objectif, W-margin, 21, {align:'right'});
+  doc.text(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}), W-margin, 28, {align:'right'});
+  y = 44;
+
+  // INFO TAGS
+  const tags = [tProfile.jours+'j/sem', tProfile.split, ...tProfile.blessure.map(b=>'! '+b), ...tProfile.anomalie.map(a=>'! '+a)];
+  let tx = margin;
+  tags.forEach(tag => {
+    const tw = doc.getTextWidth(tag)+8;
+    const isWarn = tag.startsWith('!');
+    fillRect(tx, y, tw, 7, isWarn ? '#7f1d1d' : '#1e293b');
+    setFont(7, 'bold', isWarn ? [252,165,165] : [226,232,240]);
+    doc.text(isWarn ? tag.slice(2) : tag, tx+4, y+5);
+    tx += tw+4;
+    if (tx > W-margin-30) { tx=margin; y+=9; }
+  });
+  y += 13;
+
+  setFont(11, 'bold', [30,41,59]);
+  doc.text(prog.nom || (tProfile.split+' — '+tProfile.objectif), margin, y);
+  y += 9;
+
+  // JOURS
+  jours.forEach(day => {
+    const isRest = !day.seances || !day.seances.length || day.type==='Repos';
+    const col = typeColor[day.type]||'#4ade80';
+    newPageIfNeeded(isRest ? 14 : 20);
+
+    fillRect(margin, y, W-margin*2, 9, '#1e293b');
+    fillRect(margin, y, 4, 9, col);
+    setFont(9, 'bold', [255,255,255]);
+    doc.text('  '+day.jour.toUpperCase(), margin+4, y+6.5);
+    if (!isRest) {
+      const [cr,cg,cb] = hexToRGB(col);
+      setFont(8, 'bold', [cr,cg,cb]);
+      doc.text(day.type, W-margin, y+6.5, {align:'right'});
+    } else {
+      setFont(8, 'normal', [148,163,184]);
+      doc.text('Repos / Recuperation', W-margin, y+6.5, {align:'right'});
+    }
+    y += 11;
+
+    if (!isRest) {
+      // Table header
+      fillRect(margin, y, W-margin*2, 6, '#f1f5f9');
+      setFont(6.5, 'bold', [100,116,139]);
+      doc.text('#', margin+2, y+4.5);
+      doc.text('Exercice', margin+10, y+4.5);
+      doc.text('Series', W-margin-52, y+4.5, {align:'center'});
+      doc.text('Reps', W-margin-38, y+4.5, {align:'center'});
+      doc.text('Repos', W-margin-22, y+4.5, {align:'center'});
+      y += 7;
+
+      (day.seances||[]).forEach((ex, i) => {
+        newPageIfNeeded(10);
+        if(i%2===0) fillRect(margin, y, W-margin*2, 8, '#fafafa');
+        doc.setDrawColor(241,245,249); doc.setLineWidth(0.15);
+        doc.rect(margin, y, W-margin*2, 8);
+
+        setFont(7, 'bold', [148,163,184]); doc.text(String(i+1), margin+3, y+5.5);
+        setFont(8, 'bold', [30,41,59]);
+        const nm = doc.splitTextToSize(ex.nom||ex.name||'', 78);
+        doc.text(nm[0], margin+10, y+5.5);
+        if(ex.muscle){setFont(6.5,'normal',[148,163,184]); doc.text(ex.muscle, margin+10, y+8.5);}
+
+        setFont(8,'bold',[30,41,59]);
+        doc.text(String(ex.series), W-margin-52, y+5.5, {align:'center'});
+        doc.text(String(ex.reps), W-margin-38, y+5.5, {align:'center'});
+        setFont(7,'normal',[100,116,139]);
+        doc.text(String(ex.repos), W-margin-22, y+5.5, {align:'center'});
+
+        if(ex.conseil){
+          setFont(6.5,'italic',[100,116,139]);
+          const cl = doc.splitTextToSize(ex.conseil, 36);
+          doc.text(cl[0], W-margin, y+5.5, {align:'right'});
+        }
+
+        const dbEx = EXERCISES.find(e => e.id===ex.exId);
+        if(dbEx && dbEx.safe && dbEx.warnLevel!=='green'){
+          newPageIfNeeded(7); y+=8;
+          fillRect(margin, y, W-margin*2, 6, dbEx.warnLevel==='red'?'#450a0a':'#451a03');
+          setFont(6.5,'normal',dbEx.warnLevel==='red'?[252,165,165]:[253,230,138]);
+          const sn = dbEx.safe.replace(/^[\u{1F534}\u{1F7E0}\u2705]\s*/u,'');
+          doc.text('! '+sn.substring(0,110), margin+3, y+4.5);
+        }
+        y += 9;
+      });
+    }
+    y += 4;
+  });
+
+  // FOOTER on all pages
+  const pageCount = doc.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    setFont(7,'normal',[148,163,184]);
+    doc.text('TGG Helper · TeamGreekGods · '+new Date().getFullYear(), margin, 292);
+    doc.text('Page '+i+' / '+pageCount, W-margin, 292, {align:'right'});
+  }
+
+  doc.save('programme-'+(prenom||'client').toLowerCase().replace(/\s+/g,'-')+'.pdf');
+}
+
+
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('tab-' + id);
+  if (panel) panel.classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+id+"'")) {
+      b.classList.add('active');
+    }
+  });
+}
+
 // ══════════════════════════════════════════════════════
-// PROGRAMME IA — STATE & FUNCTIONS
+// TAB 4 — PROGRAMME IA
 // ══════════════════════════════════════════════════════
 const tProfile = {
   sex: 'H',
@@ -2643,74 +2822,73 @@ async function lancerProgrammeIA() {
 
   const output = document.getElementById('trainPlanOutput');
   output.innerHTML = '<div style="text-align:center;padding:48px 20px">' +
-    '<div style="font-size:40px;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block">⚙️</div>' +
+    '<div style="font-size:40px;margin-bottom:16px">⚙️</div>' +
     '<div style="font-size:16px;font-weight:700;color:#818cf8;margin-bottom:8px">Programme en cours...</div>' +
     '<div style="font-size:12px;color:var(--muted);line-height:1.7">Exercices sélectionnés · Adaptés à ton profil<br>Patiente 20-30 secondes.</div></div>';
 
-  // Build contraintes string
   const contraintes = [];
   if (tProfile.blessure.length) contraintes.push('Blessures: ' + tProfile.blessure.join(', '));
   if (tProfile.anomalie.length) contraintes.push('Anomalies posturales: ' + tProfile.anomalie.join(', '));
   if (notes) contraintes.push('Notes: ' + notes);
 
-  // Compressed exercise list for AI
   const exCompressed = EXERCISES.map(e =>
-    `${e.id}|${e.name}|${e.muscle}|${e.warnLevel||'green'}`
+    e.id + '|' + e.name + '|' + e.muscle + '|' + (e.warnLevel || 'green')
   ).join('\n');
 
   const systemPrompt = 'Tu es coach sportif expert en programmation musculaire scientifique. RÉPONDS UNIQUEMENT EN JSON VALIDE, sans texte avant ou après, sans markdown.';
 
-  const userPrompt = `Programme ${tProfile.split} pour ${prenom} (${tProfile.sex==='H'?'Homme':'Femme'}).
-Niveau: ${tProfile.niveau}
-Objectif: ${tProfile.objectif}
-Jours/semaine: ${tProfile.jours}
-Équipement: ${tProfile.equip.join(', ')||'Salle complète'}
-${contraintes.length ? '\nCONTRAINTES ABSOLUES:\n' + contraintes.join('\n') : ''}
+  const repsPrescription = tProfile.objectif === 'Force' ? '3-5 séries x 3-6 reps, repos 3-5min'
+    : tProfile.objectif === 'Prise de masse' ? '3-5 séries x 6-12 reps, repos 2-3min'
+    : tProfile.objectif === 'Cardio et Endurance' ? '3-4 séries x 15-20 reps, repos 45-60s'
+    : '3-4 séries x 8-15 reps, repos 90s-2min';
 
-BASE EXERCICES DISPONIBLES (id|nom|muscle|risque):
-${exCompressed}
+  const scolNote = tProfile.anomalie.includes('Scoliose') ? 'SCOLIOSE: Interdire tout axial chargé (Squat barre, Good Morning, Deadlift). Favoriser machines, câbles, couché.' : '';
+  const lordNote = tProfile.anomalie.includes('Hyperlordose') ? 'HYPERLORDOSE: Renforcer abdos et fessiers. Éviter extension lombaire excessive.' : '';
+  const kyphNote = tProfile.anomalie.includes('Cyphose') ? 'CYPHOSE: Prioriser tirage dos et pectoraux étirés. Éviter flexion rachidienne.' : '';
+  const genouNote = tProfile.blessure.includes('Genou') ? 'GENOU: Interdire Leg Extension, Squat profond, Walking Lunge.' : '';
+  const epNote = tProfile.blessure.includes('Épaule') ? 'ÉPAULE: Interdire Upright Row, Dips, Développé nuque.' : '';
+  const dosNote = tProfile.blessure.includes('Dos et Lombaires') ? 'DOS: Interdire Deadlift, Good Morning, Barbell Row lourd.' : '';
 
-RÈGLES:
-1. Utilise les IDs de la base — ne PAS inventer des exercices hors base.
-2. Exercices avec warnLevel "red" sur zone blessée = INTERDITS. "orange" = à adapter.
-3. ${tProfile.anomalie.includes('Scoliose') ? 'SCOLIOSE: Interdire tout axial chargé (Squat barre, Good Morning, Deadlift conventionnel). Favoriser machines, câbles, couché.' : ''}
-4. ${tProfile.anomalie.includes('Hyperlordose') ? 'HYPERLORDOSE: Renforcer abdos et fessiers en priorité. Éviter extension lombaire excessive.' : ''}
-5. ${tProfile.anomalie.includes('Cyphose') ? 'CYPHOSE: Prioriser le dos (rowing) et les pectoraux étirés. Éviter toute flexion rachidienne.' : ''}
-6. ${tProfile.blessure.includes('Genou') ? 'GENOU: Interdire Leg Extension, Squat profond, Walking Lunge. Autoriser Leg Press pieds hauts, Hip Thrust.' : ''}
-7. ${tProfile.blessure.includes('Épaule') ? 'ÉPAULE: Interdire Upright Row, Dips, Développé nuque. Autoriser câbles, machines guidées.' : ''}
-8. ${tProfile.blessure.includes('Dos et Lombaires') ? 'DOS: Interdire Deadlift, Good Morning, Barbell Row lourd. Autoriser tirage poulie, rowing machine assis.' : ''}
-9. Programme sur ${tProfile.jours} jours avec repos bien placés. Progressivité adaptée au niveau ${tProfile.niveau}.
-10. Séries x Reps basés sur l'objectif: ${tProfile.objectif==='Force'?'3-5 séries x 3-6 reps, repos 3-5min':tProfile.objectif==='Prise de masse'?'3-5 séries x 6-12 reps, repos 2-3min':tProfile.objectif==='Cardio et Endurance'?'3-4 séries x 15-20 reps, repos 45-60s':'3-4 séries x 8-15 reps, repos 90s-2min'}.
-
-FORMAT JSON:
-{"programme":{"nom":"PPL 4 jours — Masse","jours":[{"jour":"Lundi","type":"Push","seances":[{"exId":"e1","nom":"Flat Barbell Bench Press","muscle":"Poitrine","series":4,"reps":"6-10","repos":"3 min","conseil":"Omoplates serrées, descente contrôlée"},{"exId":"e2","nom":"...","muscle":"...","series":3,"reps":"8-12","repos":"2 min","conseil":"..."}]},{"jour":"Mardi","type":"Repos","seances":[]},{"jour":"Mercredi","type":"Pull","seances":[...]}]}}`;
+  const userPrompt = 'Programme ' + tProfile.split + ' pour ' + prenom + ' (' + (tProfile.sex === 'H' ? 'Homme' : 'Femme') + ').\n'
+    + 'Niveau: ' + tProfile.niveau + '\n'
+    + 'Objectif: ' + tProfile.objectif + '\n'
+    + 'Jours/semaine: ' + tProfile.jours + '\n'
+    + 'Équipement: ' + (tProfile.equip.join(', ') || 'Salle complète') + '\n'
+    + (contraintes.length ? '\nCONTRAINTES ABSOLUES:\n' + contraintes.join('\n') : '')
+    + '\n\nBASE EXERCICES DISPONIBLES (id|nom|muscle|risque):\n' + exCompressed
+    + '\n\nRÈGLES:\n'
+    + '1. Utilise uniquement les IDs de la base — ne PAS inventer des exercices hors base.\n'
+    + '2. Exercices warnLevel "red" sur zone blessée = INTERDITS. "orange" = à adapter.\n'
+    + (scolNote ? '3. ' + scolNote + '\n' : '')
+    + (lordNote ? '4. ' + lordNote + '\n' : '')
+    + (kyphNote ? '5. ' + kyphNote + '\n' : '')
+    + (genouNote ? '6. ' + genouNote + '\n' : '')
+    + (epNote ? '7. ' + epNote + '\n' : '')
+    + (dosNote ? '8. ' + dosNote + '\n' : '')
+    + '9. Programme sur ' + tProfile.jours + ' jours avec repos bien placés.\n'
+    + '10. Séries x Reps basés sur objectif: ' + repsPrescription + '.\n'
+    + '\nFORMAT JSON STRICT:\n'
+    + '{"programme":{"nom":"PPL 4j Masse","jours":[{"jour":"Lundi","type":"Push","seances":[{"exId":"e1","nom":"Flat Barbell Bench Press","muscle":"Poitrine","series":4,"reps":"6-10","repos":"3 min","conseil":"Omoplates serrées"}]},{"jour":"Mardi","type":"Repos","seances":[]}]}}';
 
   try {
     const gasUrl = API_URL + '?action=ai_plan&payload=' + encodeURIComponent(JSON.stringify({
       system: systemPrompt,
-      user: userPrompt,
-      max_tokens: 6000
+      user: userPrompt
     }));
     const res = await fetch(gasUrl);
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Erreur GAS');
 
-    const raw = (data.text||'').trim().replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    let raw = (data.text || '').trim().replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
     let plan;
     try { plan = JSON.parse(raw); }
     catch(e) {
-      // Try to salvage partial JSON
       const m = raw.match(/"jours"\s*:\s*\[/);
       if (m) {
-        const start = raw.indexOf(m[0]) + m[0].length;
-        const chunks = raw.slice(start).split(/(?<=\}\s*\]),\s*\{/);
-        if (chunks.length > 0) {
-          try {
-            plan = { programme: { nom: tProfile.split + ' — ' + tProfile.objectif,
-              jours: JSON.parse('[' + chunks[0] + ']') }};
-            plan._partial = true;
-          } catch(e2) { throw e; }
-        } else throw e;
+        try {
+          const start = raw.indexOf(m[0]) + m[0].length;
+          plan = { programme: { nom: tProfile.split + ' — ' + tProfile.objectif, jours: [] }, _partial: true };
+        } catch(e2) { throw e; }
       } else throw e;
     }
 
@@ -2718,11 +2896,11 @@ FORMAT JSON:
     renderProgramme(plan, prenom);
 
   } catch(err) {
-    output.innerHTML = '<div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:12px;padding:20px;text-align:center">' +
-      '<div style="font-size:28px;margin-bottom:10px">⚠️</div>' +
-      '<div style="font-weight:700;color:#f87171;margin-bottom:6px">Erreur de génération</div>' +
-      '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">' + err.message + '</div>' +
-      '<button class="btn btn-s" onclick="lancerProgrammeIA()" style="background:var(--surface2)">🔄 Réessayer</button></div>';
+    output.innerHTML = '<div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:12px;padding:20px;text-align:center">'
+      + '<div style="font-size:28px;margin-bottom:10px">⚠️</div>'
+      + '<div style="font-weight:700;color:#f87171;margin-bottom:6px">Erreur de génération</div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">' + err.message + '</div>'
+      + '<button class="btn btn-s" onclick="lancerProgrammeIA()" style="background:var(--surface2)">🔄 Réessayer</button></div>';
   }
 }
 
@@ -2736,9 +2914,9 @@ function renderProgramme(plan, prenom) {
     'Repos':'rgba(100,116,139,.1)', 'Cardio':'rgba(251,113,133,.12)'
   };
   const typeText = {
-    'Push':'#4ade80', 'Pull':'#60a5fa', 'Legs':'#fbbf24',
-    'Full Body':'#a78bfa', 'Upper':'#4ade80', 'Lower':'#fbbf24',
-    'Repos':'#64748b', 'Cardio':'#fb7185'
+    'Push':'#4ade80','Pull':'#60a5fa','Legs':'#fbbf24',
+    'Full Body':'#a78bfa','Upper':'#4ade80','Lower':'#fbbf24',
+    'Repos':'#64748b','Cardio':'#fb7185'
   };
 
   let html = '';
@@ -2746,121 +2924,60 @@ function renderProgramme(plan, prenom) {
     html += '<div style="background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#facc15">⚠️ Programme partiel — Clique Régénérer pour compléter.</div>';
   }
 
-  // Header
-  html += `<div style="background:linear-gradient(135deg,rgba(129,140,248,.15),rgba(99,102,241,.1));border:1px solid rgba(129,140,248,.25);border-radius:14px;padding:14px 16px;margin-bottom:14px">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#818cf8;margin-bottom:3px">🏋️ ${prog.nom || tProfile.split}</div>
-    <div style="font-size:11px;color:var(--muted)">${prenom} · ${tProfile.niveau} · ${tProfile.objectif} · ${tProfile.jours}j/semaine</div>
-    ${tProfile.blessure.length ? '<div style="font-size:11px;color:#fca5a5;margin-top:4px">🩹 Adapté : ' + tProfile.blessure.join(', ') + '</div>' : ''}
-    ${tProfile.anomalie.length ? '<div style="font-size:11px;color:#fde68a;margin-top:2px">🦴 Adapté : ' + tProfile.anomalie.join(', ') + '</div>' : ''}
-  </div>`;
+  html += '<div style="background:linear-gradient(135deg,rgba(129,140,248,.15),rgba(99,102,241,.1));border:1px solid rgba(129,140,248,.25);border-radius:14px;padding:14px 16px;margin-bottom:14px">'
+    + '<div style="font-weight:800;font-size:14px;color:#818cf8;margin-bottom:3px">🏋️ ' + (prog.nom || tProfile.split) + '</div>'
+    + '<div style="font-size:11px;color:var(--muted)">' + prenom + ' · ' + tProfile.niveau + ' · ' + tProfile.objectif + ' · ' + tProfile.jours + 'j/semaine</div>'
+    + (tProfile.blessure.length ? '<div style="font-size:11px;color:#fca5a5;margin-top:4px">🩹 Adapté : ' + tProfile.blessure.join(', ') + '</div>' : '')
+    + (tProfile.anomalie.length ? '<div style="font-size:11px;color:#fde68a;margin-top:2px">🦴 Adapté : ' + tProfile.anomalie.join(', ') + '</div>' : '')
+    + '</div>';
 
-  jours.forEach(day => {
+  jours.forEach(function(day) {
     const isRest = !day.seances || day.seances.length === 0 || day.type === 'Repos';
     const col = typeColor[day.type] || 'rgba(74,222,128,.1)';
     const tcol = typeText[day.type] || '#4ade80';
 
     if (isRest) {
-      html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 15px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
-        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;flex:1">${day.jour}</div>
-        <div style="font-size:12px;color:var(--muted);background:rgba(100,116,139,.15);padding:3px 10px;border-radius:20px">🛌 Repos</div>
-      </div>`;
+      html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 15px;margin-bottom:10px;display:flex;align-items:center;gap:10px">'
+        + '<div style="font-weight:700;font-size:13px;flex:1">' + day.jour + '</div>'
+        + '<div style="font-size:12px;color:var(--muted);background:rgba(100,116,139,.15);padding:3px 10px;border-radius:20px">🛌 Repos</div>'
+        + '</div>';
       return;
     }
 
-    let exercisesHtml = '';
-    (day.seances || []).forEach((ex, i) => {
-      // Find exercise in database for safety info
-      const dbEx = EXERCISES.find(e => e.id === ex.exId);
-      const safeText = dbEx ? (dbEx.safe || dbEx.warn || '') : '';
+    let exHtml = '';
+    (day.seances || []).forEach(function(ex, i) {
+      const dbEx = EXERCISES.find(function(e) { return e.id === ex.exId; });
+      const safeText = dbEx ? (dbEx.safe || '') : '';
       const safeLevel = dbEx ? (dbEx.warnLevel || 'green') : 'green';
       const safeIcon = safeLevel === 'red' ? '🔴' : safeLevel === 'orange' ? '🟠' : '';
+      const isLast = i === (day.seances.length - 1);
 
-      exercisesHtml += `<div style="padding:10px 14px;border-bottom:1px solid rgba(42,48,64,.5)${i===((day.seances||[]).length-1)?';border-bottom:none':''}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-          <div>
-            <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${ex.muscle||''}</span>
-            <div style="font-size:13px;font-weight:600;margin-top:1px">${ex.nom||ex.name||''}</div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;margin-left:8px">
-            <div style="font-size:12px;font-weight:700;color:var(--accent)">${ex.series} × ${ex.reps}</div>
-            <div style="font-size:10px;color:var(--muted)">⏱ ${ex.repos}</div>
-          </div>
-        </div>
-        ${ex.conseil ? `<div style="font-size:11px;color:var(--muted);font-style:italic;margin-bottom:4px">💡 ${ex.conseil}</div>` : ''}
-        ${safeText && safeLevel !== 'green' ? `<div style="font-size:11px;padding:5px 9px;border-radius:7px;margin-top:4px;${safeLevel==='red'?'background:rgba(248,113,113,.08);color:#fca5a5;border:1px solid rgba(248,113,113,.2)':'background:rgba(251,191,36,.07);color:#fde68a;border:1px solid rgba(251,191,36,.2)'}">${safeIcon} ${safeText.replace(/^[🔴🟠✅]\s*/,'')}</div>` : ''}
-      </div>`;
+      exHtml += '<div style="padding:10px 14px;' + (isLast ? '' : 'border-bottom:1px solid rgba(42,48,64,.5)') + '">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
+        + '<div><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">' + (ex.muscle || '') + '</span>'
+        + '<div style="font-size:13px;font-weight:600;margin-top:1px">' + (ex.nom || ex.name || '') + '</div></div>'
+        + '<div style="text-align:right;flex-shrink:0;margin-left:8px">'
+        + '<div style="font-size:12px;font-weight:700;color:var(--accent)">' + ex.series + ' × ' + ex.reps + '</div>'
+        + '<div style="font-size:10px;color:var(--muted)">⏱ ' + ex.repos + '</div>'
+        + '</div></div>'
+        + (ex.conseil ? '<div style="font-size:11px;color:var(--muted);font-style:italic;margin-bottom:4px">💡 ' + ex.conseil + '</div>' : '')
+        + (safeText && safeLevel !== 'green' ? '<div style="font-size:11px;padding:5px 9px;border-radius:7px;margin-top:4px;'
+          + (safeLevel === 'red' ? 'background:rgba(248,113,113,.08);color:#fca5a5;border:1px solid rgba(248,113,113,.2)'
+            : 'background:rgba(251,191,36,.07);color:#fde68a;border:1px solid rgba(251,191,36,.2)')
+          + '">' + safeIcon + ' ' + safeText.replace(/^[🔴🟠✅]\s*/, '') + '</div>' : '')
+        + '</div>';
     });
 
-    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden">
-      <div style="background:${col};padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px">${day.jour}</div>
-        <div style="font-size:11px;font-weight:700;color:${tcol};background:rgba(0,0,0,.2);padding:3px 10px;border-radius:20px">${day.type}</div>
-      </div>
-      ${exercisesHtml}
-    </div>`;
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden">'
+      + '<div style="background:' + col + ';padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+      + '<div style="font-weight:700;font-size:13px">' + day.jour + '</div>'
+      + '<div style="font-size:11px;font-weight:700;color:' + tcol + ';background:rgba(0,0,0,.2);padding:3px 10px;border-radius:20px">' + day.type + '</div>'
+      + '</div>' + exHtml + '</div>';
   });
 
   output.innerHTML = html;
 }
 
-function exportProgrammePDF() {
-  const stored = window._lastTrainPlan;
-  if (!stored) { alert('Génère un programme d\'abord'); return; }
-  const {plan, prenom} = stored;
-  const prog = plan.programme || plan;
-  const jours = prog.jours || [];
-
-  let lines = [];
-  lines.push('PROGRAMME D\'ENTRAÎNEMENT');
-  lines.push(`Athlète : ${prenom} | ${tProfile.niveau} | ${tProfile.objectif}`);
-  lines.push(`Structure : ${prog.nom || tProfile.split} | ${tProfile.jours} jours/semaine`);
-  if (tProfile.blessure.length) lines.push(`Adapté pour blessures : ${tProfile.blessure.join(', ')}`);
-  if (tProfile.anomalie.length) lines.push(`Anomalies prises en compte : ${tProfile.anomalie.join(', ')}`);
-  lines.push('');
-  lines.push('═'.repeat(50));
-  lines.push('');
-
-  jours.forEach(day => {
-    const isRest = !day.seances || day.seances.length === 0 || day.type === 'Repos';
-    lines.push(`📅 ${day.jour.toUpperCase()}${isRest ? ' — REPOS' : ' — ' + day.type.toUpperCase()}`);
-    lines.push('─'.repeat(40));
-
-    if (!isRest) {
-      (day.seances || []).forEach((ex, i) => {
-        lines.push(`${i+1}. ${ex.nom || ex.name}`);
-        lines.push(`   ${ex.series} séries × ${ex.reps} reps | Repos : ${ex.repos}`);
-        if (ex.conseil) lines.push(`   💡 ${ex.conseil}`);
-        // Add safety note if orange/red
-        const dbEx = EXERCISES.find(e => e.id === ex.exId);
-        if (dbEx && dbEx.safe && dbEx.warnLevel !== 'green') {
-          lines.push(`   ⚠️  ${dbEx.safe.replace(/^[🔴🟠✅]\s*/,'')}`);
-        }
-      });
-    }
-    lines.push('');
-  });
-
-  const text = lines.join('\n');
-  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'programme-' + prenom.toLowerCase().replace(/\s+/g,'-') + '.txt';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function switchTab(id) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const panel = document.getElementById('tab-' + id);
-  if (panel) panel.classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+id+"'")) {
-      b.classList.add('active');
-    }
-  });
-}
 
 function initApp() {
   buildSourceSelect();
