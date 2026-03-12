@@ -2370,11 +2370,11 @@ FORMAT JSON:
 Note: Pour aliments HORS BASE, utilise id_ext (nom) + kcal_u/prot_u/gluc_u/lip_u pour 100g (ou par unité si unit!="g").`;
 
   try {
-    const gasUrl = API_URL + '?action=ai_plan&payload=' + encodeURIComponent(JSON.stringify({
-      system: systemPrompt,
-      user: userPrompt
-    }));
-    const res = await fetch(gasUrl);
+    const res = await fetch(API_URL + '?action=ai_plan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({system: systemPrompt, user: userPrompt})
+    });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Erreur GAS');
 
@@ -3064,11 +3064,11 @@ async function lancerProgrammeIA() {
     + '{"programme":{"nom":"PPL 4j Masse","jours":[{"jour":"Lundi","type":"Push","seances":[{"exId":"e1","nom":"Flat Barbell Bench Press","muscle":"Poitrine","series":4,"reps":"6-10","repos":"3 min","conseil":"Omoplates serrées"}]},{"jour":"Mardi","type":"Repos","seances":[]}]}}';
 
   try {
-    const gasUrl = API_URL + '?action=ai_plan&payload=' + encodeURIComponent(JSON.stringify({
-      system: systemPrompt,
-      user: userPrompt
-    }));
-    const res = await fetch(gasUrl);
+    const res = await fetch(API_URL + '?action=ai_plan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({system: systemPrompt, user: userPrompt})
+    });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Erreur GAS');
 
