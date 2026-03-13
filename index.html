@@ -3070,12 +3070,11 @@ async function lancerProgrammeIA() {
 
   // Filter exercises relevant to this split to reduce prompt size and GAS timeout
   const SPLIT_MUSCLES = {
-    'Push':       ['Poitrine','Épaules','Triceps'],
-    'Pull':       ['Dos','Biceps','Trapèzes','Avant-bras'],
-    'Legs':       ['Quadriceps','Ischio-jambiers','Fessiers','Mollets'],
-    'Full Body':  ['Poitrine','Dos','Épaules','Quadriceps','Ischio-jambiers','Fessiers','Biceps','Triceps','Abdominaux'],
-    'Upper':      ['Poitrine','Dos','Épaules','Biceps','Triceps','Trapèzes'],
-    'Lower':      ['Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux'],
+    'Push Pull Legs':      ['Poitrine','Épaules','Triceps','Dos','Biceps','Trapèzes','Quadriceps','Ischio-jambiers','Fessiers','Mollets'],
+    'Full Body':           ['Poitrine','Dos','Épaules','Quadriceps','Ischio-jambiers','Fessiers','Biceps','Triceps','Abdominaux'],
+    'Upper Lower':         ['Poitrine','Dos','Épaules','Biceps','Triceps','Trapèzes','Quadriceps','Ischio-jambiers','Fessiers','Mollets'],
+    'Bro Split':           ['Poitrine','Dos','Épaules','Biceps','Triceps','Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux'],
+    'Arnold Split':        ['Poitrine','Dos','Épaules','Biceps','Triceps','Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux'],
     'Cardio et Endurance': ['Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux'],
   };
   const splitMuscles = SPLIT_MUSCLES[tProfile.split] || null;
@@ -3253,14 +3252,20 @@ function toggleEx(id) {
   if (icon) icon.textContent = open ? '▶' : '▼';
 }
 
-function tChip(el, group) {
-  const chips = document.querySelectorAll('.tchip[data-group="' + group + '"]');
-  const multi = el.dataset.multi === 'true';
-  if (!multi) {
-    chips.forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
+function tChip(group, val, el) {
+  const multiGroups = ['blessure', 'anomalie', 'equip'];
+  const isMulti = multiGroups.includes(group);
+  if (!isMulti) {
+    // Deactivate all buttons in same group
+    [...document.querySelectorAll('.rchip, .rchip-big')].forEach(function(btn) {
+      var oc = btn.getAttribute('onclick') || '';
+      if (oc.includes("tChip('" + group + "'") || oc.includes('tChip("' + group + '"')) {
+        btn.classList.remove('active');
+      }
+    });
+    if (el) el.classList.add('active');
   } else {
-    el.classList.toggle('active');
+    if (el) el.classList.toggle('active');
   }
   updateTProfile();
 }
@@ -3270,13 +3275,34 @@ function tToggle(el) {
   updateTProfile();
 }
 
+// ── Global training profile state ────────────────────────────────
+let tProfile = {
+  sex: 'H', objectif: 'Prise de masse', niveau: 'Débutant (0-1 an)',
+  jours: '4', split: 'Push Pull Legs', equip: [],
+  blessure: [], anomalie: []
+};
+
 function updateTProfile() {
-  tProfile.niveau    = document.querySelector('.tchip[data-group="niveau"].active')?.dataset.val || tProfile.niveau;
-  tProfile.objectif  = document.querySelector('.tchip[data-group="objectif"].active')?.dataset.val || tProfile.objectif;
-  tProfile.split     = document.querySelector('.tchip[data-group="split"].active')?.dataset.val || tProfile.split;
-  tProfile.jours     = document.querySelector('.tchip[data-group="jours"].active')?.dataset.val || tProfile.jours;
-  tProfile.blessure  = [...document.querySelectorAll('.tchip[data-group="blessure"].active')].map(c => c.dataset.val);
-  tProfile.anomalie  = [...document.querySelectorAll('.tchip[data-group="anomalie"].active')].map(c => c.dataset.val);
+  // Extract val from onclick="tChip('group','val',this)"
+  function readGroup(group, multi) {
+    var all = [...document.querySelectorAll('.rchip.active, .rchip-big.active')].filter(function(el) {
+      var oc = el.getAttribute('onclick') || '';
+      return oc.includes("tChip('" + group + "'") || oc.includes('tChip("' + group + '"');
+    });
+    var vals = all.map(function(el) {
+      var m = (el.getAttribute('onclick')||'').match(/tChip\(['"]\w+['"],\s*['"]([^'"]+)['"]/);
+      return m ? m[1] : null;
+    }).filter(Boolean);
+    return multi ? vals : (vals[0] || null);
+  }
+  tProfile.niveau   = readGroup('niveau')   || tProfile.niveau;
+  tProfile.objectif = readGroup('objectif') || tProfile.objectif;
+  tProfile.split    = readGroup('split')    || tProfile.split;
+  tProfile.jours    = readGroup('jours')    || tProfile.jours;
+  tProfile.sex      = readGroup('sex')      || tProfile.sex;
+  tProfile.blessure = readGroup('blessure', true);
+  tProfile.anomalie = readGroup('anomalie', true);
+  tProfile.equip    = readGroup('equip',    true);
 }
 
 function initApp() {
