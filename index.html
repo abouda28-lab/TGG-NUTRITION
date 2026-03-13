@@ -2328,7 +2328,7 @@ async function lancerGenerationIA(force7days) {
 
   // Compressed FOODS for prompt
   // Exclude legumes (IDs 42,43,48,50,51) from AI food list
-  const LEGUME_IDS = new Set([42,43,48,50,51]);
+  const LEGUME_IDS = new Set([42,43,48,50,51,70]); // 70=Crêpe banane (trop lipidique)
   const FOODS_COMPRESSED = FOODS.filter(f => !LEGUME_IDS.has(f.id)).map(f => {
     const kcal100 = f.cru.kcal, p = f.cru.prot, g = f.cru.gluc, l = f.cru.lip;
     const uLab = f.unitType === 'unit' ? (f.unitLab || 'unité') : 'g';
@@ -2357,7 +2357,8 @@ RÈGLES ABSOLUES:
 ${force7days ? "⚠️ PRIORITÉ ABSOLUE: Génère les 7 jours COMPLETS, ne t'arrête pas avant le jour 7.\n" : ""}5. 7 jours différents, aucun plat répété.
 6. Ingrédients disponibles au Maroc / budget ${rProfile.budget}.
 7. INTERDIT ABSOLU — LÉGUMINEUSES: pois cassés, lentilles, haricots rouges, pois chiches, haricots blancs, fèves — NE JAMAIS utiliser ces aliments.
-8. CALORIES STRICTES: chaque jour DOIT atteindre entre ${Math.round(kcal*0.97)} et ${Math.round(kcal*1.03)} kcal (tolérance ±3%). Ajuste les quantités en conséquence. C'est non négociable.
+8b. INTERDIT ABSOLU — PLATS TROP LIPIDIQUES: baghrir, pastilla, msemen, m'semen, crêpe marocaine, cornes de gazelle, briouats frits, chebakia — NE JAMAIS proposer ces aliments ou plats.
+8. CALORIES STRICTES: chaque jour DOIT atteindre entre ${Math.round(kcal*0.95)} et ${Math.round(kcal*1.05)} kcal. Objectif exact: ${kcal} kcal. Pour atteindre cet objectif, AUGMENTE les quantités de viande, féculents et huile si nécessaire. Chaque repas doit être calorique. C'est NON NÉGOCIABLE — un plan à ${Math.round(kcal*0.9)} kcal sera REJETÉ.
 9. REPAS INTERCHANGEABLES: les petits-déjeuners de tous les jours doivent être entre ${Math.round(kcal*0.22)} et ${Math.round(kcal*0.28)} kcal. Les déjeuners entre ${Math.round(kcal*0.32)} et ${Math.round(kcal*0.38)} kcal. Les dîners entre ${Math.round(kcal*0.27)} et ${Math.round(kcal*0.33)} kcal. Cela permet au client d'interchanger les repas du même type entre les jours.
 10. Ingrédients détaillés avec quantités précises — pas d'ingrédients vagues comme "épices" sans quantité.
 ${rProfile.maladie.length ? '11. Adapte STRICTEMENT aux maladies: ' + rProfile.maladie.join(', ') : ''}
@@ -3270,8 +3271,8 @@ function tChip(group, val, el) {
   updateTProfile();
 }
 
-function tToggle(el) {
-  el.classList.toggle('active');
+function tToggle(group, val, el) {
+  if (el) el.classList.toggle('active');
   updateTProfile();
 }
 
@@ -3300,9 +3301,19 @@ function updateTProfile() {
   tProfile.split    = readGroup('split')    || tProfile.split;
   tProfile.jours    = readGroup('jours')    || tProfile.jours;
   tProfile.sex      = readGroup('sex')      || tProfile.sex;
-  tProfile.blessure = readGroup('blessure', true);
-  tProfile.anomalie = readGroup('anomalie', true);
-  tProfile.equip    = readGroup('equip',    true);
+  // tToggle buttons (blessure, anomalie)
+  function readToggle(group) {
+    return [...document.querySelectorAll('.rchip.active')].filter(function(el) {
+      var oc = el.getAttribute('onclick') || '';
+      return oc.includes("tToggle('" + group + "'") || oc.includes('tToggle("' + group + '"');
+    }).map(function(el) {
+      var m = (el.getAttribute('onclick')||'').match(/tToggle\(['"]\w+['"],\s*['"]([^'"]+)['"]/);
+      return m ? m[1] : null;
+    }).filter(Boolean);
+  }
+  tProfile.blessure = readToggle('blessure');
+  tProfile.anomalie = readToggle('anomalie');
+  tProfile.equip    = readGroup('equip', true);
 }
 
 function initApp() {
