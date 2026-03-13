@@ -3099,33 +3099,100 @@ async function lancerProgrammeIA() {
     : tProfile.objectif === 'Cardio et Endurance' ? '3-4 séries x 15-20 reps, repos 45-60s'
     : '3-4 séries x 8-15 reps, repos 90s-2min';
 
-  const scolNote = tProfile.anomalie.includes('Scoliose') ? 'SCOLIOSE: Interdire tout axial chargé (Squat barre, Good Morning, Deadlift). Favoriser machines, câbles, couché.' : '';
-  const lordNote = tProfile.anomalie.includes('Hyperlordose') ? 'HYPERLORDOSE: Renforcer abdos et fessiers. Éviter extension lombaire excessive.' : '';
-  const kyphNote = tProfile.anomalie.includes('Cyphose') ? 'CYPHOSE: Prioriser tirage dos et pectoraux étirés. Éviter flexion rachidienne.' : '';
-  const genouNote = tProfile.blessure.includes('Genou') ? 'GENOU: Interdire Leg Extension, Squat profond, Walking Lunge.' : '';
-  const epNote = tProfile.blessure.includes('Épaule') ? 'ÉPAULE: Interdire Upright Row, Dips, Développé nuque.' : '';
-  const dosNote = tProfile.blessure.includes('Dos et Lombaires') ? 'DOS: Interdire Deadlift, Good Morning, Barbell Row lourd.' : '';
+    // ── Blessures — règles exhaustives ──────────────────────────────
+  const genouNote = tProfile.blessure.includes('Genou') ?
+    'GENOU (INTERDITS ABSOLUS): Front Squat, Back Squat barre, Hack Squat profond, Leg Extension, Walking Lunge, Bulgarian Split Squat, Box Jump, Leg Press amplitude complète, Pistol Squat, Step-Up chargé. ' +
+    'AUTORISÉS: Leg Press pieds hauts amplitude réduite (90°max), Glute Bridge, Cable Pull Through, Romanian Deadlift, Seated Leg Curl, Calf Raise, Hip Thrust amplitude réduite.' : '';
+
+  const epNote = tProfile.blessure.includes('Épaule') ?
+    'ÉPAULE (INTERDITS ABSOLUS): Upright Row, Dips, Développé nuque, Military Press derrière nuque, Lateral Raise au-dessus horizontal, Chest Fly amplitude extrême, Pull-Up prise large, Bench Press prise trop large, Arnold Press. ' +
+    'AUTORISÉS: Machine Chest Press, Cable Crossover, Lat Pulldown prise neutre, Seated Row, Face Pull, Lateral Raise câble, Dumbbell Press angle 30°.' : '';
+
+  const dosNote = tProfile.blessure.includes('Dos et Lombaires') ?
+    'DOS/LOMBAIRES (INTERDITS ABSOLUS): Deadlift conventionnel, Good Morning, Barbell Row penché, T-Bar Row, Jefferson Squat, Squat barre chargé, Hyperextension, Leg Press dos non soutenu. ' +
+    'AUTORISÉS: Leg Press guidé dos plaqué, Lat Pulldown assis, Seated Cable Row, Machine Row, Glute Bridge, Hip Thrust guidé, Planche, Crunch machine.' : '';
+
+  const coudeNote = tProfile.blessure.includes('Coude') ?
+    'COUDE (INTERDITS ABSOLUS): Skull Crusher, French Press, Triceps Extension barre, Close Grip Bench Press, Dips, EZ Bar Curl lourd, Preacher Curl barre droite, Wrist Curl chargé. ' +
+    'AUTORISÉS: Rope Pushdown, Overhead Cable Extension (léger), Dumbbell Curl prise neutre (Hammer Curl), Cable Curl, Machine Biceps Curl, Triceps Machine.' : '';
+
+  const poignetNote = tProfile.blessure.includes('Poignet') ?
+    'POIGNET (INTERDITS ABSOLUS): Barbell Bench Press prise fixe, Barbell Curl, Wrist Curl/Extension, Clean & Jerk, Snatch, Front Squat prise classique, Push-Up plat, Dips. ' +
+    'AUTORISÉS: Tout exercice avec haltères (poignet libre), câbles, machines guidées. Hammer Curl (prise neutre), Dumbbell Press, Machine Chest Press, Lat Pulldown barre droite, Pushdown corde.' : '';
+
+  const chevNote = tProfile.blessure.includes('Cheville') ?
+    'CHEVILLE (INTERDITS ABSOLUS): Barbell Squat profond, Box Jump, Jump Squat, Lunge marchant, Step-Up, Calf Raise chargé, Agility drills. ' +
+    'AUTORISÉS: Leg Press, Leg Curl, Hip Thrust, Glute Bridge, Exercices haut du corps en position assise ou allongée, Calf Raise machine assis (sans impact).' : '';
+
+  // ── Anomalies posturales ──────────────────────────────────────────
+  const scolNote = tProfile.anomalie.includes('Scoliose') ?
+    'SCOLIOSE (INTERDITS ABSOLUS): Tout exercice axial chargé: Barbell Squat, Front Squat, Good Morning, Deadlift conventionnel, Barbell Lunges, Military Press debout lourd. ' +
+    'AUTORISÉS: Tout en machine, câbles, couché. Leg Press, Hack Squat machine, Lat Pulldown, Seated Row, Machine Shoulder Press.' : '';
+
+  const lordNote = tProfile.anomalie.includes('Hyperlordose') ?
+    'HYPERLORDOSE (INTERDITS ABSOLUS): Deadlift conventionnel, Good Morning, Hyperextension, Leg Press dos décollé, Squat profond, Hip Thrust amplitude exagérée. ' +
+    'AUTORISÉS: Renforcer abdos (Crunch cable, Planche), fessiers (Glute Bridge, Cable Pull Through), Leg Press neutre, Lat Pulldown, exercices en position neutre.' : '';
+
+  const kyphNote = tProfile.anomalie.includes('Cyphose') ?
+    'CYPHOSE (INTERDITS ABSOLUS): Bench Press prise large, Chest Fly amplitude extrême, Crunch classique, Leg Press dos arrondi, tout ce qui renforce la flexion du rachis. ' +
+    'AUTORISÉS et PRIORITAIRES: Tirage horizontal (Cable Row, Machine Row), tirage vertical (Lat Pulldown), Face Pull, Rear Delt Fly, Rowing, exercices pectoraux en position neutre.' : '';
+
+  const recurNote = tProfile.anomalie.includes('Recurvatum') ?
+    'RECURVATUM (INTERDITS ABSOLUS): Leg Extension, tout exercice en hyperextension de genou, Squat profond, Leg Press avec verrouillage. ' +
+    'AUTORISÉS: Leg Curl, Hip Thrust, Glute Bridge, Leg Press amplitude limitée (genou jamais en hyperextension), Romanian Deadlift léger, exercices haut du corps.' : '';
+
+  const platNote = tProfile.anomalie.includes('Pieds plats') ?
+    'PIEDS PLATS (INTERDITS ABSOLUS): Barbell Squat lourd, Box Jump, Sprint chargé, Lunge marchant long. ' +
+    'AUTORISÉS: Leg Press, Leg Curl, Hip Thrust, exercices assis ou allongés, Calf Raise pour renforcer voûte plantaire.' : '';
+
+  const anteNote = tProfile.anomalie.includes('Ant\u00e9version du bassin') ?
+    'ANT\u00c9VERSION DU BASSIN (INTERDITS ABSOLUS): Hyperextension lombaire, Good Morning, Deadlift conventionnel, Hip Thrust amplitude exag\u00e9r\u00e9e, Squat forte inclinaison avant, Leg Press pieds bas. ' +
+    'PRIORIT\u00c9 ABSOLUE — RENFORCER: Abdominaux profonds (Planche, Dead Bug, Crunch c\u00e2ble), Fessiers (Glute Bridge neutre, Clamshell), Ischio-jambiers.' : '';
+
+  const epavNote = tProfile.anomalie.includes('\u00c9paules en avant') ?
+    '\u00c9PAULES EN AVANT / PROTRACTION (INTERDITS ABSOLUS): Chest Fly amplitude extr\u00eame, Bench Press prise trop large, Dips, tout ce qui accentue la protraction scapulaire. ' +
+    'PRIORIT\u00c9 ABSOLUE — RENFORCER: Face Pull, Rear Delt Fly, Rowing horizontal (Cable Row, Machine Row). Ratio Pouss\u00e9e/Tirage minimum 1:2.' : '';
+
+  const hanNote = tProfile.blessure.includes('Hanche') ?
+    'HANCHE (INTERDITS ABSOLUS): Squat profond, Deadlift sumo, Hip Thrust lourd, Lunge, Step-Up, flexion hanche > 90\u00b0 sous charge, Box Jump, Leg Raise lest\u00e9. ' +
+    'AUTORIS\u00c9S: Leg Press amplitude r\u00e9duite, Leg Curl, exercices haut du corps assis/allong\u00e9, Glute Bridge amplitude r\u00e9duite sans douleur.' : '';
+
+  const cervNote = tProfile.blessure.includes('Cervicales') ?
+    'CERVICALES (INTERDITS ABSOLUS): Shrug barre lourd, Upright Row, Military Press derri\u00e8re nuque, Lat Pulldown derri\u00e8re nuque, tout exercice avec charge sur la nuque. ' +
+    'AUTORIS\u00c9S: Shrug halt\u00e8res l\u00e9ger, Lat Pulldown devant, Seated Row, Face Pull c\u00e2ble. Pas d\'appui t\u00eate en hyperextension.' : '';
+
+  const trainNotes = (document.getElementById('trainNotes')||{}).value || '';
 
   const userPrompt = 'Programme ' + tProfile.split + ' pour ' + prenom + ' (' + (tProfile.sex === 'H' ? 'Homme' : 'Femme') + ').\n'
     + 'Niveau: ' + tProfile.niveau + '\n'
     + 'Objectif: ' + tProfile.objectif + '\n'
     + 'Jours/semaine: ' + tProfile.jours + '\n'
     + 'Équipement: ' + (tProfile.equip.join(', ') || 'Salle complète') + '\n'
+    + (trainNotes ? 'Infos complémentaires: ' + trainNotes + '\n' : '')
     + (contraintes.length ? '\nCONTRAINTES ABSOLUES:\n' + contraintes.join('\n') : '')
     + '\n\nBASE EXERCICES DISPONIBLES (id|nom|muscle|risque):\n' + exCompressed
     + '\n\nRÈGLES:\n'
     + '1. Utilise uniquement les IDs de la base — ne PAS inventer des exercices hors base.\n'
-    + '2. Exercices warnLevel "red" sur zone blessée = INTERDITS. "orange" = à adapter.\n'
+    + '2. Exercices warnLevel \"red\" sur zone blessée = INTERDITS. \"orange\" = à adapter.\n'
     + (scolNote ? '3. ' + scolNote + '\n' : '')
     + (lordNote ? '4. ' + lordNote + '\n' : '')
     + (kyphNote ? '5. ' + kyphNote + '\n' : '')
+    + (recurNote ? '5b. ' + recurNote + '\n' : '')
+    + (platNote ? '5c. ' + platNote + '\n' : '')
+    + (anteNote ? '5d. ' + anteNote + '\n' : '')
+    + (epavNote ? '5e. ' + epavNote + '\n' : '')
     + (genouNote ? '6. ' + genouNote + '\n' : '')
     + (epNote ? '7. ' + epNote + '\n' : '')
     + (dosNote ? '8. ' + dosNote + '\n' : '')
+    + (coudeNote ? '8b. ' + coudeNote + '\n' : '')
+    + (poignetNote ? '8c. ' + poignetNote + '\n' : '')
+    + (chevNote ? '8d. ' + chevNote + '\n' : '')
+    + (hanNote ? '8e. ' + hanNote + '\n' : '')
+    + (cervNote ? '8f. ' + cervNote + '\n' : '')
     + '9. Programme sur ' + tProfile.jours + ' jours avec repos bien placés.\n'
     + '10. Séries x Reps basés sur objectif: ' + repsPrescription + '.\n'
     + '\nFORMAT JSON STRICT (réponds UNIQUEMENT ce JSON):\n'
-    + '{"programme":{"nom":"string","jours":[{"jour":"Lundi","type":"Push","seances":[{"exId":"e1","nom":"string","muscle":"string","series":4,"reps":"8-12","repos":"2 min","conseil":"string"}]}]}}';
+    + '{\"programme\":{\"nom\":\"string\",\"jours\":[{\"jour\":\"Lundi\",\"type\":\"Push\",\"seances\":[{\"exId\":\"e1\",\"nom\":\"string\",\"muscle\":\"string\",\"series\":4,\"reps\":\"8-12\",\"repos\":\"2 min\",\"conseil\":\"string\"}]}]}}'
 
   try {
     const res = await fetch(API_URL + '?action=ai_plan', {
