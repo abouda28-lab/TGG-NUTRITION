@@ -713,7 +713,7 @@ textarea{resize:vertical;min-height:90px}
     <div id="rPlanArea" style="display:none">
       <div style="display:flex;gap:8px;padding:0 0 12px">
         <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="retourForm()">← Modifier</button>
-        <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="lancerGenerationIA()">🔄 Régénérer</button>
+        <button class="btn btn-s" style="flex:1;background:var(--surface2)" onclick="lancerGenerationIA(true)">🔄 Régénérer</button>
         <button class="btn btn-s" style="flex:1;background:rgba(74,222,128,.15);color:var(--accent);border:1px solid rgba(74,222,128,.3)" onclick="exportPlanPDF()">📄 PDF</button>
       </div>
       <div id="rPlanOutput"></div>
@@ -2292,7 +2292,7 @@ function lancerGenerationStatique() {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-async function lancerGenerationIA() {
+async function lancerGenerationIA(force7days) {
   const kcal = parseInt(document.getElementById('rKcal').value)||0;
   if(kcal < 1000){ alert('Entre tes calories journalières (min 1000) !'); return; }
 
@@ -2354,7 +2354,7 @@ RÈGLES ABSOLUES:
 2. Œufs = unités (ex: qty:2, unit:"œufs"). Yaourt = pot (une portion = 125g). Autres = grammes.
 3. Claude NE CALCULE PAS les macros — il indique juste id+qty. L'app calcule.
 4. Style ${rProfile.cuisine} UNIQUEMENT — aucun autre style.
-5. 7 jours différents, aucun plat répété.
+${force7days ? "⚠️ PRIORITÉ ABSOLUE: Génère les 7 jours COMPLETS, ne t'arrête pas avant le jour 7.\n" : ""}5. 7 jours différents, aucun plat répété.
 6. Ingrédients disponibles au Maroc / budget ${rProfile.budget}.
 7. INTERDIT ABSOLU — LÉGUMINEUSES: pois cassés, lentilles, haricots rouges, pois chiches, haricots blancs, fèves — NE JAMAIS utiliser ces aliments.
 8. CALORIES STRICTES: chaque jour DOIT atteindre entre ${Math.round(kcal*0.97)} et ${Math.round(kcal*1.03)} kcal (tolérance ±3%). Ajuste les quantités en conséquence. C'est non négociable.
@@ -2603,76 +2603,86 @@ function exportPlanPDF() {
   const MEAL_COLOR  = {breakfast:'#f97316', lunch:'#3b82f6', dinner:'#8b5cf6', snack1:'#22c55e', snack2:'#22c55e'};
 
   days.forEach((day, di) => {
-    const meals = ['breakfast','lunch','dinner','snack1','snack2'].filter(k => day[k] && day[k].ingredients && day[k].ingredients.length);
+    // AI plan structure: day.day = "Lundi", day.meals = {"Petit-déjeuner": {name, emoji, ings, steps}}
+    const dayMeals = day.meals || {};
+    const mealKeys = Object.keys(dayMeals).filter(k => dayMeals[k] && (dayMeals[k].ings||[]).length);
+    if (!mealKeys.length) return;
 
     np(30);
 
     // Day header
+    const dayLabel = day.day || DAY_NAMES[di] || ('JOUR '+(di+1));
     fill(M, y, W-M*2, 10, '#0f172a');
     fill(M, y, 5, 10, '#22c55e');
     sf(10, 'bold', [255,255,255]);
-    doc.text((DAY_NAMES[di]||('JOUR '+(di+1))), M+8, y+7);
+    doc.text(dayLabel.toUpperCase(), M+8, y+7);
 
     // Day macro totals
-    const dm = calcDayMacros(day);
+    const dm = calcDayMacrosIA(dayMeals);
     sf(7, 'normal', [156,163,175]);
     doc.text(dm.kcal+'kcal  P:'+dm.prot+'g  G:'+dm.gluc+'g  L:'+dm.lip+'g', W-M, y+7, {align:'right'});
     y += 13;
 
-    meals.forEach(mealKey => {
-      const meal = day[mealKey];
-      if (!meal || !meal.ingredients || !meal.ingredients.length) return;
+    mealKeys.forEach(mealLabel => {
+      const meal = dayMeals[mealLabel];
+      const ings = meal.ings || [];
+      if (!ings.length) return;
 
       np(18);
 
-      // Meal title bar
-      const mColor = MEAL_COLOR[mealKey] || '#64748b';
-      const mLabel = MEAL_LABELS[mealKey] || mealKey;
+      // Meal color based on label
+      const MEAL_COLOR_MAP = {
+        'Petit-déjeuner':'#f97316','Déjeuner':'#3b82f6','Dîner':'#8b5cf6',
+        'Collation 1':'#22c55e','Collation 2':'#22c55e'
+      };
+      const mColor = MEAL_COLOR_MAP[mealLabel] || '#64748b';
       const r2=parseInt(mColor.slice(1,3),16), g2=parseInt(mColor.slice(3,5),16), b2=parseInt(mColor.slice(5,7),16);
-      doc.setFillColor(r2,g2,b2); doc.setFillColor(r2,g2,b2);
-      // left accent + label bg
+
+      // Meal title bar
       doc.setFillColor(r2,g2,b2); doc.rect(M, y, 3, 7, 'F');
-      doc.setFillColor(r2,g2,b2); doc.setAlpha && doc.setAlpha(0.08);
       fill(M+3, y, W-M*2-3, 7, '#f1f5f9');
       sf(8, 'bold', [r2,g2,b2]);
-      doc.text(mLabel.toUpperCase(), M+7, y+5);
+      doc.text(mealLabel.toUpperCase(), M+7, y+5);
 
-      // Meal macros right
-      if (meal._macros) {
+      // Meal name + macros
+      if (meal.name) {
         sf(7, 'normal', [100,116,139]);
-        doc.text(meal._macros.kcal+'kcal', W-M, y+5, {align:'right'});
+        doc.text((meal.emoji||'') + ' ' + meal.name, W-M, y+5, {align:'right'});
       }
       y += 9;
 
-      // Ingredients
-      (meal.ingredients || []).forEach(ing => {
+      // Ingredients (meal.ings format from AI)
+      ings.forEach(ing => {
         np(7);
-        // ingredient name
-        const name = ing.name || ing.id || '';
-        const qty  = ing.qty ? (ing.qty + (ing.unit && ing.unit !== 'g' ? ' '+ing.unit : 'g')) : '';
+        // Get food name from FOODS db or id_ext
+        let name = '';
+        if (ing.id) {
+          const food = FOODS.find(f => f.id === ing.id);
+          name = food ? food.name : String(ing.id);
+        } else {
+          name = ing.id_ext || '?';
+        }
+        const qty = ing.qty ? (ing.qty + (ing.unit && ing.unit !== 'g' ? ' '+ing.unit : 'g')) : '';
 
-        // dot
         doc.setFillColor(100,116,139); doc.circle(M+5, y+2.5, 0.8, 'F');
         sf(8, 'normal', [30,41,59]);
         const nameTxt = doc.splitTextToSize(name, 110);
         doc.text(nameTxt[0], M+9, y+4);
-
-        // qty right-aligned
         sf(8, 'bold', [100,116,139]);
         doc.text(qty, W-M, y+4, {align:'right'});
         y += 6.5;
       });
 
-      // prep if any
-      if (meal.prep) {
+      // Steps (first step as prep hint)
+      if (meal.steps && meal.steps.length) {
         np(8);
         sf(6.5, 'italic', [148,163,184]);
-        const prepLines = doc.splitTextToSize('⚡ ' + meal.prep, W-M*2-6);
+        const prepLines = doc.splitTextToSize('⚡ ' + meal.steps[0], W-M*2-6);
         doc.text(prepLines[0], M+6, y+4);
         y += 7;
       }
 
-      y += 3; // spacing between meals
+      y += 3;
       hline(y, '#f1f5f9');
       y += 4;
     });
@@ -2691,11 +2701,19 @@ function exportPlanPDF() {
   // Aggregate
   const shop = {};
   days.forEach(day => {
-    ['breakfast','lunch','dinner','snack1','snack2'].forEach(mk => {
-      const meal = day[mk]; if (!meal) return;
-      (meal.ingredients||[]).forEach(ing => {
-        const k = (ing.name||ing.id||'').toLowerCase();
-        if (!shop[k]) shop[k] = {name: ing.name||ing.id||'', qty: 0, unit: ing.unit||'g'};
+    const dayMeals = day.meals || {};
+    Object.values(dayMeals).forEach(meal => {
+      if (!meal) return;
+      (meal.ings||[]).forEach(ing => {
+        let name = '';
+        if (ing.id) {
+          const food = FOODS.find(f => f.id === ing.id);
+          name = food ? food.name : String(ing.id);
+        } else {
+          name = ing.id_ext || '?';
+        }
+        const k = name.toLowerCase();
+        if (!shop[k]) shop[k] = {name, qty: 0, unit: ing.unit||'g'};
         shop[k].qty += (ing.qty||0);
       });
     });
@@ -2734,7 +2752,7 @@ function exportPlanPDF() {
   doc.save('plan-alimentaire-'+(prenom||'client').toLowerCase().replace(/\s+/g,'-')+'.pdf');
 }
 
-// ── helper: sum macros for a day ──────────────────────
+// ── helper: sum macros for a day (old structure) ──────────────────────
 function calcDayMacros(day) {
   let kcal=0, prot=0, gluc=0, lip=0;
   ['breakfast','lunch','dinner','snack1','snack2'].forEach(mk => {
@@ -2743,6 +2761,33 @@ function calcDayMacros(day) {
     else (m.ingredients||[]).forEach(ing => {
       const r = getFoodMacros(ing); if(!r) return;
       kcal+=r.kcal; prot+=r.prot; gluc+=r.gluc; lip+=r.lip;
+    });
+  });
+  return {kcal:Math.round(kcal), prot:Math.round(prot), gluc:Math.round(gluc), lip:Math.round(lip)};
+}
+
+// ── helper: sum macros for AI plan day (day.meals structure) ──────────
+function calcDayMacrosIA(dayMeals) {
+  let kcal=0, prot=0, gluc=0, lip=0;
+  Object.values(dayMeals||{}).forEach(meal => {
+    if (!meal) return;
+    (meal.ings||[]).forEach(ing => {
+      if (ing.id) {
+        const food = FOODS.find(f => f.id === ing.id);
+        if (!food) return;
+        const per100 = food.cru || {};
+        const qty = ing.unit === 'g' ? (ing.qty||0) : (ing.qty||0) * (food.gramsPerUnit||100);
+        kcal += (per100.kcal||0) * qty / 100;
+        prot += (per100.prot||0) * qty / 100;
+        gluc += (per100.gluc||0) * qty / 100;
+        lip  += (per100.lip||0)  * qty / 100;
+      } else if (ing.kcal_u) {
+        const qty = ing.qty || 0;
+        kcal += ing.kcal_u * qty / 100;
+        prot += (ing.prot_u||0) * qty / 100;
+        gluc += (ing.gluc_u||0) * qty / 100;
+        lip  += (ing.lip_u||0)  * qty / 100;
+      }
     });
   });
   return {kcal:Math.round(kcal), prot:Math.round(prot), gluc:Math.round(gluc), lip:Math.round(lip)};
@@ -3037,7 +3082,13 @@ async function lancerProgrammeIA() {
   const filteredEx = splitMuscles
     ? EXERCISES.filter(e => splitMuscles.includes(e.muscle))
     : EXERCISES;
-  const exCompressed = filteredEx.map(e =>
+  // Limit to max 5 per muscle to keep prompt small and avoid GAS timeout
+  const muscleCount = {};
+  const cappedEx = filteredEx.filter(e => {
+    muscleCount[e.muscle] = (muscleCount[e.muscle] || 0) + 1;
+    return muscleCount[e.muscle] <= 5;
+  });
+  const exCompressed = cappedEx.map(e =>
     e.id + '|' + e.name + '|' + e.muscle + '|' + (e.warnLevel || 'green')
   ).join('\n');
 
