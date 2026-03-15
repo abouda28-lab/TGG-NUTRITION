@@ -903,9 +903,10 @@ async function lancerGenerationIA(forceRegen) {
 
   // FIX GAS OPT7: Filtrer FOODS selon cuisine pour réduire tokens
   const LEGUME_IDS = new Set([42,43,48,50,51]);
-  const cuisineIsMarocain = rProfile.cuisine.toLowerCase().includes('marocain') || rProfile.cuisine.toLowerCase().includes('marocain');
+  const cuisineIsMarocain = rProfile.cuisine.toLowerCase().includes('marocain');
   const filteredFoods = FOODS.filter(f => {
-    if(LEGUME_IDS.has(f.id)) return false;
+    // Légumineuses: garder si cuisine marocaine (couscous, harira, bissara, pois chiches...)
+    if(LEGUME_IDS.has(f.id) && !cuisineIsMarocain) return false;
     return true;
   });
   // FIX GAS OPT1: Format compact (moins de champs)
@@ -926,11 +927,11 @@ async function lancerGenerationIA(forceRegen) {
   };
   const maladiePromptRules = rProfile.maladie.map(m => maladieRules[m] ? `${m}: ${maladieRules[m]}` : m).join('\n');
 
-  // FIX F8: Quantités minimales cibles dans le prompt
-  const kcalPdj = Math.round(kcal * 0.25);
-  const kcalDej = Math.round(kcal * 0.35);
-  const kcalDin = Math.round(kcal * 0.30);
-  const kcalCol = Math.round(kcal * 0.10);
+  // FIX F8: Cibles caloriques dynamiques selon les repas choisis
+  const repasKcalLines = rProfile.repas.map(r => {
+    const pct = (pctMap[r]||0.10)/totalPct;
+    return `   ${r}: ${Math.round(kcal*pct)} kcal`;
+  }).join('\n');
 
   const systemPrompt = 'Diététicien sportif expert cuisine marocaine. JSON VALIDE UNIQUEMENT, sans markdown ni texte.';
 
@@ -950,12 +951,9 @@ ${FOODS_COMPACT}
 RÈGLES:
 1. IDs de la base EN PRIORITÉ. Hors base: fournis kcal_u/prot_u/gluc_u/lip_u par 100g.
 2. Œufs=unités(qty:3,unit:"oeufs"). Autres=grammes.
-3. Style ${rProfile.cuisine} exclusivement. ${dayNames.length} jours complets sans répétition.
+3. Style ${rProfile.cuisine} exclusivement. ${dayNames.length} jours complets sans répétition.${cuisineIsMarocain?'\n3b. Cuisine marocaine: tajine, couscous (avec légumineuses), harira, kefta, chermoula, zaalouk, bissara. Épices: cumin, ras el hanout, coriandre, persil, gingembre, safran. Féculents: semoule, riz, pain (khobz, msemen).':''}
 4. CALORIES STRICTES: chaque jour entre ${Math.round(kcal*0.93)} et ${Math.round(kcal*1.07)} kcal.
-   Ptit-déj:${kcalPdj}kcal → poulet min 170g ou 3 oeufs + féculent 60g.
-   Déjeuner:${kcalDej}kcal → viande min 180g cru + féculent 70g cru + légumes.
-   Dîner:${kcalDin}kcal → viande min 160g cru + légumes + huile olive 10-15ml.
-   Collation:${kcalCol}kcal → yaourt 200g + fruits + amandes 15g.
+${repasKcalLines}
 5. INTERDIT: légumineuses (lentilles,pois chiches,haricots), plats frits.
 ${rProfile.maladie.length?'6. RÈGLES MÉDICALES CI-DESSUS = NON NÉGOCIABLES.':''}
 ${rProfile.allergie.length?'7. ALLERGIES INTERDITES: '+rProfile.allergie.join(', '):''}
@@ -1562,6 +1560,7 @@ async function lancerProgrammeIA() {
   const contraintes=[];
   if(tProfile.blessure.length)contraintes.push('Blessures: '+tProfile.blessure.join(', '));
   if(tProfile.anomalie.length)contraintes.push('Anomalies: '+tProfile.anomalie.join(', '));
+  if(rProfile.maladie.length)contraintes.push('Maladies: '+rProfile.maladie.join(', ')+' → adapter intensité, éviter surcharge cardiovasculaire si nécessaire.');
   if(notes)contraintes.push('Notes: '+notes);
   const SPLIT_MUSCLES={'Push Pull Legs':['Poitrine','Épaules','Triceps','Dos','Biceps','Trapèzes','Quadriceps','Ischio-jambiers','Fessiers','Mollets'],'Full Body':['Poitrine','Dos','Épaules','Quadriceps','Ischio-jambiers','Fessiers','Biceps','Triceps','Abdominaux'],'Upper Lower':['Poitrine','Dos','Épaules','Biceps','Triceps','Quadriceps','Ischio-jambiers','Fessiers','Mollets'],'Bro Split':['Poitrine','Dos','Épaules','Biceps','Triceps','Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux'],'Arnold Split':['Poitrine','Dos','Épaules','Biceps','Triceps','Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux'],'Cardio et Endurance':['Quadriceps','Ischio-jambiers','Fessiers','Mollets','Abdominaux']};
   const splitMuscles=SPLIT_MUSCLES[tProfile.split]||null;
@@ -1576,6 +1575,7 @@ async function lancerProgrammeIA() {
 }
 
 function renderProgramme(plan, prenom) {
+  _trainDaysDone = {};
   var output = document.getElementById('trainPlanOutput');
   var prog = plan.programme || plan;
   var jours = prog.jours || [];
@@ -1586,8 +1586,28 @@ function renderProgramme(plan, prenom) {
   html += '<div style="background:linear-gradient(135deg,rgba(129,140,248,.15),rgba(99,102,241,.1));border:1px solid rgba(129,140,248,.25);border-radius:14px;padding:14px 16px;margin-bottom:14px">'
     + '<div style="font-weight:800;font-size:14px;color:#818cf8;margin-bottom:3px">🏋️ ' + (prog.nom || tProfile.split) + '</div>'
     + '<div style="font-size:11px;color:var(--muted)">' + prenom + ' · ' + tProfile.niveau + ' · ' + tProfile.objectif + ' · ' + tProfile.jours + 'j/semaine</div>'
-    + (tProfile.blessure.length ? '<div style="font-size:11px;color:#fca5a5;margin-top:4px">🩹 Adapté : ' + tProfile.blessure.join(', ') + '</div>' : '')
+    + (tProfile.blessure.length ? '<div style="font-size:11px;color:#fca5a5;margin-top:4px">🩹 Blessures adaptées : ' + tProfile.blessure.join(', ') + '</div>' : '')
+    + (rProfile.maladie.length ? '<div style="font-size:11px;color:#fbbf24;margin-top:4px">⚕️ Maladies prises en compte : ' + rProfile.maladie.join(', ') + '</div>' : '')
     + '</div>';
+  // Barre de progression semaine d'entraînement
+  var joursActifs = jours.filter(function(d){ return d.seances && d.seances.length > 0 && d.type !== 'Repos'; });
+  var totalActifs = joursActifs.length;
+  if(totalActifs > 0) {
+    html += '<div id="trainProgressBox" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Progression semaine</div>'
+      + '<div id="trainProgLabel" style="font-size:12px;font-weight:700;color:var(--accent)">0 / ' + totalActifs + ' séances</div>'
+      + '</div>'
+      + '<div style="background:var(--surface2);border-radius:8px;height:8px;overflow:hidden;margin-bottom:10px">'
+      + '<div id="trainProgBar" style="width:0%;height:100%;background:var(--accent);border-radius:8px;transition:width .4s ease"></div>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      + joursActifs.map(function(d, i){
+          return '<button onclick="toggleTrainDay('+i+','+totalActifs+')" id="trainDayBtn'+i+'" style="flex:1;min-width:56px;padding:6px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;line-height:1.4">'
+            + d.jour + '<br><span style="font-size:9px;opacity:.7">' + (d.type||'') + '</span></button>';
+        }).join('')
+      + '</div></div>';
+  }
   jours.forEach(function(day) {
     var isRest = !day.seances || day.seances.length === 0 || day.type === 'Repos';
     var col = typeColor[day.type] || 'rgba(74,222,128,.1)';
@@ -1632,6 +1652,31 @@ function renderProgramme(plan, prenom) {
 }
 
 function exportProgrammePDF(){alert('Pour exporter le programme PDF, utilisez la version précédente ou contactez le support.');}
+
+// ══════════════════════════════════════════════════════
+// TRAINING PROGRESS TRACKER
+// ══════════════════════════════════════════════════════
+var _trainDaysDone = {};
+function toggleTrainDay(idx, total) {
+  _trainDaysDone[idx] = !_trainDaysDone[idx];
+  var btn = document.getElementById('trainDayBtn'+idx);
+  if(btn) {
+    if(_trainDaysDone[idx]) {
+      btn.style.background = 'rgba(74,222,128,.2)';
+      btn.style.borderColor = '#4ade80';
+      btn.style.color = '#4ade80';
+    } else {
+      btn.style.background = 'var(--surface2)';
+      btn.style.borderColor = 'var(--border)';
+      btn.style.color = 'var(--muted)';
+    }
+  }
+  var done = Object.values(_trainDaysDone).filter(Boolean).length;
+  var bar = document.getElementById('trainProgBar');
+  var label = document.getElementById('trainProgLabel');
+  if(bar) bar.style.width = Math.round(done/total*100)+'%';
+  if(label) label.textContent = done+' / '+total+' séances';
+}
 
 // ══════════════════════════════════════════════════════
 // TAB + INIT
