@@ -2364,11 +2364,20 @@ RÈGLES ABSOLUES:
 2. Œufs = unités (ex: qty:2, unit:"œufs"). Yaourt = pot (une portion = 125g). Autres = grammes.
 3. Claude NE CALCULE PAS les macros — il indique juste id+qty. L'app calcule.
 4. Style ${rProfile.cuisine} UNIQUEMENT — aucun autre style.
-${force7days ? "⚠️ PRIORITÉ ABSOLUE: Génère les 7 jours COMPLETS, ne t'arrête pas avant le jour 7.\n" : ""}5. 7 jours différents, aucun plat répété.
+${force7days ? "⚠️⚠️ PRIORITÉ MAXIMALE: Tu DOIS générer les 7 jours COMPLETS (Lundi→Dimanche). Ne t'arrête JAMAIS avant le Dimanche. Si tu manques de tokens, RÉDUIS la longueur des steps mais complète les 7 jours.\n" : "IMPORTANT: Génère les 7 jours complets Lundi→Dimanche sans exception.\n"}5. 7 jours différents, aucun plat répété.
 6. Ingrédients disponibles au Maroc / budget ${rProfile.budget}.
 7. INTERDIT ABSOLU — LÉGUMINEUSES: pois cassés, lentilles, haricots rouges, pois chiches, haricots blancs, fèves — NE JAMAIS utiliser ces aliments.
 8b. INTERDIT ABSOLU — PLATS TROP LIPIDIQUES: baghrir, pastilla, msemen, m'semen, crêpe marocaine, cornes de gazelle, briouats frits, chebakia — NE JAMAIS proposer ces aliments ou plats.
-8. CALORIES STRICTES: chaque jour DOIT atteindre entre ${Math.round(kcal*0.95)} et ${Math.round(kcal*1.05)} kcal. Objectif exact: ${kcal} kcal. Pour atteindre cet objectif, AUGMENTE les quantités de viande, féculents et huile si nécessaire. Chaque repas doit être calorique. C'est NON NÉGOCIABLE — un plan à ${Math.round(kcal*0.9)} kcal sera REJETÉ.
+8. CALORIES STRICTES: chaque jour DOIT atteindre entre ${Math.round(kcal*0.97)} et ${Math.round(kcal*1.03)} kcal. Objectif EXACT: ${kcal} kcal/jour.
+QUANTITÉS MINIMALES OBLIGATOIRES PAR REPAS pour ${kcal} kcal/jour:
+- Protéine principale (viande/poisson): MINIMUM ${Math.round(kcal*0.10)} kcal → ex: poulet ${Math.round(kcal*0.10/1.14)}g, thon ${Math.round(kcal*0.10/1.30)}g
+- Féculent (riz/patate/pain): MINIMUM ${Math.round(kcal*0.08)} kcal → ex: riz cru ${Math.round(kcal*0.08/1.30)}g, pomme de terre ${Math.round(kcal*0.08/0.77)}g
+- Huile d'olive: MINIMUM 10g par repas principal (90 kcal/10g)
+- Si les quantités semblent trop petites, DOUBLE-LES.
+EXEMPLES DE PORTIONS POUR ${kcal} kcal:
+- Déjeuner ${Math.round(kcal*0.35)} kcal: poulet ${Math.round(kcal*0.35*0.30/1.14)}g + riz cru ${Math.round(kcal*0.35*0.25/1.30)}g + légumes 200g + huile 15g
+- Dîner ${Math.round(kcal*0.30)} kcal: poisson ${Math.round(kcal*0.30*0.30/1.00)}g + féculent ${Math.round(kcal*0.30*0.20/0.77)}g + légumes 200g + huile 12g
+- Petit-déjeuner ${Math.round(kcal*0.25)} kcal: 3-4 oeufs ou yaourt 200g + avoine 80g + fruit + huile/beurre amande
 9. REPAS INTERCHANGEABLES: les petits-déjeuners de tous les jours doivent être entre \${Math.round(kcal*0.22)} et \${Math.round(kcal*0.28)} kcal. Les déjeuners entre \${Math.round(kcal*0.32)} et \${Math.round(kcal*0.38)} kcal. Les dîners entre \${Math.round(kcal*0.27)} et \${Math.round(kcal*0.33)} kcal. Cela permet au client d'interchanger les repas du même type entre les jours.
 9b. RÈGLES PAR REPAS (NON NÉGOCIABLE):
   PETIT-DÉJEUNER: jamais de viande rouge, jamais de poulet entier grillé, jamais de tajine, jamais de plats chauds à base de viande mijotée. Autorisé: œufs (toutes formes), fromage blanc, yaourt, skyr, flocons d'avoine, pain complet, fruits, labneh, thon en conserve léger, smoothie protéiné.
@@ -2473,8 +2482,16 @@ function renderIAPlan(plan, targets) {
   const mealOrder = rProfile.repas;
   const mealEmoji = {'Petit-déjeuner':'🌅','Déjeuner':'☀️','Dîner':'🌙','Collation 1':'🍎','Collation 2':'🍪'};
 
-  // Store for PDF
+  // Store for PDF — les deux références pour compatibilité
   window._lastIAPlan = {plan, targets};
+  window._lastPlan   = {
+    plan,
+    kcal:   targets.kcal   || kcal,
+    prot:   targets.prot   || prot,
+    gluc:   targets.gluc   || gluc,
+    lip:    targets.lip    || lip,
+    prenom: targets.prenom || prenom
+  };
 
   let html = '';
 
@@ -2542,7 +2559,21 @@ function renderIAPlan(plan, targets) {
 
 // ── PDF EXPORT ──────────────────────────────────────────────────
 function exportPlanPDF() {
-  const stored = window._lastPlan;
+  // IA plan → _lastIAPlan ; plan statique → _lastPlan
+  let stored = null;
+  if (window._lastIAPlan) {
+    const t = window._lastIAPlan.targets || {};
+    stored = {
+      plan:   window._lastIAPlan.plan,
+      kcal:   t.kcal  || 2000,
+      prot:   t.prot  || 150,
+      gluc:   t.gluc  || 200,
+      lip:    t.lip   || 70,
+      prenom: t.prenom || ''
+    };
+  } else if (window._lastPlan) {
+    stored = window._lastPlan;
+  }
   if (!stored) { alert("Génère un plan d'abord"); return; }
   if (!window.jspdf) { alert("jsPDF non chargé. Vérifie ta connexion."); return; }
 
